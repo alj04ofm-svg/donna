@@ -422,7 +422,7 @@ app.whenReady().then(() => {
     return config;
   });
   // is Donna running as the installed .app (vs a terminal `npm start`)?
-  ipcMain.handle("donna:appInfo", () => ({ packaged: !!app.isPackaged, loginAtStart: !!config.launchAtLogin }));
+  ipcMain.handle("donna:appInfo", () => ({ packaged: !!app.isPackaged, version: app.getVersion(), loginAtStart: !!config.launchAtLogin }));
   const RELEASES_URL = "https://github.com/alj04ofm-svg/donna/releases/latest";
   ipcMain.handle("donna:checkUpdate", async () => {
     const current = app.getVersion();

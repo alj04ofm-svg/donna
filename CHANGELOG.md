@@ -3,6 +3,11 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] — 2026-09-20
+
+- Fixed the AI-coach button overlapping Plan's Timeline/Week/Forecast tabs.
+- Settings shows the real app version; calendar-permission copy now says Donna.
+
 ## [1.6.0] — 2026-09-20
 
 - **New Habits page** — daily routines with streaks, identity votes and

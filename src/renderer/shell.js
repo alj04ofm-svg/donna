@@ -444,6 +444,7 @@ window.donna.onHide?.(() => {
   const init = await window.donna.init();
   data = init.tasks;
   prod = init.production || null;
+  try { window.donna.appInfo().then((i) => { if (i && i.version) window.__ver = i.version; }); } catch {}
   cfg = init.config || {};
   habitsCache = init.habits || [];
   remindersCache = init.reminders || [];

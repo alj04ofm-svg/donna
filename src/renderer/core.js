@@ -1,7 +1,7 @@
 /* Donna renderer — three window modes, live local data, Linear-grade keyboard,
    Kanban board, streaming Ask. Vanilla JS, one keydown state machine. */
 
-window.__ver = "1.0";
+window.__ver = "";
 const $ = (s) => document.querySelector(s);
 const main = $("#main");
 let view = "today";

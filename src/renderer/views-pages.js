@@ -10,7 +10,7 @@ async function vSettings() {
   const pane = (key, html) => `<div class="set-pane" data-pane="${key}"${settingsTab === key ? "" : " hidden"}>${html}</div>`;
   main.innerHTML = `<div class="view">
     <div class="lib-head">
-      <div><h1 class="h1">Settings</h1><p class="sub">Tuned for you<span class="sep">·</span>Donna v${window.__ver || "1"}</p></div>
+      <div><h1 class="h1">Settings</h1><p class="sub">Tuned for you${window.__ver ? `<span class="sep">·</span>Donna v${esc(window.__ver)}` : ""}</p></div>
       <div class="seg vz-seg set-tabseg">${SETTINGS_TABS.map(([k, l]) => `<button data-settab="${k}" class="${settingsTab === k ? "on" : ""}">${l}</button>`).join("")}</div>
     </div>
 
@@ -36,7 +36,7 @@ async function vSettings() {
       <div class="set-row"><div><div class="set-label">Launch at login</div><div class="set-hint">Open Donna automatically when you start your Mac</div></div>${toggle("launchAtLogin", !!cfg.launchAtLogin)}</div>
     </div>
     <div class="set-group">
-      <div class="set-row"><div><div class="set-label">Onboarding tour</div><div class="set-hint">Replay the 5-step tour. Clears the onboarded flag.</div></div>
+      <div class="set-row"><div><div class="set-label">Setup wizard</div><div class="set-hint">Replay the setup wizard. Clears the onboarded flag.</div></div>
         <button class="wind-btn" id="btn-reonboard" style="width:auto;margin:0;padding:8px 14px">Replay tour</button></div>
     </div>
     <div class="set-group">
@@ -523,7 +523,7 @@ async function vPlan() {
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
       <div><h1 class="h1">Plan</h1>
       <p class="sub">${fmtT(nowMin)} now${p.calOk ? "" : `<span class="sep">·</span>calendar off`}</p></div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;padding-right:86px">
         <div class="seg">
           <button class="on" data-planlay="timeline">Timeline</button>
           <button data-planlay="week">Week</button>
@@ -532,7 +532,7 @@ async function vPlan() {
         <button class="triage-btn" id="replan-btn">↻ Replan</button>
       </div>
     </div>
-    ${!p.calOk && p.calReason === "permission" ? `<div class="prod-status" style="margin-top:10px"><span class="ps warn">⚠ grant Calendar access to Electron — System Settings › Privacy › Calendars</span></div>` : ""}
+    ${!p.calOk && p.calReason === "permission" ? `<div class="prod-status" style="margin-top:10px"><span class="ps warn">⚠ grant Calendar access to Donna — System Settings › Privacy › Calendars</span></div>` : ""}
 
     <div class="pl-board"${si()}>
       <div class="pl-cell"><b>${p.planned}</b><span>block${p.planned !== 1 ? "s" : ""} today</span></div>
@@ -582,7 +582,7 @@ async function vPlanWeek() {
   main.innerHTML = `<div class="view wide">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
       <div><h1 class="h1">Plan</h1><p class="sub">The 7 days ahead, at a glance</p></div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;padding-right:86px">
         <div class="seg">
           <button data-planlay="timeline">Timeline</button>
           <button class="on" data-planlay="week">Week</button>
