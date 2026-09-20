@@ -21,7 +21,7 @@ Everything stays on your Mac. No account, no cloud sync, no telemetry.
 
 ## Install
 
-1. Download `Donna-<version>-arm64.dmg` from Releases.
+1. Download `Donna-<version>-universal.dmg` from Releases.
 2. Open it and drag **Donna** to **Applications**.
 3. First launch: right-click the app → **Open** (it's not notarized yet), or run:
 
@@ -58,4 +58,4 @@ npm start          # run in development
 npm run dist       # build the .app + .dmg into dist/
 ```
 
-Built with Electron. Tested on macOS 14+ (Apple Silicon).
+Built with Electron. Tested on macOS 14+ (Apple Silicon and Intel).
