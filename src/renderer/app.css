@@ -1707,6 +1707,7 @@ kbd { font: 500 11px var(--mono); color: var(--mut); background: var(--surface-h
    Popover fades in with a 6px slide-down. The button itself pulses
    softly while the brain is thinking. Honors sections.ai.coach
    (openCoachButton() in core.js short-circuits when off). */
+.lib-head > .seg { margin-right: 86px; }
 .coach-btn { position: absolute; top: 0; right: 0; z-index: 8;
   display: inline-flex; align-items: center; gap: 5px;
   padding: 5px 10px 5px 8px; border-radius: 999px;

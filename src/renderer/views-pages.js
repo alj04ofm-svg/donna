@@ -669,7 +669,8 @@ async function vPeople() {
       ${peopleHubTabs("people")}
     </div>
     ${drifting.length ? `<div class="coverage-banner">☎ <span><b>${esc(drifting.map((p) => p.name).join(", "))}</b> ${drifting.length > 1 ? "are" : "is"} drifting past cadence — one message keeps it warm.</span></div>` : ""}
-    <div class="quick-add" style="margin-top:14px"><input id="ppl-add" placeholder='Add someone — "Mikee · VA", then ↵'></div>
+    <div class="quick-add" style="margin-top:14px"><input id="ppl-add" placeholder='Add someone — "Name · role", then ↵'></div>
+    ${people.length ? "" : `<div class="rows" style="margin-top:14px"><div class="empty">No one here yet. Add the people you work with — Donna tracks your cadence with each of them, and anything they owe you shows in the Waiting tab.</div></div>`}
     <div class="ppl-list">${sorted.map((p) => `
       <div class="ppl-card ${p.drifting ? "drifting" : ""}"${si()}>
         <div class="ppl-av">${esc((p.name || "?")[0])}</div>

@@ -3,6 +3,12 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.4] — 2026-09-20
+
+- Polished People page (friendly empty state; tabs no longer clash with the AI coach button).
+- Removed the last internal wording from the Tasks header.
+- Verified end-to-end: fresh install → onboarding → add task → persists (no errors).
+
 ## [1.0.3] — 2026-09-20
 
 - **Clearer IA, fewer pages.** Sidebar is now Today · Tasks · Goals · People ·

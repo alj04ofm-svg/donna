@@ -23,7 +23,7 @@ async function vTasks() {
     <div class="tasks-topbar">
       <div class="tasks-head">
         <div><h1 class="h1">Tasks</h1>
-        <p class="sub">${data.counts.open} open<span class="sep">·</span>${data.done.length} done<span class="sep">·</span>synced with the dashboard${dueFilter ? `<span class="sep">·</span>filtering to ${esc(dueFilter)}` : ""}</p></div>
+        <p class="sub">${data.counts.open} open<span class="sep">·</span>${data.done.length} done<span class="sep">·</span>kept on this Mac${dueFilter ? `<span class="sep">·</span>filtering to ${esc(dueFilter)}` : ""}</p></div>
         <div class="tasks-head-acts">
           ${filterChip}
           ${untriaged.length >= 3 ? `<button class="triage-btn" id="btn-triage">▤ Triage ${untriaged.length}</button>` : ""}
