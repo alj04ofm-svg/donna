@@ -3,6 +3,10 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.2] — 2026-09-20
+
+- Ask now shows which AI answered (Gemini / Claude / etc.).
+
 ## [1.3.1] — 2026-09-20
 
 - Added a **Google Gemini** provider (bring your own key) and made it the

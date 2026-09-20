@@ -1,3 +1,4 @@
+const provLabel = (p) => ({ anthropic: "Claude", openai: "GPT", gemini: "Gemini", minimax: "MiniMax", "claude-cli": "Claude CLI", m3: "M3", opus: "Opus", fable: "Fable" }[p] || p || "");
 
 /* ── Ask: grouped jump-start recommendations ── */
 function suggGroups() {
@@ -146,7 +147,7 @@ function msgHtml(m, i) {
     ? `<div class="thinking-line"><i></i><i></i><i></i></div>`
     : `${esc(m.text)}`;
   return `<div class="msg donna msg-in" data-i="${i}"><div class="msg-head"><span class="orb"></span><span class="msg-name">Donna</span>
-    ${m.tier && m.tier !== "capture" ? `<span class="chip tier">${m.tier}</span>` : ""}</div>
+    ${(m.provider || m.tier) && m.tier !== "capture" ? `<span class="chip tier">${provLabel(m.provider || m.tier)}</span>` : ""}</div>
     <div class="msg-body">${body}</div>
     ${!m.streaming && m.text ? `<div class="msg-acts"><button data-copy="${i}">Copy</button><button data-regen="${i}">Regenerate</button></div>` : ""}</div>`;
 }
@@ -187,6 +188,7 @@ async function sendAsk(q) {
   if (view === "ask") paintThread();
   const res = await window.donna.ask(q);
   reply.tier = res.tier;
+  reply.provider = res.provider;
   if (view === "ask") {
     const el = document.querySelector(".msg.donna:last-of-type .msg-body");
     if (el) {

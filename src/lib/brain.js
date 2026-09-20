@@ -25,7 +25,7 @@ function createBrain({ config, captureStore, clients }) {
       captureStore.add(cap.kind, cap.text);
       const answer = `Got it — ${cap.kind} added: "${cap.text}".`;
       onToken && onToken(answer);
-      return { answer, tier: "capture" };
+      return { answer, tier: "capture", provider: "capture" };
     }
     onState && onState("thinking");
     const { tier, text: clean } = route(text);
@@ -44,7 +44,7 @@ function createBrain({ config, captureStore, clients }) {
     }
     onState && onState("idle");
     onToken && onToken(answer);
-    return { answer, tier };
+    return { answer, tier, provider };
   }
 
   return { ask };
