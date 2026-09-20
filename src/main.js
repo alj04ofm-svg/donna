@@ -333,11 +333,40 @@ function syncLoginItem() {
   } catch {}
 }
 
+/* First run: give the app a small, generic, useful starting state so it feels
+   alive (and demonstrates the system) instead of an empty shell. Runs once. */
+function seedStarter() {
+  try {
+    if (config.starterSeeded) return;
+    config.starterSeeded = true;
+    if (tasks.summary().open.length === 0) {
+      [
+        "Plan your day — pick the one thing p1 today @work =15m",
+        "Email Sam about the invoice p2 @work =10m",
+        "Book the dentist appointment p3 @life =15m",
+        "Review this quarter's goals p2 @life =30m",
+        "Clear the inbox to zero p3 anytime @work =20m",
+      ].forEach((t) => { try { tasks.add(t); } catch {} });
+    }
+    try {
+      const notes = require("./lib/notes");
+      if (notes.list().length === 0) {
+        notes.add("How I like to work", "Deep work in the morning. Admin after lunch. Nothing heavy after 7pm. One priority a day beats ten quick wins.");
+        notes.add("Weekly review", "1. Clear inbox + task list. 2. Review goals. 3. Pick next week's one big thing. 4. Book time for it.");
+      }
+    } catch {}
+    try {
+      const goals = require("./lib/goals");
+      if (goals.list().length === 0) goals.add("Get consistently organised", "A calm system beats a busy to-do list — build the habit first.", "work");
+    } catch {}
+    appConfig.save(config);
+  } catch {}
+}
+
 app.whenReady().then(() => {
   syncLoginItem();
+  seedStarter();
   createWindow();
-  try { if (app.dock) app.dock.show(); } catch {}
-  showWindow(); // open visibly on launch; hotkey / Dock click still toggle
   try { if (app.dock) app.dock.show(); } catch {}
   showWindow(); // open visibly on launch (Dock click / login item / hotkey still work)
 
@@ -545,6 +574,20 @@ app.whenReady().then(() => {
     const r = await dialog.showOpenDialog(win, { properties: ["openDirectory", "createDirectory"] });
     if (r.canceled || !r.filePaths[0]) return require("./lib/tracker").getTrackerConfig();
     return require("./lib/tracker").setTrackerConfig({ saveDir: r.filePaths[0] });
+  });
+  ipcMain.handle("donna:importNotes", async () => {
+    const { dialog } = require("electron");
+    const r = await dialog.showOpenDialog(win, {
+      title: "Import notes",
+      properties: ["openFile", "multiSelections"],
+      filters: [{ name: "Notes", extensions: ["md", "markdown", "txt", "csv", "json"] }],
+    });
+    if (r.canceled) return [];
+    const out = [];
+    for (const f of r.filePaths) {
+      try { out.push({ name: path.basename(f), content: fs.readFileSync(f, "utf8").slice(0, 300000) }); } catch {}
+    }
+    return out;
   });
   ipcMain.handle("donna:pickContext", async () => {
     const { dialog } = require("electron");

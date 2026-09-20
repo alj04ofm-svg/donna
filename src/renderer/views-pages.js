@@ -629,19 +629,61 @@ async function vNotes(root = main, bare = false) {
   root.innerHTML = `${bare ? "" : `<div class="view"><h1 class="h1">Notes</h1><p class="sub">Your durable library — decisions, references, playbooks. Use <code>[[name]]</code> to backlink to any task, goal, note, or idea.${notes.length ? `<span class="sep">·</span>${notes.length}` : ""}</p>`}
     <div class="task-filters" style="margin-top:16px">
       <input id="note-search" class="tf-search" placeholder="Search notes…" value="${esc(localStorage.getItem("donna.noteSearch") || "")}">
+      <button class="wind-btn" id="note-import" style="width:auto;margin:0;padding:9px 14px">Import…</button>
     </div>
     <div class="quick-add" style="margin-top:10px"><input id="note-add" placeholder="New note — type a title, then ↵"></div>
     ${shown.length ? `<div class="note-list">${shown.map((n) => `
       <div class="note-card" data-id="${n.id}">
         <div class="note-title" data-expand>${esc(n.title)}</div>
         <textarea class="note-edit" data-body="${n.id}" placeholder="Write… use [[name]] to backlink">${esc(n.body)}</textarea>
-        <div class="note-foot"><span>${new Date(n.updatedAt).toLocaleDateString()}</span><button class="note-pin ${n.pinned ? "on" : ""}" data-pin="${n.id}">${n.pinned ? "★ pinned" : "☆ pin"}</button><button class="note-del" data-del="${n.id}">delete</button></div>
+        <div class="note-foot"><span>${new Date(n.updatedAt).toLocaleDateString()}</span><button class="note-pin ${n.pinned ? "on" : ""}" data-pin="${n.id}">${n.pinned ? "★ pinned" : "☆ pin"}</button><button class="note-ai" data-ai="${n.id}" title="Tidy and structure with Donna">✨ tidy</button><button class="note-del" data-del="${n.id}">delete</button></div>
         <div class="note-bk" data-bk-for="${n.id}" hidden></div>
       </div>`).join("")}</div>`
       : `<div class="rows" style="margin-top:14px"><div class="empty">No notes yet. Keep decisions, references and playbook snippets here — anything worth remembering that isn't a task.</div></div>`}
   ${bare ? "" : "</div>"}`;
   const inp = $("#note-add");
   if (inp) inp.onkeydown = async (e) => { if (e.key === "Enter" && inp.value.trim()) { await window.donna.notesAdd(inp.value.trim(), ""); inp.value = ""; vNotes(root, bare); } };
+  const imp = $("#note-import");
+  if (imp) imp.onclick = async () => {
+    let files = [];
+    try { files = await window.donna.importNotes(); } catch {}
+    if (!files || !files.length) return;
+    let added = 0;
+    for (const f of files) {
+      const isMd = /\.(md|markdown)$/i.test(f.name);
+      if (isMd) {
+        const title = f.name.replace(/\.[^.]+$/, "");
+        const lines = String(f.content).split(/\r?\n/);
+        let cur = { title, body: [] };
+        const parts = [];
+        for (const ln of lines) {
+          const m = ln.match(/^#{1,3}\s+(.+)/);
+          if (m) { if (cur.body.join("").trim()) parts.push(cur); cur = { title: m[1].trim(), body: [] }; }
+          else cur.body.push(ln);
+        }
+        if (cur.body.join("").trim()) parts.push(cur);
+        for (const part of parts) { await window.donna.notesAdd(part.title.slice(0, 120), part.body.join("\n").trim()); added++; }
+      } else {
+        await window.donna.notesAdd(f.name.replace(/\.[^.]+$/, "").slice(0, 120), String(f.content).slice(0, 20000));
+        added++;
+      }
+    }
+    toast(`Imported ${added} note${added === 1 ? "" : "s"}`);
+    vNotes(root, bare);
+  };
+  root.querySelectorAll("[data-ai]").forEach((b) => (b.onclick = async (e) => {
+    e.stopPropagation();
+    const n = notes.find((x) => x.id === b.dataset.ai);
+    if (!n) return;
+    b.textContent = "…";
+    try {
+      const res = await window.donna.askInternal(`quick: Tidy and structure the following note as clean Markdown with a short title line and clear sections. Keep the author's wording and facts; do not invent anything. Just return the tidied note.\n\n${(n.body || "").slice(0, 4000)}`);
+      const out = (res.answer || "").trim();
+      if (out && !/^\(/i.test(out)) { await window.donna.notesUpdate(n.id, { body: out }); toast("Tidied"); }
+      else toast("Couldn't tidy that one");
+    } catch { toast("Couldn't tidy that one"); }
+    vNotes(root, bare);
+  }));
   const ns = $("#note-search");
   if (ns) ns.oninput = () => { localStorage.setItem("donna.noteSearch", ns.value); vNotes(root, bare); const el = $("#note-search"); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } };
   root.querySelectorAll("[data-pin]").forEach((b) => (b.onclick = async (e) => {

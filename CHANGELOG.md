@@ -3,6 +3,14 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.11.0] — 2026-09-20
+
+- First run is now fresh-but-alive: a small generic starter set (tasks, notes,
+  one goal) so Today/Plan look real instead of empty.
+- Notes: **Import** Markdown / text / CSV / JSON (Notion exports welcome), with
+  Markdown headings split into separate notes; and a **✨ tidy** action that
+  lets Donna restructure a note.
+
 ## [1.10.0] — 2026-09-20
 
 - Tracker: the Screenshots tab only appears when screenshot capture is enabled;
