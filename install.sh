@@ -59,6 +59,12 @@ hdiutil detach "$MOUNT" >/dev/null || true
 # Defensive: make sure no quarantine attribute is present.
 xattr -dr com.apple.quarantine "${TARGET_DIR}/${APP_NAME}.app" 2>/dev/null || true
 
+# Ad-hoc sign so Apple Silicon is happy even though we have no Developer ID.
+# (Harmless if it fails; the app's inner binaries are already signed.)
+if command -v codesign >/dev/null 2>&1; then
+  codesign --force --deep --sign - "${TARGET_DIR}/${APP_NAME}.app" >/dev/null 2>&1 || true
+fi
+
 echo ""
 echo "✓ Donna installed to ${TARGET_DIR}/${APP_NAME}.app"
 echo "  Open it with:  open -a Donna"
