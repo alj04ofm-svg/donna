@@ -3,6 +3,14 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-09-20
+
+- **Task editor.** Open any task (the ✎ button on a row, or double-click a task
+  in List, Board or By-project) to edit title, notes, priority, due date,
+  project and estimate — or delete / mark won't-do.
+- Fixed the desktop app not opening: `/Applications/Donna.app` is now the app
+  (was the old launcher).
+
 ## [1.0.4] — 2026-09-20
 
 - Polished People page (friendly empty state; tabs no longer clash with the AI coach button).

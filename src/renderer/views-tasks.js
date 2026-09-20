@@ -144,6 +144,7 @@ async function dropToCol(id, col) {
 }
 function wireBoard() {
   document.querySelectorAll(".card").forEach((card) => {
+    card.addEventListener("dblclick", () => { if (typeof openTaskDetail === "function") openTaskDetail(card.dataset.id); });
     card.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       const startX = e.clientX, startY = e.clientY;
@@ -214,6 +215,7 @@ function paintProjects(open) {
       </div>`).join("")}
     </div>
   </div>`;
+  $("#task-body").querySelectorAll(".proj-card[data-start]").forEach((c) => (c.ondblclick = () => { if (typeof openTaskDetail === "function") openTaskDetail(c.dataset.start); }));
   $("#task-body").querySelectorAll(".proj-card[data-start]").forEach((c) => (c.onclick = async () => {
     const id = c.dataset.start;
     const t = data.open.find((x) => x.id === id);
@@ -223,4 +225,77 @@ function paintProjects(open) {
     renderCompactBody();
     toast(t?.status === "doing" ? "Paused" : "On it — focus started");
   }));
+}
+
+/* ── Task detail editor ──────────────────────────────────────────────────────
+   Open from the ⋯ / ✎ button on a row, or double-click any task. Edit title,
+   notes, priority, due date, project and estimate; delete or mark won't-do. */
+function openTaskDetail(id) {
+  const t = [...(data.open || []), ...(data.done || [])].find((x) => x.id === id);
+  if (!t) return;
+  const el = document.createElement("div");
+  el.id = "task-detail-ov";
+  el.className = "sd-overlay";
+  el.style.cssText = "position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(3,4,10,0.72);backdrop-filter:blur(6px)";
+  const projList = [...new Set([...(data.open || []), ...(data.done || [])].map((x) => x.project_id).filter(Boolean))];
+  el.innerHTML = `<div class="sd-panel" style="width:min(540px,94vw);background:var(--surface,#12121a);border:1px solid var(--line,#252530);border-radius:16px;padding:22px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font:600 15px var(--sans);color:var(--ink,#e8e8f0)">Edit task</div>
+      <button id="td-close" class="icon-btn" title="Close" style="background:none;border:none;color:#9aa0b4;cursor:pointer;font-size:16px">×</button>
+    </div>
+    <input id="td-title" class="sd-input" value="${esc(t.title)}" placeholder="Title"
+      style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 12px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0">
+    <textarea id="td-notes" class="sd-input" rows="3" placeholder="Notes / detail"
+      style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:10px 12px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0;resize:vertical">${esc(t.detail || "")}</textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <label style="font:600 11px var(--sans);color:#8b90a6;text-transform:uppercase;letter-spacing:.06em">Priority
+        <select id="td-priority" style="width:100%;margin-top:5px;padding:9px 10px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0">
+          ${[1, 2, 3, 4].map((p) => `<option value="${p}"${t.priority === p ? " selected" : ""}>P${p}</option>`).join("")}
+        </select></label>
+      <label style="font:600 11px var(--sans);color:#8b90a6;text-transform:uppercase;letter-spacing:.06em">Due
+        <input id="td-due" type="date" value="${t.dueAt ? String(t.dueAt).slice(0, 10) : ""}" style="width:100%;margin-top:5px;padding:9px 10px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0;color-scheme:dark"></label>
+      <label style="font:600 11px var(--sans);color:#8b90a6;text-transform:uppercase;letter-spacing:.06em">Project
+        <input id="td-project" list="td-projects" value="${esc(t.project_id || "")}" placeholder="e.g. work" style="width:100%;margin-top:5px;padding:9px 10px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0">
+        <datalist id="td-projects">${projList.map((p) => `<option value="${esc(p)}"></option>`).join("")}</datalist></label>
+      <label style="font:600 11px var(--sans);color:#8b90a6;text-transform:uppercase;letter-spacing:.06em">Estimate (min)
+        <input id="td-est" type="number" min="0" value="${t.estimatedMinutes || ""}" placeholder="30" style="width:100%;margin-top:5px;padding:9px 10px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0"></label>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button id="td-del" style="padding:9px 14px;border-radius:9px;border:1px solid rgba(255,107,107,.35);background:transparent;color:#ff6b6b;cursor:pointer">Delete</button>
+      <button id="td-wont" style="padding:9px 14px;border-radius:9px;border:1px solid #252530;background:transparent;color:#9aa0b4;cursor:pointer">Won't do</button>
+      <button id="td-save" style="margin-left:auto;padding:9px 18px;border-radius:9px;border:none;background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-weight:600;cursor:pointer">Save</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  const close = () => el.remove();
+  el.addEventListener("click", (e) => { if (e.target === el) close(); });
+  el.querySelector("#td-close").onclick = close;
+  const after = async (msg) => { close(); await refresh(); if (view === "tasks") vTasks(); try { renderCompactBody(); } catch {} if (msg) toast(msg); };
+  el.querySelector("#td-save").onclick = async () => {
+    const title = el.querySelector("#td-title").value.trim();
+    if (title && title !== t.title) await window.donna.setTaskField(id, "title", title);
+    const notes = el.querySelector("#td-notes").value;
+    if (notes !== (t.detail || "")) await window.donna.setTaskField(id, "detail", notes);
+    const pr = Number(el.querySelector("#td-priority").value);
+    if (pr !== t.priority) await window.donna.setPriority(id, pr);
+    const due = el.querySelector("#td-due").value;
+    if (due) { if ((t.dueAt || "").slice(0, 10) !== due) await window.donna.setDue(id, due); }
+    else if (t.dueAt) await window.donna.setDue(id, null);
+    const proj = el.querySelector("#td-project").value.trim();
+    if (proj !== (t.project_id || "")) await window.donna.setTaskField(id, "project_id", proj || null);
+    const est = el.querySelector("#td-est").value;
+    if ((t.estimatedMinutes || null) !== (est ? Number(est) : null)) await window.donna.setTaskField(id, "estimatedMinutes", est ? Number(est) : null);
+    await after("Saved");
+  };
+  el.querySelector("#td-del").onclick = async () => {
+    if (!confirm("Delete this task?")) return;
+    await window.donna.removeTask(id);
+    await after("Deleted");
+  };
+  el.querySelector("#td-wont").onclick = async () => {
+    await window.donna.setWontDo(id, "not this time");
+    await after("Marked won't do");
+  };
+  const ti = el.querySelector("#td-title");
+  ti.focus(); ti.setSelectionRange(ti.value.length, ti.value.length);
 }

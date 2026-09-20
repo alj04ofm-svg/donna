@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("donna", {
   tasks: () => ipcRenderer.invoke("donna:tasks"),
   production: () => ipcRenderer.invoke("donna:production"),
   completeTask: (id) => ipcRenderer.invoke("donna:completeTask", id),
+  removeTask: (id) => ipcRenderer.invoke("donna:removeTask", id),
   setStatus: (id, status) => ipcRenderer.invoke("donna:setStatus", { id, status }),
   setWaiting: (id, who) => ipcRenderer.invoke("donna:setWaiting", { id, who }),
   setDue: (id, dueAt) => ipcRenderer.invoke("donna:setDue", { id, dueAt }),

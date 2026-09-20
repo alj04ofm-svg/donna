@@ -135,6 +135,7 @@ function rowHtml(t, { compact = false, idx = -1 } = {}) {
                   : '<svg viewBox="0 0 16 16"><path d="M5.5 3.5l7 4.5-7 4.5z"/></svg>'}</button>
         <button class="icon-btn" data-wait="${t.id}" title="Waiting on someone (W)"><svg viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.6"/><path d="M3.2 13c.8-2.5 2.6-3.8 4.8-3.8s4 1.3 4.8 3.8"/></svg></button>
         <button class="icon-btn" data-snooze="${t.id}" title="Reschedule (S)"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.8"/><path d="M8 5v3.2l2 1.6"/></svg></button>
+        <button class="icon-btn" data-edit="${t.id}" title="Edit task (double-click)"><svg viewBox="0 0 16 16"><path d="M11.5 2.5l2 2L6 12l-2.5.5L4 10z"/></svg></button>
       </div>
       ${statusChip(t)}${pGlyph(t.priority)}
     </div>
@@ -181,6 +182,13 @@ function wireRows(scope) {
     await window.donna.setStatus(el.dataset.start, t?.status === "doing" ? "todo" : "doing");
     await refresh(); render(); renderCompactBody();
     toast(t?.status === "doing" ? "Paused" : "On it");
+  }));
+  scope.querySelectorAll("[data-edit]").forEach((el) => (el.onclick = (e) => {
+    e.stopPropagation();
+    if (typeof openTaskDetail === "function") openTaskDetail(el.dataset.edit);
+  }));
+  scope.querySelectorAll(".row[data-id]").forEach((row) => (row.ondblclick = () => {
+    if (typeof openTaskDetail === "function") openTaskDetail(row.dataset.id);
   }));
   scope.querySelectorAll("[data-wait]").forEach((el) => (el.onclick = (e) => {
     e.stopPropagation();

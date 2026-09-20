@@ -181,6 +181,13 @@ function setWontDo(id, reason) {
 }
 
 /* focus-timer sessions land their minutes here — powers planned-vs-actual */
+function remove(id) {
+  const data = readJson(TASKS_FILE, { version: 1, tasks: [] });
+  data.tasks = (data.tasks || []).filter((t) => t.id !== id);
+  fs.writeFileSync(TASKS_FILE, JSON.stringify(data, null, 2));
+  return true;
+}
+
 function addActual(id, minutes) {
   const data = readJson(TASKS_FILE, { version: 1, tasks: [] });
   const t = (data.tasks || []).find((x) => x.id === id);
@@ -236,4 +243,4 @@ function add(input, priority, detail) {
   return id;
 }
 
-module.exports = { summary, complete, setStatus, setWaiting, setDue, setPriority, add, setField, setWontDo, addActual, TASKS_FILE };
+module.exports = { summary, complete, setStatus, setWaiting, setDue, setPriority, add, setField, setWontDo, addActual, remove, TASKS_FILE };

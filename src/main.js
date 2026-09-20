@@ -492,6 +492,7 @@ app.whenReady().then(() => {
   ipcMain.handle("donna:tasks", () => tasks.summary());
   ipcMain.handle("donna:production", async () => ({ ...(await production.liveSnapshot()), agents: production.agents() }));
   ipcMain.handle("donna:completeTask", (_e, id) => tasks.complete(id));
+  ipcMain.handle("donna:removeTask", (_e, id) => tasks.remove(id));
   ipcMain.handle("donna:setStatus", (_e, { id, status }) => tasks.setStatus(id, status));
   ipcMain.handle("donna:setWaiting", (_e, { id, who }) => tasks.setWaiting(id, who));
   ipcMain.handle("donna:setDue", (_e, { id, dueAt }) => tasks.setDue(id, dueAt));
