@@ -14,7 +14,9 @@ set -euo pipefail
 
 REPO="alj04ofm-svg/donna"
 APP_NAME="Donna"
-DEST="/Applications/${APP_NAME}.app"
+# Override with DONNA_DEST=~/Applications to test without touching /Applications.
+DEST_DIR="${DONNA_DEST:-/Applications}"
+DEST="${DEST_DIR}/${APP_NAME}.app"
 
 command -v curl >/dev/null || { echo "curl is required."; exit 1; }
 command -v hdiutil >/dev/null || { echo "This installer is for macOS."; exit 1; }
@@ -46,9 +48,10 @@ if [ -z "$SRC_APP" ]; then
   echo "✗ No .app found inside the disk image."; hdiutil detach "$MOUNT" >/dev/null || true; exit 1
 fi
 
-echo "→ Installing to /Applications…"
-TARGET_DIR="/Applications"
-if [ ! -w "$TARGET_DIR" ]; then TARGET_DIR="$HOME/Applications"; mkdir -p "$TARGET_DIR"; fi
+echo "→ Installing to ${DEST_DIR}…"
+TARGET_DIR="$DEST_DIR"
+if [ ! -w "$TARGET_DIR" ]; then TARGET_DIR="$HOME/Applications"; fi
+mkdir -p "$TARGET_DIR"
 rm -rf "${TARGET_DIR}/${APP_NAME}.app"
 cp -R "$SRC_APP" "${TARGET_DIR}/${APP_NAME}.app"
 hdiutil detach "$MOUNT" >/dev/null || true
