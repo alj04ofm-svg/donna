@@ -3,6 +3,11 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.11.1] — 2026-09-20
+
+- The morning brief never shows provider/rate-limit errors, including any stale
+  cached one — it silently regenerates or hides.
+
 ## [1.11.0] — 2026-09-20
 
 - First run is now fresh-but-alive: a small generic starter set (tasks, notes,

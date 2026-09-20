@@ -407,14 +407,20 @@ function openSleepPopover() {
 }
 
 /* morning brief — one AI sentence on how to start the day, generated once/day (M3) */
+function briefIsBad(t) {
+  return !t || /^\s*\((?:[^)]*(?:not set|unavailable|couldn.t reach|rate limit|error|429|401))/i.test(t);
+}
 async function ensureBrief() {
   const today = new Date().toISOString().slice(0, 10);
   let c = null; try { c = JSON.parse(localStorage.getItem("donna.brief")); } catch {}
-  if (c && c.date === today) return c.dismissed ? null : c.text;
+  if (c && c.date === today) {
+    if (c.dismissed) return null;
+    if (!briefIsBad(c.text)) return c.text;
+    // stale/cached error — fall through and regenerate
+  }
   const res = await window.donna.askInternal("quick: In ONE short punchy sentence, tell me how to start my day given my open tasks. Just the sentence — no preamble, no lists.");
   const raw = (res.answer || "").trim();
-  // Never surface provider/config errors as a "brief".
-  if (!raw || /^\((?:[^)]*(?:not set|unavailable|couldn.t reach|error))/i.test(raw)) return null;
+  if (briefIsBad(raw)) return null;
   const text = raw.replace(/^["']|["']$/g, "");
   localStorage.setItem("donna.brief", JSON.stringify({ date: today, text, dismissed: false }));
   return text;
