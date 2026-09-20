@@ -45,7 +45,7 @@ function run({ trackerConfig, permStatus, cfg } = {}) {
   } catch {}
 
   try {
-    /* stale waitings (anyone, not just George) */
+    /* stale waitings */
     const wlist = waiting.list();
     const alert = wlist.filter((w) => w.alert).length;
     if (alert > 0) {

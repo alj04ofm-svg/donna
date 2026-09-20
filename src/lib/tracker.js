@@ -22,7 +22,7 @@ const SAMPLE_MS = 4000;            // heartbeat cadence
 const PULSE_S = 12;                // merge window: same activity within 12s extends the event
 const AFK_S = 180;                 // idle beyond this = away, retroactive to last input
 
-/* Tracker settings — user-tunable, not hardcoded (Alex asked for retention
+/* Tracker settings — user-tunable, not hardcoded (retention
    days, screenshot cadence, save location, on/off in one place). Persisted
    separately from the general app config so a bad path can't wedge boot. */
 const TCFG_FILE = dataPath("tracker-config.json");
@@ -79,7 +79,7 @@ function idleSec() {
   catch { return 999; }
 }
 
-/* FluidVoice dictation history — voice counts as presence (Alex works by voice). */
+/* Dictation history — voice counts as presence if you dictate. */
 function voiceEvents() {
   try {
     const PLIST = path.join(process.env.HOME, "Library/Preferences/com.FluidApp.app.plist");

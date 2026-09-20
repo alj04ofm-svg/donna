@@ -6,7 +6,7 @@ const path = require("node:path");
 // config.voice flag so text answers work instantly without the model.
 function createVoice({ ref, venvPython }) {
   const proc = spawn(venvPython, [path.join(__dirname, "../../tts/tts_service.py")], {
-    env: { ...process.env, XIMENA_REF: ref },
+    env: { ...process.env, DONNA_VOICE_REF: ref },
   });
   proc.stderr.on("data", (d) => console.error("[tts]", String(d).trim()));
   proc.stdout.on("data", (d) =>

@@ -3,7 +3,7 @@ const { dataPath } = require("./paths");
 const path = require("node:path");
 
 /* Reminders — time-based pokes. Donna's main process polls due() and fires a
-   native notification, so Alex gets tapped at the right moment without holding
+   native notification, so you get tapped at the right moment without holding
    it in his head. */
 
 const FILE = dataPath("reminders.json");

@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const { dataPath } = require("./paths");
 const path = require("node:path");
 
-/* Vision — the long horizon. Not a score sheet (that was pointless): where Alex
+/* Vision — the long horizon. Not a score sheet: where you
    wants to be at 1mo / 3mo / 1yr / 5yr across each life area, each with the
    concrete steps to get there. Set the far star, cascade it back to this month.
    Donna can break a vision into steps (the brain) so it's a plan, not a wish. */

@@ -253,7 +253,7 @@ async function openShutdown() {
     const txt = $("#sd-reflect").value.trim();
     if (txt) await window.donna.reflect(txt);
     await refresh(); close();
-    toast("Day closed. Rest well, Alex.");
+    toast("Day closed. Rest well.");
     setTimeout(() => window.donna.hide(), 700);
   };
   $("#sd-reflect").focus();

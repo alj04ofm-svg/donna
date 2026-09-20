@@ -8,11 +8,11 @@
      time       3pm · at 15:30  (kept as dueTime for reminders/plan)
      priority   p1 p2 p3 · urgent/high/low
      estimate   =45m · =2h
-     project    #worldcup
+     project    #project
      area       @work @money @health @relationships
      deadline   !friday · !tomorrow  (the drop-dead date — HARD by definition)
      bucket     tonight/this evening · someday · anytime
-     waiting    waiting on george
+     waiting    waiting on sam
    Anything inside "double quotes" is literal — the escape hatch when the
    parser grabs a word you meant as title text. */
 

@@ -1,5 +1,5 @@
 /* aliases.js — user-saved command shortcuts. "wc" → "filter tasks to
-   #worldcup", "wk" → "open Week plan view", etc. Persisted in
+   tag", "wk" → "open Week plan view", etc. Persisted in
    data/aliases.json. The command palette merges these into its
    buildActions() list. */
 

@@ -107,7 +107,7 @@ function backfill() {
 
 function domainOfTask(t) {
   if (t.area && DOMAINS.includes(t.area)) return t.area;
-  // project_id is a track (worldcup, gossip…) — bucket under work unless explicit
+  // project_id is a track — bucket under work unless explicit
   return "work";
 }
 

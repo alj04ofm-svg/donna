@@ -3,6 +3,13 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-09-20
+
+- Cleanup pass for the public build: removed all app-specific/agency content,
+  seed data and prompts (no more hardcoded names anywhere — Donna uses the name
+  you set). Generic demo data. Greeting and AI prompts now use your name.
+- Fixed the tracker + context tests (13/13 passing).
+
 ## [1.0.0] — 2026-09-20
 
 First finished release.

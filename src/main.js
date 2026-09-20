@@ -202,7 +202,7 @@ function createWindow() {
   win.webContents.on("render-process-gone", (_e, d) => console.log("[render-gone]", d.reason));
   win.webContents.on("did-fail-load", (_e, ec, desc, url) => console.log("[did-fail-load]", ec, desc, url));
   win.webContents.on("did-finish-load", () => console.log("[did-finish-load]"));
-  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }); // companion follows Alex across Spaces
+  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }); // companion follows you across Spaces
   win.on("close", (e) => { if (!app.isQuitting) { e.preventDefault(); hideWindow(); } });
 }
 
@@ -597,10 +597,6 @@ app.whenReady().then(() => {
   ipcMain.handle("donna:activityGrouped", (_e, opts) => require("./lib/activity").grouped(opts || {}));
   ipcMain.handle("donna:activityRollup", (_e, since) => require("./lib/activity").rollup(since));
   try { require("./lib/activity").backfill(); } catch {}
-  /* No external dashboard wiring in the public build. */
-  ipcMain.handle("donna:agency", async () => ({ up: false, overview: null, alerts: [] }));
-  ipcMain.handle("donna:dashOpen", () => false);
-  ipcMain.handle("donna:dashStart", () => false);
   ipcMain.handle("donna:comms", () => require("./lib/comms").status(config));
   ipcMain.handle("donna:connectGmail", async () => { try { await require("./lib/gmail").connect(); return { ok: true }; } catch (e) { return { ok: false, error: e.message }; } });
   ipcMain.handle("donna:gmailUnread", () => require("./lib/gmail").unread());
@@ -717,20 +713,20 @@ app.whenReady().then(() => {
   });
   /* internal asks (morning brief, recaps) — Donna prompting herself. Same
      brain, but NEVER mined for memory: her own instructions aren't facts
-     about Alex (the miner once learned "wants no preamble" from a brief). */
+     about the user (the miner once learned "wants no preamble" from a brief). */
   ipcMain.handle("donna:askInternal", async (_e, text) => {
     const send = (ch, v) => win && win.webContents.send(ch, v);
     const res = await brain.ask(text, { onState: (s) => { send("donna:state", s); setThinking(s === "thinking"); }, onToken: () => {} });
     setThinking(false);
     return res;
   });
-  /* ambient fact mining (Dot's green flash) — cheap M3 pass over what ALEX
+  /* ambient fact mining (Dot's green flash) — cheap pass over what the user
      said (never Donna's answer — no hallucinated selves), fire-and-forget */
   async function extractFacts(userText) {
     const t = String(userText || "");
     if (t.length < 25) return;
     const memory = require("./lib/memory");
-    const q = `Extract lasting personal facts about Alex from this message he wrote — preferences, people in his life, dates that matter, health, ongoing projects. Verbatim-grounded only, no inference. Reply with ONLY a JSON array like [{"fact":"…","kind":"preference"}] (kinds: person|preference|date|project|health|fact). Empty array if none.\n\nMessage: "${t.slice(0, 600)}"`;
+    const q = `Extract lasting personal facts about the user from this message they wrote — preferences, people in his life, dates that matter, health, ongoing projects. Verbatim-grounded only, no inference. Reply with ONLY a JSON array like [{"fact":"…","kind":"preference"}] (kinds: person|preference|date|project|health|fact). Empty array if none.\n\nMessage: "${t.slice(0, 600)}"`;
     try {
       const raw = await clients.m3(q, "You extract facts. JSON only, no prose.");
       const m = raw.match(/\[[\s\S]*\]/);
@@ -743,7 +739,7 @@ app.whenReady().then(() => {
   }
 
   /* auto-track: the whole point is zero-effort self-memory — start on boot
-     unless Alex turned it off. Nudges route through the same notification
+     unless the user turned it off. Nudges route through the same notification
      gate as everything else. */
   const tracker = require("./lib/tracker");
   /* nudge budget — the Dot lesson: one weak nudge teaches you to ignore ALL

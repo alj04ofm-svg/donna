@@ -24,7 +24,7 @@ function normalize(t) {
     objectiveId: t.objectiveId || null, // links execution to a weekly objective / Goals OKR
     wontDo: !!t.wontDo,                // consciously abandoned ≠ done ≠ deleted (TickTick) — shared store sees "done"
     wontDoReason: t.wontDoReason || null,
-    waitingOn: t.waitingOn || null,    // Donna-only field: "george" etc. Shared store still sees a plain todo.
+    waitingOn: t.waitingOn || null,    // Donna-only field: who it is blocked on.
     startedAt: t.startedAt || null,    // set when moved to doing — powers the Now timer
     updatedAt: t.updatedAt || null,
     project_id: t.project_id || null,  // groups tasks into tracks (WC / gossip / …)
@@ -107,7 +107,7 @@ function nextInstance(t) {
   else return null;
   const newId = `task_${Date.now()}_donna`;
   return {
-    id: newId, assigneeUserId: "alex", title: t.title, detail: t.detail || "",
+    id: newId, assigneeUserId: "me", title: t.title, detail: t.detail || "",
     link: null, status: "todo", board: null, project_id: t.project_id || null,
     dueAt: next.toISOString().slice(0, 10), dueTime: t.dueTime || null,
     deadline: t.deadline || null, deadlineHard: t.deadlineHard || false,
@@ -224,7 +224,7 @@ function add(input, priority, detail) {
   const id = `task_${Date.now()}_donna`;
   data.tasks = data.tasks || [];
   data.tasks.push({
-    id, assigneeUserId: "alex", title: parsed.title || "(untitled)", detail: (detail || "").slice(0, 500), link: null, status: "todo",
+    id, assigneeUserId: "me", title: parsed.title || "(untitled)", detail: (detail || "").slice(0, 500), link: null, status: "todo",
     source: "donna", board: null, project_id: parsed.project_id, dueAt: parsed.dueAt, dueTime: parsed.dueTime,
     deadline: parsed.deadline, deadlineHard: parsed.deadlineHard, priority: parsed.priority,
     estimatedMinutes: parsed.estimatedMinutes, bucket: parsed.bucket, area: parsed.area, waitingOn: parsed.waitingOn,

@@ -14,7 +14,7 @@ const sleep = require("./sleep");
 const notes = require("./notes");
 const { askMinimax } = require("./models/minimax");
 
-const SYSTEM = `You are Donna, Alex's sharp executive personal assistant. Write a terse,
+const SYSTEM = `You are Donna, a sharp executive personal assistant. Write a terse,
 no-fluff weekly briefing in your own voice. Use the data below — every claim
 must be grounded in it. If you don't know something, say "no data". Lead with
 the headline. No bullet walls. No "I" / "Here's". Numbers over adjectives.`;

@@ -30,7 +30,7 @@ async function vTasks() {
           ${segHtml}
         </div>
       </div>
-      <div class="quick-add tasks-add"><input id="task-in" placeholder='New task — "voice swap friday 3pm p1 #worldcup @work =2h" parses live'></div>
+      <div class="quick-add tasks-add"><input id="task-in" placeholder='New task — "email sam friday 3pm p1 #work @work =2h" parses live'></div>
     </div>
     <div id="task-body"></div>
   </div>`;
@@ -94,7 +94,7 @@ function paintList(open, handoffs = []) {
           <div class="wait-who">on ${esc(w.who || "someone")}${w.stale ? " · time to nudge" : ""}</div></div>
         <button class="wait-clear" data-hoclear="${w.id}">back to me</button>
       </div>`).join("")}</div>` : ""}
-    <div class="quick-add" id="handoff-add-wrap" style="margin:0 0 4px"><input id="handoff-in" placeholder='Hand off to someone — "ElevenLabs invoice · george" ↵'></div>
+    <div class="quick-add" id="handoff-add-wrap" style="margin:0 0 4px"><input id="handoff-in" placeholder='Hand off to someone — "Invoice · Sam" ↵'></div>
     ${sec("Someday", someday, "someday-sec")}
     ${!open.length ? `<div class="rows"><div class="empty">No open tasks. <b>${data.counts.doneToday ? data.counts.doneToday + " shipped today." : "Clean board."}</b></div></div>` : ""}
     ${logbook.length ? `<div class="sec">Logbook</div><div class="rows">${logbook.map((t) => `

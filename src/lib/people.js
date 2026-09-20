@@ -2,16 +2,12 @@ const fs = require("node:fs");
 const { dataPath } = require("./paths");
 const path = require("node:path");
 
-/* People — a light CRM for Alex's small circle (George, editors, models). Per
-   person: role + running notes + how many Waiting-On items are on them, so it
-   doubles as "who owes me what". */
+/* People — a light CRM for the people in your life. Per person: role +
+   running notes + how many Waiting-On items are on them, so it doubles as
+   "who owes me what". */
 
 const FILE = dataPath("people.json");
-const DEFAULTS = [
-  { id: "p_george", name: "George", role: "Partner · Ops", notes: "Infra, provider keys (ElevenLabs / Apify), hosting decision, Geelark posting." },
-  { id: "p_editors", name: "Editors", role: "Team", notes: "Reel edits + per-account captions." },
-  { id: "p_models", name: "Models", role: "Talent", notes: "Anastasia · BossMints · PettyPetty." },
-];
+const DEFAULTS = [];
 const read = () => { try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catch { return DEFAULTS; } };
 const write = (a) => { try { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify(a)); } catch {} };
 

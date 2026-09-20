@@ -1,6 +1,6 @@
 /* sections.js — the visibility model for every page + strip in Donna.
    One source of truth so Settings, the sidebar, and every view render agree
-   on what's on. Defaults = everything on (Alex wants the full app).
+   on what's on. Defaults = everything on.
    Per-section toggles let him hide what he doesn't use, in groups, without
    breaking nav or deep-links (a hidden page just isn't in the sidebar;
    ⌘1-9 still works if you know the slot). */
@@ -10,10 +10,9 @@
    in-page strips, "settings" for setting sub-tabs. */
 const SECTIONS = [
   /* nav pages */
-  { id: "page.today",      label: "Today",         group: "nav", desc: "Home — hero task, lead action, week, brief, agency card", default: true },
+  { id: "page.today",      label: "Today",         group: "nav", desc: "Home — hero task, lead action, week, brief", default: true },
   { id: "page.plan",       label: "Plan",          group: "nav", desc: "Auto-scheduled timeline + Week view of what's coming", default: true },
   { id: "page.tasks",      label: "Tasks",         group: "nav", desc: "List + Board of every open task, sortable by priority / due / project", default: true },
-  { id: "page.production", label: "Production",    group: "nav", desc: "The reel pipeline: script → voice → edit → schedule → posted", default: true },
   { id: "page.ask",        label: "Ask",           group: "nav", desc: "The AI hub — chat, memory, jump-starts", default: true },
   { id: "page.rhythm",     label: "Tracker",       group: "nav", desc: "What you actually did today: focus, deep work, screenshots, Pulse", default: true },
   { id: "page.comms",      label: "Comms",         group: "nav", desc: "Gmail / Telegram / WhatsApp unified", default: true },
@@ -36,10 +35,8 @@ const SECTIONS = [
   { id: "today.nudge",     label: "Smart nudge",          group: "Today", desc: "One contextual suggestion from real state", default: true },
   { id: "today.also",      label: "Also on your plate",   group: "Today", desc: "Next 3 priorities below the hero", default: true },
   { id: "today.routines",  label: "Routines",             group: "Today", desc: "Daily non-negotiables checklist", default: true },
-  { id: "today.agency",    label: "Agency OS card",       group: "Today", desc: "Live revenue + alerts from the dashboard", default: true },
   { id: "today.reminders", label: "Reminders",            group: "Today", desc: "Upcoming reminders strip", default: true },
-  { id: "today.waiting",   label: "Waiting on others",    group: "Today", desc: "George/partner wait-timer: stale at 12h, alert at 48h", default: true },
-  { id: "today.production", label: "Production mini",      group: "Today", desc: "Inline pipeline counts (voice / edit / ready / post)", default: true },
+  { id: "today.waiting",   label: "Waiting on others",    group: "Today", desc: "Who owes you what — stale and alert timers", default: true },
   { id: "today.diagnostic", label: "Boot diagnostic",      group: "Today", desc: "Silent-issue radar (tracker perm, stale goals, alerts)", default: true },
   { id: "today.sleep",      label: "Sleep chip",          group: "Today", desc: "Last night's sleep + 7-day average", default: true },
 

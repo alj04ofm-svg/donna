@@ -4,10 +4,8 @@ const path = require("node:path");
 const tasks = require("./tasks");
 
 /* Waiting-On — the follow-up ledger for anything blocked on OTHER people.
-   Merges standing items (data/waiting.json) with any task carrying a
-   waitingOn flag. Per-person thresholds because partners are tighter than
-   vendors: George is a partner → 12h stale, 48h alert. Anyone else → 3d
-   stale, 7d alert. Override per-person via PEOPLE_THRESHOLDS. */
+   Merges standing items with any task carrying a waitingOn flag. A single
+   default cadence is used (72h stale / 7d alert); override per person below. */
 
 const FILE = dataPath("waiting.json");
 const read = () => { try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catch { return []; } };
@@ -17,8 +15,7 @@ const write = (a) => { try { fs.mkdirSync(path.dirname(FILE), { recursive: true 
 const DEFAULT_STALE_HRS = 72;
 const DEFAULT_ALERT_HRS = 168;
 const PEOPLE_THRESHOLDS = {
-  george: { stale: 12, alert: 48 },
-  /* add more partners here: "alex": { stale: 4, alert: 24 } */
+  /* add per-person thresholds here, e.g. "sam": { stale: 12, alert: 48 } */
 };
 function thresholds(who) {
   const k = String(who || "").toLowerCase();
@@ -55,7 +52,7 @@ function rollup() {
     total: all.length,
     stale: all.filter((x) => x.stale && !x.alert).length,
     alert: all.filter((x) => x.alert).length,
-    george: all.filter((x) => String(x.who || "").toLowerCase() === "george").length,
+    people: new Set(all.map((x) => String(x.who || "").toLowerCase()).filter(Boolean)).size,
   };
 }
 

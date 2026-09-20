@@ -17,7 +17,7 @@ const FILE = dataPath("categories.json");
 const DEFAULTS = [
   // ── deep work: the operation itself
   { cat: "Creative", level: 2, match: "higgsfield|veo|runway|capcut|final cut|davinci|premiere|after effects" },
-  { cat: "Dev & AI", level: 2, match: "cmux|herdr|claude|cursor|terminal|iterm|warp" },
+  { cat: "Dev & AI", level: 2, match: "claude|cursor|terminal|iterm|warp|vscode|code|xcode" },
   { cat: "Work · Dashboards", level: 2, match: "localhost|dashboard|notion|airtable|linear|asana|trello|clickup" },
   { cat: "Code", level: 2, match: "code|xcode|electron|node|python|github" },
   // ── real work, lighter
@@ -57,8 +57,8 @@ function classify(ev, compiled) {
 
 /* hue per top-level category group — one palette everywhere (timeline, bars) */
 const HUES = {
-  "Agency · Reels": 330, "Agency · Agents": 250, "Agency · Dashboard": 250, "Agency · Code": 250,
-  "Agency · Posting": 200, "Agency · Comms": 200, "Research · Niche": 85, "Docs & Notes": 85,
+  Creative: 330, "Dev & AI": 250, "Work · Dashboards": 250, Code: 250,
+  "Social · Publishing": 200, Comms: 200, "Research": 85, "Docs & Notes": 85,
   Browsing: 160, "Files & System": 160, Chat: 25, "Social feeds": 25, Entertainment: 25, Uncategorized: 0,
 };
 const hueOf = (cat) => HUES[cat] ?? 0;

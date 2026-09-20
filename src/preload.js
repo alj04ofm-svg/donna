@@ -96,7 +96,6 @@ contextBridge.exposeInMainWorld("donna", {
   aliasesAdd: (k, v) => ipcRenderer.invoke("donna:aliasesAdd", { key: k, value: v }),
   aliasesRemove: (k) => ipcRenderer.invoke("donna:aliasesRemove", k),
   aliasesResolve: (q) => ipcRenderer.invoke("donna:aliasesResolve", q),
-  agency: () => ipcRenderer.invoke("donna:agency"),
   dashOpen: (section) => ipcRenderer.invoke("donna:dashOpen", section),
   dashStart: () => ipcRenderer.invoke("donna:dashStart"),
   comms: () => ipcRenderer.invoke("donna:comms"),

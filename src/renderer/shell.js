@@ -1,5 +1,5 @@
 
-const VIEWS = { today: vToday, tasks: vTasks, plan: vPlan, production: vProduction, ask: vAsk, rhythm: vRhythm, comms: vComms, library: vLibrary, canvas: vCanvas, life: vLife, goals: vGoals, activity: vActivity, log: vLog, settings: vSettings,
+const VIEWS = { today: vToday, tasks: vTasks, plan: vPlan, ask: vAsk, rhythm: vRhythm, comms: vComms, library: vLibrary, canvas: vCanvas, life: vLife, goals: vGoals, activity: vActivity, log: vLog, settings: vSettings,
   // still callable (embedded elsewhere / palette), not in the sidebar:
   waiting: vWaiting, capture: vCapture, notes: vNotes, ideas: vIdeas, memory: vMemory };
 function render() {
@@ -20,7 +20,7 @@ function render() {
    Cards: lead · now · pipeline · priorities · ask. Each card checks
    isOn() so the user can toggle in Settings → Sections. Default = all on.
    Lead is the first thing you see — the goal's oneThing, the ONE action
-   that moves the week. Live timer if you're focusing. 60% of Alex's day
+   that moves the week. Live timer if you're focusing.
    is spent here, so every card earns its space. */
 const COMPACT_CARDS = [
   { id: "compact.lead",      group: "compact" },
@@ -82,7 +82,7 @@ function renderCompactBody() {
   if (window.sections.isOn("compact.priorities")) cards.push(compactCardPriorities());
   body.innerHTML = `
     ${cards.join("")}
-    <div class="c-add"><input id="c-add-in" placeholder='Add — "chase george tomorrow p1"'></div>`;
+    <div class="c-add"><input id="c-add-in" placeholder='Add — "email sam tomorrow p1"'></div>`;
   const ai = $("#c-add-in");
   ai.value = localStorage.getItem("donna.draft") || "";
   enhanceCapture(ai);
@@ -262,7 +262,7 @@ window.addEventListener("keydown", (e) => {
 
   if (mod && e.key.toLowerCase() === "k") { e.preventDefault(); pal.hidden ? openPalette() : closePalette(); return; }
   if (mod && e.key >= "1" && e.key <= "9") {
-    const v = ["today", "plan", "tasks", "production", "ask", "rhythm", "comms", "library", "settings"][Number(e.key) - 1];
+    const v = ["today", "plan", "tasks", "ask", "rhythm", "comms", "library", "settings"][Number(e.key) - 1];
     if (v) { e.preventDefault(); gotoView(v); }
     return;
   }

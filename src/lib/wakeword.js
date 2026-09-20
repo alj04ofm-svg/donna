@@ -4,7 +4,7 @@ const path = require("node:path");
 const { execSync } = require("node:child_process");
 
 /* Wake word — "Donna, ..." activates her, hands-free. No mic pipeline of our
-   own to build: Alex already dictates everywhere through FluidVoice, and the
+   own to build: if you dictate everywhere, the
    Tracker already reads its transcription history for voice-note counts.
    Same source, read further: if a fresh dictation starts with "donna", strip
    the name and treat the rest as a spoken question. Cheap, local, no wake-word

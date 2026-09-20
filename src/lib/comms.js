@@ -1,6 +1,6 @@
 /* Comms — channel connection state. Read-only status derived from config; the
    actual message adapters (Gmail API / Telegram MTProto / WhatsApp Web) light up
-   once Alex completes each sign-in. Honest: nothing here fakes messages — it
+   once you complete each sign-in. Honest: nothing here fakes messages — it
    reports what's connected and exactly what each needs. */
 
 function status(config) {

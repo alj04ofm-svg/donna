@@ -48,7 +48,7 @@ function vToday() {
   const vibe = data.counts.open === 0 ? "you're clear" : data.counts.p1 >= 3 ? "a full one" : data.counts.open <= 3 ? "a light one" : "a steady one";
   main.innerHTML = `<div class="view home">
     <div class="home-head">
-      <h1 class="home-hi">${greeting()}, Alex</h1>
+      <h1 class="home-hi">${greeting()}, ${esc((cfg && cfg.userName) || "there")}</h1>
       <p class="home-date">${date}<span class="sep">·</span>${vibe}${data.counts.doneToday ? `<span class="sep">·</span>${data.counts.doneToday} shipped` : ""}</p>
       <div class="sleep-strip" data-strip="today.sleep"></div>
     </div>
@@ -67,10 +67,7 @@ function vToday() {
     <div data-strip="today.routines">${routinesStrip()}${replacementsStrip()}</div>
     <div id="diag-slot" data-strip="today.diagnostic"></div>
     <div id="waiting-slot" data-strip="today.waiting"></div>
-    <div id="prod-mini-slot" data-strip="today.production"></div>
-    <div class="quick-add home-add"><input id="today-add" placeholder='Add — "chase george tomorrow p1"'></div>
-    ${opLine()}
-    <div id="agency-slot" data-strip="today.agency"></div>
+    <div class="quick-add home-add"><input id="today-add" placeholder='Add — "email sam tomorrow p1"'></div>
     ${localStorage.getItem("donna.planned") !== new Date().toISOString().slice(0, 10) && new Date().getHours() < 14 ? `<button class="wind-btn plan-btn" id="mplan-btn">☀ Plan the day — 2 minutes, then it's locked</button>` : ""}
     ${new Date().getHours() >= 18 ? `<button class="wind-btn" id="wind-btn">☾ Wind down the day</button>` : ""}
   </div>`;
@@ -79,7 +76,6 @@ function vToday() {
   main.querySelectorAll(".wait-goto").forEach((b) => (b.onclick = () => { try { vWaiting(); } catch {} }));
   wireRoutines(main);
   wireReplacements(main);
-  wireOpLine(main);
   const wb = $("#wind-btn"); if (wb) wb.onclick = openShutdown;
   const mp = $("#mplan-btn"); if (mp) mp.onclick = openMorningPlan;
   /* contextual coach — vibe, lead, top open task, pipeline stage counts.
@@ -90,14 +86,8 @@ function vToday() {
     hero: hero ? { title: hero.title, priority: hero.priority, due: hero.dueAt } : null,
     lead: (data._leadText || "").slice(0, 220),
     also: also.map((t) => t.title),
-    pipeline: prod ? { voice: prod.stages.find((s) => s.key === "voice")?.n || 0,
-                        ready: prod.stages.find((s) => s.key === "ready")?.n || 0 } : null,
   });
   ensureBrief().then((text) => { if (view === "today" && text) { const el = $("#brief-slot"); if (el) { el.innerHTML = briefCard(text); wireBrief(); } } });
-  paintAgencyCard();
-  if (!prod) refreshProd().then(() => {
-    if (view === "today") { const el = $("#op-line"); if (el) { el.outerHTML = opLine(); wireOpLine(main); } }
-  });
   /* surface the top goal's lead action + week-at-a-glance in parallel.
      The lead text also feeds the smartPick scorer above via data._leadText. */
   Promise.all([window.donna.goalsTopLead(), window.donna.goalsWeek(), window.donna.waitingRollup()]).then(([lead, week, wroll]) => {
@@ -138,13 +128,6 @@ function vToday() {
       strip.querySelector("[data-sleep-set]")?.addEventListener("click", openSleepPopover);
     });
 
-    /* production mini — glanceable pipeline state */
-    const pSlot = $("#prod-mini-slot");
-    if (pSlot && prod) {
-      pSlot.innerHTML = productionMini(prod);
-      pSlot.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => gotoView(b.dataset.goto)));
-    }
-
     /* boot diagnostic — silent-issue radar. Once per day unless re-shown. */
     window.donna.diagnostic().then((diag) => {
       if (!diag || !diag.issues || !diag.issues.length) return;
@@ -170,27 +153,11 @@ function waitingStrip(w) {
   const verb = w.alert > 0 ? "alert" : w.stale > 0 ? "going stale" : "tracked";
   return `<div class="wait-strip wait-${cls}">
     <div class="wait-eyebrow">⏳ WAITING ON PEOPLE <span class="wait-verb">· ${verb}</span></div>
-    <div class="wait-body">${w.alert ? `<b class="wait-alert">${w.alert}</b> alert (48h+)` : ""}${w.alert && w.stale ? " · " : ""}${w.stale ? `<b>${w.stale}</b> stale (12h+)` : ""}${(!w.alert && !w.stale) ? `<b>${w.total}</b> tracked` : ""} ${w.george ? `<span class="wait-george">· ${w.george} on George</span>` : ""}</div>
+    <div class="wait-body">${w.alert ? `<b class="wait-alert">${w.alert}</b> alert (48h+)` : ""}${w.alert && w.stale ? " · " : ""}${w.stale ? `<b>${w.stale}</b> stale (12h+)` : ""}${(!w.alert && !w.stale) ? `<b>${w.total}</b> tracked` : ""} </div>
     <button class="wait-goto" data-goto="waiting">review →</button>
   </div>`;
 }
 
-/* Production mini — glanceable pipeline state. 4 chips: voice / edit /
-   ready / post. Click → Production view. The voice chip glows red if
-   the gate is backed up. */
-function productionMini(p) {
-  if (!p || !p.stages) return "";
-  const s = (k) => p.stages.find((x) => x.key === k) || { n: 0 };
-  const voice = s("voice").n, ready = s("ready").n, post = s("post").n, edit = s("edit").n;
-  if (!voice && !ready && !post && !edit) return "";
-  return `<div class="prod-mini">
-    <span class="prod-mini-h">▷ PRODUCTION</span>
-    <span class="prod-mini-stat ${voice > 0 ? "voice-wait" : ""}" data-goto="production"><b>${voice}</b><small>voice</small></span>
-    <span class="prod-mini-stat"><b>${edit}</b><small>editing</small></span>
-    <span class="prod-mini-stat"><b>${ready}</b><small>ready</small></span>
-    <span class="prod-mini-stat"><b>${post}</b><small>post</small></span>
-  </div>`;
-}
 function diagnosticCard(issues) {
   const top = issues.slice(0, 4);
   return `<div class="diag-card msg-in">
@@ -382,7 +349,7 @@ function openMorePopover(anchor, taskId) {
     if (act === "evening") { await window.donna.setTaskField(taskId, "bucket", "evening"); await refresh(); render(); renderCompactBody(); toast("This evening"); return; }
     if (act === "someday") { await window.donna.setTaskField(taskId, "bucket", "someday"); await refresh(); render(); renderCompactBody(); toast("Parked in someday"); return; }
     if (act === "waiting") {
-      const who = await _openModal({ title: "Waiting on", placeholder: "george", body: `<div class="pm-hint">Who owes you this? Donna will start the partner timer.</div>`, confirmLabel: "Mark waiting" });
+      const who = await _openModal({ title: "Waiting on", placeholder: "Someone", body: `<div class="pm-hint">Who owes you this? Donna will start the partner timer.</div>`, confirmLabel: "Mark waiting" });
       if (who == null || !who.trim()) return;
       await window.donna.setWaiting(taskId, who.trim());
       await refresh(); render(); renderCompactBody();
@@ -510,38 +477,3 @@ window.openSinceLeftCard = function (items, lastSeenAt) {
   slot.querySelector(".since-x").onclick = () => { slot.innerHTML = ""; };
 };
 
-
-/* ── Agency OS card — the business half, one glance + one click deep in.
-   Alert hrefs come from the dashboard's own rules engine so they never rot. ── */
-async function paintAgencyCard() {
-  const slot = $("#agency-slot");
-  if (!slot) return;
-  let a = null;
-  try { a = await window.donna.agency(); } catch {}
-  if (view !== "today" || !$("#agency-slot")) return;
-  if (!a || !a.up) {
-    slot.innerHTML = `<button class="op-line dash-asleep" id="dash-wake"><span class="op-dot" style="background:var(--dim)"></span><span class="op-txt">Agency OS is asleep</span><span class="op-arrow">wake it →</span></button>`;
-    const b = $("#dash-wake");
-    if (b) b.onclick = async () => {
-      b.querySelector(".op-txt").textContent = "Waking Agency OS — ~15s…";
-      await window.donna.dashStart();
-      setTimeout(() => { if (view === "today") paintAgencyCard(); }, 16000);
-    };
-    return;
-  }
-  const rev = a.overview && a.overview.revenue30 && a.overview.revenue30.total;
-  const prev = a.overview && a.overview.revenuePrev30 && a.overview.revenuePrev30.total;
-  const delta = rev && prev ? Math.round(((rev - prev) / prev) * 100) : null;
-  const crit = (a.alerts || []).filter((f) => f.severity === "critical");
-  const top = [...crit, ...(a.alerts || []).filter((f) => f.severity === "warn")].slice(0, 2);
-  slot.innerHTML = `<div class="agency-card ${crit.length ? "alert" : ""}">
-    <div class="ag-head">
-      <span class="ag-title">Agency OS</span>
-      ${rev != null ? `<span class="ag-rev">$${Number(rev).toLocaleString()} <i>30d</i>${delta !== null ? `<b class="${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "+" : ""}${delta}%</b>` : ""}</span>` : ""}
-      <button class="ag-open" data-dash="">open ↗</button>
-    </div>
-    ${top.length ? top.map((f) => `<button class="ag-alert ${f.severity}" data-dash="${esc(f.href || "")}"><span>${f.severity === "critical" ? "▲" : "◆"}</span>${esc(trunc(f.message, 74))}<span class="op-arrow">→</span></button>`).join("")
-      : `<div class="ag-clean">No alerts firing — the machine hums.</div>`}
-  </div>`;
-  slot.querySelectorAll("[data-dash]").forEach((b) => (b.onclick = () => window.donna.dashOpen(b.dataset.dash)));
-}

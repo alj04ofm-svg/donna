@@ -11,8 +11,6 @@ async function buildContext({ roots = [], captureStore, runCmd }) {
   const cmd = runCmd || ((c) => { try { return execSync(c, { encoding: "utf8", timeout: 8000 }); } catch { return ""; } });
   const parts = [];
   for (const r of roots) { const body = readTrimmed(r); if (body) parts.push(`## ${r}\n${body}`); }
-  const panes = String(cmd("herdr pane list")).slice(0, 1200);
-  if (panes.trim()) parts.push(`## herdr panes\n${panes}`);
   if (captureStore) {
     const todos = captureStore.list("todo").filter((t) => !t.done).map((t) => `- ${t.text}`).join("\n");
     if (todos) parts.push(`## open todos\n${todos}`);

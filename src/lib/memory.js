@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const { dataPath } = require("./paths");
 const path = require("node:path");
 
-/* Donna's memory — the "she knows me" layer. Structured facts about Alex,
+/* Donna's memory — the "she knows me" layer. Structured facts about the user,
    mined ambiently from conversation (Dot's green-flash pattern) and editable
    by hand, because trust requires inspectability: he can see, correct, and
    delete anything she believes. Facts feed the morning brief and replies.
@@ -43,7 +43,7 @@ function remove(id) { write(read().filter((x) => x.id !== id)); return true; }
 function promptBlock(max = 14) {
   const a = list().slice(0, max);
   if (!a.length) return "";
-  return "KNOWN ABOUT ALEX (his own words, stored facts — use naturally, never invent more):\n" +
+  return "KNOWN ABOUT THE USER (their own words, stored facts — use naturally, never invent more):\n" +
     a.map((f) => `- [${f.kind}] ${f.fact}`).join("\n");
 }
 

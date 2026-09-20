@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const { dataPath } = require("./paths");
 const path = require("node:path");
 
-/* Self-directed time tracking — the Hubstaff-equivalent, but Alex's own focus
+/* Self-directed time tracking — your own focus
    sessions, never surveillance. Every focus session (task → doing → done/pause)
    is logged here; the Rhythm view reads the stream. */
 

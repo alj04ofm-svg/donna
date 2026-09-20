@@ -16,7 +16,7 @@ async function vSettings() {
 
     ${pane("general", `
     <div class="set-group">
-      <div class="set-row"><div><div class="set-label">Your name</div><div class="set-hint">How Donna addresses you</div></div><input id="set-name" class="set-input" value="${esc(cfg.userName || "")}" placeholder="e.g. George"></div>
+      <div class="set-row"><div><div class="set-label">Your name</div><div class="set-hint">How Donna addresses you</div></div><input id="set-name" class="set-input" value="${esc(cfg.userName || "")}" placeholder="e.g. Sam"></div>
       <div class="set-row"><div><div class="set-label">AI provider</div><div class="set-hint">Bring your own key — stored locally on this Mac</div></div>
         <select id="set-provider" class="set-input">
           <option value="anthropic"${cfg.provider === "anthropic" ? " selected" : ""}>Anthropic (Claude)</option>
@@ -38,10 +38,10 @@ async function vSettings() {
         <button class="wind-btn" id="btn-reonboard" style="width:auto;margin:0;padding:8px 14px">Replay tour</button></div>
     </div>
     <div class="set-group">
-      <div class="set-row"><div><div class="set-label">Saved aliases</div><div class="set-hint">Your command shortcuts. "wc" → "filter to #worldcup" etc. Surfaces in ⌘K.</div></div></div>
+      <div class="set-row"><div><div class="set-label">Saved aliases</div><div class="set-hint">Your command shortcuts. "wk" → "filter tasks to #week" etc. Surfaces in ⌘K.</div></div></div>
       <div class="quick-add" style="display:flex;gap:8px;margin-top:6px">
         <input id="al-key" style="flex:1" placeholder="key (e.g. wc)">
-        <input id="al-val" style="flex:2" placeholder='value (e.g. "filter tasks to #worldcup")'>
+        <input id="al-val" style="flex:2" placeholder='value (e.g. "filter tasks to #week")'>
         <button class="hero-btn go" id="al-add">Add</button>
       </div>
       <div id="al-list" style="margin-top:10px"></div>
@@ -257,7 +257,7 @@ async function vSettings() {
     const draw = () => {
       const map = JSON.parse(localStorage.getItem("donna.aliases") || "{}");
       const keys = Object.keys(map);
-      al.innerHTML = keys.length ? keys.map((k) => `<div class="al-row"><span class="al-key">${esc(k)}</span><span class="al-arrow">→</span><span class="al-val">${esc(map[k])}</span><button class="ag-x" data-al-rm="${esc(k)}">✕</button></div>`).join("") : `<div class="hint" style="margin:0">No aliases yet. Try: <code>wc</code> → <code>filter tasks to #worldcup</code></div>`;
+      al.innerHTML = keys.length ? keys.map((k) => `<div class="al-row"><span class="al-key">${esc(k)}</span><span class="al-arrow">→</span><span class="al-val">${esc(map[k])}</span><button class="ag-x" data-al-rm="${esc(k)}">✕</button></div>`).join("") : `<div class="hint" style="margin:0">No aliases yet. Try: <code>wk</code> → <code>filter tasks to #week</code></div>`;
       al.querySelectorAll("[data-al-rm]").forEach((b) => (b.onclick = () => {
         const k = b.dataset.alRm;
         const m = JSON.parse(localStorage.getItem("donna.aliases") || "{}");
@@ -456,8 +456,8 @@ async function vWaiting() {
   const ageH = (h) => h < 1 ? "just now" : h < 24 ? `${h}h` : h < 48 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${Math.floor(h / 24)}d`;
   main.innerHTML = `<div class="view">
     <h1 class="h1">Waiting on</h1>
-    <p class="sub">Blocked on other people — partner timers (12h stale / 48h alert for George, 3d / 7d for everyone else)${items.length ? `<span class="sep">·</span>${items.length} open${items.filter((w) => w.alert).length ? ` · <b style="color:oklch(0.78 0.18 25)">${items.filter((w) => w.alert).length} alert</b>` : ""}${items.filter((w) => w.stale && !w.alert).length ? ` · <b style="color:oklch(0.78 0.16 70)">${items.filter((w) => w.stale && !w.alert).length} stale</b>` : ""}` : ""}</p>
-    <div class="quick-add" style="margin-top:16px"><input id="wait-add" placeholder='Hand-off — "ElevenLabs invoice · george"'></div>
+    <p class="sub">Blocked on other people — stale at 3 days, alert at 7${items.length ? `<span class="sep">·</span>${items.length} open${items.filter((w) => w.alert).length ? ` · <b style="color:oklch(0.78 0.18 25)">${items.filter((w) => w.alert).length} alert</b>` : ""}${items.filter((w) => w.stale && !w.alert).length ? ` · <b style="color:oklch(0.78 0.16 70)">${items.filter((w) => w.stale && !w.alert).length} stale</b>` : ""}` : ""}</p>
+    <div class="quick-add" style="margin-top:16px"><input id="wait-add" placeholder='Hand-off — "Invoice · Sam"'></div>
     ${items.length ? `<div class="rows" style="margin-top:14px">${items.map((w) => `
       <div class="row wait-row ${w.alert ? "alert" : w.stale ? "stale" : ""}">
         <span class="wait-age ${w.alert ? "alert" : w.stale ? "stale" : ""}">${ageH(w.hrs)}</span>
@@ -1068,7 +1068,7 @@ function vLibrary() {
 }
 
 /* Comms — channels in one place. Honest: shows real connection status + exactly
-   what each needs; the message adapters light up once Alex completes each sign-in. */
+   what each needs; the message adapters light up once you complete each sign-in. */
 async function vComms() {
   const channels = await window.donna.comms();
   stagger = 0;

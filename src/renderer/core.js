@@ -39,13 +39,8 @@ window.addEventListener("donna:sections", () => { try { applySections(); } catch
 const esc = (s) => (s || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const trunc = (s, n) => ((s || "").length > n ? s.slice(0, n) + "…" : (s || ""));
 
-/* project tracks → colored tags (Alex's real work streams) */
-const PROJECTS = {
-  proj_worldcup_30: { label: "World Cup", hue: 28 },
-  proj_gossip_finish: { label: "Gossip", hue: 330 },
-  proj_today: { label: "Today", hue: 250 },
-  proj_secondary: { label: "Ops", hue: 200 },
-};
+/* project tracks → colored tags. Users create these with task project_id. */
+const PROJECTS = {};
 const projMeta = (id) => PROJECTS[id] || (id ? { label: id.replace(/^proj_/, "").replace(/_/g, " "), hue: 240 } : null);
 function projChip(t) { const p = projMeta(t.project_id); return p ? `<span class="proj-chip" style="--h:${p.hue}">${esc(p.label)}</span>` : ""; }
 function estChip(t) { return t.estimatedMinutes ? `<span class="chip est">${t.estimatedMinutes >= 60 ? (t.estimatedMinutes / 60).toFixed(t.estimatedMinutes % 60 ? 1 : 0) + "h" : t.estimatedMinutes + "m"}</span>` : ""; }
@@ -146,12 +141,6 @@ function rowHtml(t, { compact = false, idx = -1 } = {}) {
   </div>`;
 }
 
-/* No external pipeline in the public build. */
-function opLine() {
-  return "";
-}
-function wireOpLine(scope) { const el = scope.querySelector(".op-line"); if (el) el.onclick = () => gotoView(el.dataset.goto); }
-
 /* progressive disclosure — collapsed section that expands on click */
 function disclosure(key, label, count, inner) {
   return `<div class="disc collapsed" data-disc="${key}">
@@ -250,7 +239,7 @@ function openSnooze(id, anchor) {
 function openWaitPop(id, anchor) {
   closePop();
   const t = (data.open || []).find((x) => x.id === id);
-  const people = ["george", "biss", "va", "p1"];
+  const people = ["sam", "maya", "p1"];
   popEl = document.createElement("div");
   popEl.className = "pop";
   popEl.innerHTML = (t?.waitingOn ? `<button data-who="">Clear waiting<span>${esc(t.waitingOn)}</span></button>` : "")
@@ -268,39 +257,6 @@ function openWaitPop(id, anchor) {
     if (popEl && !popEl.contains(e.target)) closePop();
     document.removeEventListener("mousedown", h);
   }), 0);
-}
-
-/* ── right-rail panels ── */
-function pipelinePanel() {
-  if (!prod) return "";
-  return `<div class="panel"${si()}>
-    <div class="panel-head">Pipeline <span class="panel-sub">live</span></div>
-    ${prod.stages.map((s) => `
-      <div class="pl-row ${s.alert ? "alert" : ""}">
-        <span class="pl-n">${s.n}</span>
-        <span class="pl-body"><span class="pl-label">${s.label}</span>
-        <span class="pl-detail">${esc(s.detail)}</span></span>
-      </div>`).join("")}
-  </div>`;
-}
-function agentsPanel() {
-  if (!prod?.agents?.length) return "";
-  return `<div class="panel"${si()}>
-    <div class="panel-head">Agents <span class="panel-sub">herdr</span></div>
-    ${prod.agents.map((a) => `
-      <div class="ag-row"><span class="ag-dot ${a.status}"></span>
-      <span class="ag-name">${esc(a.name)}</span>
-      <span class="ag-status">${esc(a.status)}</span></div>`).join("")}
-  </div>`;
-}
-function postPanel() {
-  if (!prod?.accounts?.length) return "";
-  return `<div class="panel"${si()}>
-    <div class="panel-head">Post-ready <span class="panel-sub">${prod.stages.find((s) => s.key === "post")?.n || 0} reels</span></div>
-    ${prod.accounts.slice(0, 5).map((a) => `
-      <div class="ag-row"><span class="ag-name">${esc(a.account)}</span>
-      <span class="pl-n" style="font-size:12px">${a.count}</span></div>`).join("")}
-  </div>`;
 }
 
 /* capacity meter (Sunsama honesty bar) — only when estimates exist */

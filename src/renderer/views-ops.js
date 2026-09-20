@@ -1,93 +1,40 @@
 
-function vProduction() {
-  stagger = 0;
-  const p = prod;
-  const fr = p && p.freshness;
-  main.innerHTML = `<div class="view wide">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
-      <div><h1 class="h1">Production</h1>
-      <p class="sub">Live operation state — via the dashboard bridge${p ? `<span class="sep">·</span>${p.perfected} perfected scripts` : ""}</p></div>
-      <button class="triage-btn" data-dash="">Agency OS ↗</button>
-    </div>
-    ${fr ? `<div class="prod-status">
-      <span class="ps ${p.live ? "ok" : "warn"}">${p.live ? "live" : "files only · bridge down"}</span>
-      <span class="ps ${fr.dashboardUp ? "ok" : "warn"}">dashboard ${fr.dashboardUp ? "up" : "down"}</span>
-      ${!fr.dashboardUp ? `<button class="wind-btn" id="prod-daststart" style="width:auto;margin:0;padding:4px 10px">▸ Start dashboard</button>` : ""}
-      ${fr.editing ? `<span class="ps">editing · ${esc(fr.editing.current_stage || "—")}${fr.editing.grade ? " · " + esc(String(fr.editing.grade)) : ""}</span>` : ""}
-      ${fr.stale ? `<span class="ps warn">⚠ ready count ${fr.readyAsOf ? Math.round(fr.readyAsOf.age_hours) + "h old" : "stale"} — regen pending</span>` : ""}
-    </div>` : ""}
-    ${!p ? '<div class="rows" style="margin-top:20px"><div class="empty">Reading pipeline…</div></div>' : `
-    <div class="stage-strip">
-      ${p.stages.map((s, i) => `
-        <div class="stage ${s.alert ? "alert" : ""}"${si()}>
-          <div class="stage-n">${s.n}</div>
-          <div class="stage-label">${s.label}</div>
-          <div class="stage-detail">${esc(s.detail)}</div>
-        </div>${i < p.stages.length - 1 ? '<svg class="stage-arrow" viewBox="0 0 16 16"><path d="M5 3l5 5-5 5"/></svg>' : ""}`).join("")}
-    </div>
-    ${p.voiceFiles.length ? `<div class="sec" style="color:var(--p2)">Voice-swap gate — <b>blocking post</b></div>
-      <div class="rows">${p.voiceFiles.map((f) => `<div class="row"${si()}><div class="row-body"><div class="row-title">${esc(f)}</div></div>
-      <div class="row-meta"><span class="chip p2">needs voice</span></div></div>`).join("")}</div>` : ""}
-    ${p.agents && p.agents.length ? `<div class="sec">Agents — <b>live in herdr</b></div>
-      <div class="rows">${p.agents.map((a) => `<div class="row">
-        <span class="ag-dot ${a.status}" style="margin-top:5px"></span>
-        <div class="row-body"><div class="row-title">${esc(a.name)}</div></div>
-        <div class="row-meta"><span class="ag-status">${esc(a.status)}</span></div></div>`).join("")}</div>` : ""}
-    ${p.accounts.length ? `<div class="sec">Post-ready packs</div>
-      <table class="qtable">${p.accounts.map((a) => `<tr><td>${esc(a.account)}</td><td style="text-align:right;font-family:var(--mono);color:var(--signal)">${a.count}</td></tr>`).join("")}</table>` : ""}
-    `}
-  </div>`;
-  main.querySelectorAll("[data-dash]").forEach((b) => (b.onclick = () => window.donna.dashOpen(b.dataset.dash)));
-  const ds = $("#prod-daststart"); if (ds) ds.onclick = async () => { ds.textContent = "Starting…"; ds.disabled = true; await window.donna.dashStart(); toast("Starting Agency OS…"); setTimeout(() => refreshProd().then(() => { if (view === "production") vProduction(); }), 4000); };
-  if (!p || !p.agents) refreshProd().then(() => { if (view === "production") render(); });
-  openCoachButton("production", p ? {
-    live: p.live,
-    stages: (p.stages || []).map((s) => ({ k: s.key, n: s.n, alert: !!s.alert })),
-    voice: p.voiceFiles?.length || 0,
-    accounts: (p.accounts || []).length,
-    perfected: p.perfected,
-  } : null);
-}
-
-/* ── Ask: grouped recommendations tailored to Alex's operation ── */
+/* ── Ask: grouped jump-start recommendations ── */
 function suggGroups() {
   const top = data?.open?.slice().sort((a, b) => a.priority - b.priority)[0];
-  const george = data?.open?.filter((t) => t.waitingOn === "george" || /george/i.test(t.title)).length;
   return [
-    { label: "Work", icon: "◎", chips: [
+    { label: "Focus", icon: "◎", chips: [
       "What should I hit first today?",
       top ? `How do I knock out "${top.title.length > 38 ? top.title.slice(0, 34).replace(/\s+\S*$/, "") + "…" : top.title}"?` : "What's my highest-leverage move?",
-      "What's blocking the pipeline right now?",
-      george ? "Draft the message to George for my open items" : "What decisions are waiting on me?",
-    ] },
-    { label: "Content", icon: "✦", chips: [
-      "best: 3 scroll-stop gossip hooks for Anastasia",
-      "best: a punchy World Cup reel opener",
-      "Ideas for the next reel batch",
-      "best: rewrite a hook to hit harder",
-    ] },
-    { label: "Review", icon: "↺", chips: [
-      "What shipped today?",
-      "Summarize what the agents got done",
-      "What's post-ready across my accounts?",
-      "What did I decide this week?",
+      "What decisions are waiting on me?",
+      "What should I NOT touch today?",
     ] },
     { label: "Plan", icon: "◷", chips: [
       "Plan my next 2 hours",
       "What can I knock out in 30 minutes?",
-      "What should I NOT touch today?",
+      "Help me wind down the day",
+    ] },
+    { label: "Review", icon: "↺", chips: [
+      "What did I get done today?",
+      "Summarize my week",
+      "What am I avoiding?",
+    ] },
+    { label: "Creative", icon: "✦", chips: [
+      "Brainstorm three ideas for a project",
+      "best: rewrite this so it hits harder",
+      "Draft a message I've been putting off",
     ] },
   ];
 }
 
 /* Ask modes — quick/think/best used to be typed prefixes hidden in a hint
-   line; Alex asked to make them real buttons. Clicking one tags the next
+   line; made them real buttons. Clicking one tags the next
    send; the prefix strips back out of what's shown, brain.js still reads it. */
 const ASK_MODES = [["quick", "⚡", "fast"], ["think", "◐", "deep"], ["best", "✦", "top creative"]];
 let askMode = null;
 
 /* rotating suggestion carousel — one flattened, shuffled-feeling list cycled
-   on a timer; click to send straight away. Alex wanted this to feel alive,
+   on a timer; click to send straight away. so it feels alive,
    not a static chip wall. */
 let askCarouselIdx = 0, askCarouselT = null;
 function flatSuggestions() { return suggGroups().flatMap((g) => g.chips.map((c) => ({ c, icon: g.icon }))); }
@@ -109,13 +56,13 @@ function startCarousel() {
 /* Ask — Donna's own AI hub. A left rail (new chat · jump-starts · what she
    knows about you) beside the conversation, an ambient aurora behind the orb.
    This is the "our own AI" centrepiece; Memory lives here now, as the panel
-   that quietly learns about Alex so she can help better. */
+   that quietly learns about you so she can help better. */
 function vAsk() {
   const g = suggGroups();
   const modeHtml = ASK_MODES.map(([k, ic, hint]) => `<button class="ask-mode ${askMode === k ? "on" : ""}" data-mode="${k}" title="${esc(hint)}">${ic} ${k}</button>`).join("");
   const empty = `<div class="ask-empty">
     <div class="ask-hero-orb"><span class="orb speaking"></span></div>
-    <div class="ask-hi">${greeting()}, Alex.<br><span>What are we shipping?</span></div>
+    <div class="ask-hi">${greeting()}, ${esc((cfg && cfg.userName) || "there")}.<br><span>What can I help with?</span></div>
     <button class="ask-carousel" id="ask-carousel"><span class="ask-car-icon"></span><span class="ask-car-text"></span><span class="ask-car-go">↵</span></button>
   </div>`;
   main.innerHTML = `<div class="view ask-hub" style="max-width:none">
@@ -261,7 +208,7 @@ async function suggestFollowups() {
   if (view !== "ask") return;
   const last = thread.filter((m) => !m.streaming).slice(-2);
   if (last.length < 2) return;
-  const q = `Based on this short exchange, suggest 2-3 short follow-up questions Alex might naturally ask next. Reply ONLY as a JSON array of strings, no preamble, no quotes inside.\n\nUser: ${last[0].text}\nDonna: ${last[1].text}`;
+  const q = `Based on this short exchange, suggest 2-3 short follow-up questions the user might naturally ask next. Reply ONLY as a JSON array of strings, no preamble, no quotes inside.\n\nUser: ${last[0].text}\nDonna: ${last[1].text}`;
   const out = await window.donna.askInternal(q);
   let arr = [];
   try { arr = JSON.parse((out.answer || "").match(/\[[\s\S]*\]/)?.[0] || "[]"); } catch {}
