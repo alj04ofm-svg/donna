@@ -341,6 +341,7 @@ function _obRenderBody(step) {
       <option value="anthropic">Anthropic (Claude)</option>
       <option value="openai">OpenAI</option>
       <option value="minimax">MiniMax</option>
+      <option value="gemini">Google Gemini</option>
       <option value="claude-cli">Claude CLI (local, no key)</option>
     </select>
     <input id="ob-key" class="sd-input" type="password" placeholder="Paste your API key (or set an env var instead)">

@@ -17,6 +17,7 @@ const { createCaptureStore } = require("./lib/captureStore");
 const { askAnthropic } = require("./lib/models/anthropic");
 const { askOpenAI } = require("./lib/models/openai");
 const { askMinimax } = require("./lib/models/minimax");
+const { askGemini } = require("./lib/models/gemini");
 const { askClaude } = require("./lib/models/claudeCli");
 const appConfig = require("./lib/appConfig");
 const tasks = require("./lib/tasks");
@@ -31,7 +32,10 @@ const config = appConfig.load();
 function applyProviderEnv(cfg) {
   if (!cfg || !cfg.apiKey) return;
   const provider = cfg.provider || "anthropic";
-  const name = provider === "openai" ? "OPENAI_API_KEY" : provider === "minimax" ? "MINIMAX_API_KEY" : "ANTHROPIC_API_KEY";
+  const name = provider === "openai" ? "OPENAI_API_KEY"
+    : provider === "minimax" ? "MINIMAX_API_KEY"
+    : provider === "gemini" ? "GEMINI_API_KEY"
+    : "ANTHROPIC_API_KEY";
   if (!process.env[name]) process.env[name] = cfg.apiKey;
 }
 applyProviderEnv(config);
@@ -41,6 +45,7 @@ const clients = {
   anthropic: (p, s) => askAnthropic(p, { system: s }),
   openai: (p, s) => askOpenAI(p, { system: s }),
   minimax: (p, s) => askMinimax(p, { system: s }),
+  gemini: (p, s) => askGemini(p, { system: s }),
   "claude-cli": (p, s) => askClaude(p, { model: "claude-opus-4-8", system: s }),
 };
 const brain = createBrain({ config, captureStore, clients });

@@ -69,6 +69,7 @@ function providerKey(cfg) {
   if (provider === "anthropic") return env.ANTHROPIC_API_KEY || cfg.apiKey || "";
   if (provider === "openai") return env.OPENAI_API_KEY || cfg.apiKey || "";
   if (provider === "minimax") return env.MINIMAX_API_KEY || cfg.apiKey || "";
+  if (provider === "gemini") return env.GEMINI_API_KEY || cfg.apiKey || "";
   return cfg.apiKey || "";
 }
 

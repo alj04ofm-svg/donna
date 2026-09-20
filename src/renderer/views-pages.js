@@ -22,6 +22,7 @@ async function vSettings() {
           <option value="anthropic"${cfg.provider === "anthropic" ? " selected" : ""}>Anthropic (Claude)</option>
           <option value="openai"${cfg.provider === "openai" ? " selected" : ""}>OpenAI</option>
           <option value="minimax"${cfg.provider === "minimax" ? " selected" : ""}>MiniMax</option>
+          <option value="gemini"${cfg.provider === "gemini" ? " selected" : ""}>Google Gemini</option>
           <option value="claude-cli"${cfg.provider === "claude-cli" ? " selected" : ""}>Claude CLI (local)</option>
         </select></div>
       <div class="set-row"><div><div class="set-label">API key</div><div class="set-hint">Or set ANTHROPIC_API_KEY / OPENAI_API_KEY in your environment</div></div><input id="set-key" class="set-input" type="password" value="${esc(cfg.apiKey || "")}" placeholder="sk-…"></div>

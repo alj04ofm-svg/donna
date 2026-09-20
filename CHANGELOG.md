@@ -3,6 +3,11 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] — 2026-09-20
+
+- Added a **Google Gemini** provider (bring your own key) and made it the
+  default path for Ask.
+
 ## [1.3.0] — 2026-09-20
 
 - **Subtasks** on tasks (checklist in the editor, progress chip on rows/cards).
