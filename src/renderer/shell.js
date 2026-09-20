@@ -182,8 +182,8 @@ function buildActions(q) {
   }
   const nav = [
     ["today", "Go to Today", "⌘1"], ["plan", "Go to Plan", "⌘2"], ["tasks", "Go to Tasks", "⌘3"],
-    ["ask", "Go to Ask", "⌘5"], ["rhythm", "Go to Tracker", "⌘6"],
-    ["comms", "Go to Comms", "⌘7"], ["library", "Go to Library", "⌘8"], ["canvas", "Go to Canvas", ""], ["life", "Go to Life", ""], ["goals", "Go to Goals", ""], ["activity", "Go to Activity", "⌘0"], ["log", "Go to Log", ""], ["settings", "Go to Settings", "⌘9"],
+    ["goals", "Go to Goals", "⌘4"], ["rhythm", "Go to Tracker", "⌘5"], ["ask", "Go to Ask", "⌘6"],
+    ["library", "Go to Library", "⌘7"], ["settings", "Go to Settings", "⌘8"],
   ];
   for (const [v, label, hint] of nav)
     acts.push({ sec: "Navigate", icon: ICONS.view, label, hint, score: fuzzy(q, label), run: () => gotoView(v) });
@@ -262,11 +262,10 @@ window.addEventListener("keydown", (e) => {
 
   if (mod && e.key.toLowerCase() === "k") { e.preventDefault(); pal.hidden ? openPalette() : closePalette(); return; }
   if (mod && e.key >= "1" && e.key <= "9") {
-    const v = ["today", "plan", "tasks", "ask", "rhythm", "comms", "library", "settings"][Number(e.key) - 1];
+    const v = ["today", "plan", "tasks", "goals", "rhythm", "ask", "library", "settings"][Number(e.key) - 1];
     if (v) { e.preventDefault(); gotoView(v); }
     return;
   }
-  if (mod && e.key === "0") { e.preventDefault(); gotoView("activity"); return; }
   if (mod && e.key.toLowerCase() === "n") {
     e.preventDefault();
     const inp = $("#today-add") || $("#task-in") || $("#c-add-in");

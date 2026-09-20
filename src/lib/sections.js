@@ -15,13 +15,8 @@ const SECTIONS = [
   { id: "page.tasks",      label: "Tasks",         group: "nav", desc: "List + Board of every open task, sortable by priority / due / project", default: true },
   { id: "page.ask",        label: "Ask",           group: "nav", desc: "The AI hub — chat, memory, jump-starts", default: true },
   { id: "page.rhythm",     label: "Tracker",       group: "nav", desc: "What you actually did today: focus, deep work, screenshots, Pulse", default: true },
-  { id: "page.comms",      label: "Comms",         group: "nav", desc: "Gmail / Telegram / WhatsApp unified", default: true },
   { id: "page.library",    label: "Library",       group: "nav", desc: "Capture / Notes / Ideas", default: true },
-  { id: "page.canvas",     label: "Canvas",        group: "nav", desc: "Spatial boards (AFFiNE/Miro) for visual thinking", default: true },
-  { id: "page.life",       label: "Life",          group: "nav", desc: "The vision / projection system across 4 life areas", default: true },
   { id: "page.goals",      label: "Goals",         group: "nav", desc: "OKR + 12-Week Year objectives, key results, milestones, lead measure", default: true },
-  { id: "page.activity",   label: "Activity",      group: "nav", desc: "Append-only log of everything you've done", default: true },
-  { id: "page.log",        label: "Log",           group: "nav", desc: "Decision log + anti-goal tracker (what you've decided, what you'll never do)", default: true },
   { id: "page.settings",   label: "Settings",      group: "nav", desc: "Configure Donna", default: true },
 
   /* AI Coach — contextual ✦ button on every page. Lives in its own group so

@@ -3,6 +3,12 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.3] — 2026-09-20
+
+- Leaner app: sidebar trimmed to the genuinely useful set — Today, Plan, Tasks,
+  Goals, Tracker, Ask, Library, Settings. Removed Comms, Canvas, Life, Activity
+  and Log from the nav (and their section toggles).
+
 ## [1.0.2] — 2026-09-20
 
 - Fixed: the API key entered in Settings is now actually used by the AI providers.
