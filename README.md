@@ -39,6 +39,11 @@ so it runs on Apple Silicon.
 
 ---
 
+## Screenshots
+
+![Today](docs/screenshots/shot-today.png)
+![Tasks](docs/screenshots/shot-tasks.png)
+
 ## Features
 
 | | |
