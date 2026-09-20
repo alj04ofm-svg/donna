@@ -27,8 +27,6 @@ async function vSettings() {
       <div class="set-row"><div><div class="set-label">API key</div><div class="set-hint">Or set ANTHROPIC_API_KEY / OPENAI_API_KEY in your environment</div></div><input id="set-key" class="set-input" type="password" value="${esc(cfg.apiKey || "")}" placeholder="sk-…"></div>
       <div class="set-row"><div></div><button class="wind-btn" id="set-ai-save" style="width:auto;margin:0;padding:8px 14px">Save</button></div>
       <div class="set-row"><div><div class="set-label">Notifications</div><div class="set-hint">Native alerts when things change</div></div>${toggle("notifications", cfg.notifications !== false)}</div>
-      <div class="set-row"><div><div class="set-label">Voice replies</div><div class="set-hint">Speak answers aloud (needs a local voice setup)</div></div>${toggle("voice", !!cfg.voice)}</div>
-      <div class="set-row"><div><div class="set-label">Wake word</div><div class="set-hint">Say "Donna, …" in any FluidVoice dictation to ask hands-free · restart to apply</div></div>${toggle("wakeWord", cfg.wakeWord !== false)}</div>
       <div class="set-row"><div><div class="set-label">Sounds</div><div class="set-hint">Tiny synthesized cues on complete · habit · capture</div></div>${toggle("sounds", cfg.sounds !== false)}</div>
       <div class="set-row"><div><div class="set-label">Auto-track</div><div class="set-hint">Watch app/window activity from boot — all local, prunes after 14 days · restart to apply</div></div>${toggle("autoTrack", cfg.autoTrack !== false)}</div>
       <div class="set-row"><div><div class="set-label">Launch at login</div><div class="set-hint">Open Donna automatically when you start your Mac</div></div>${toggle("launchAtLogin", !!cfg.launchAtLogin)}</div>

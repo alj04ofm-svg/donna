@@ -26,7 +26,7 @@ const AFK_S = 180;                 // idle beyond this = away, retroactive to la
    days, screenshot cadence, save location, on/off in one place). Persisted
    separately from the general app config so a bad path can't wedge boot. */
 const TCFG_FILE = dataPath("tracker-config.json");
-const TCFG_DEFAULT = { shotIntervalMin: 10, keepDays: 14, shotsEnabled: true, saveDir: null };
+const TCFG_DEFAULT = { shotIntervalMin: 10, keepDays: 14, shotsEnabled: false, saveDir: null };
 function readTCfg() { try { return { ...TCFG_DEFAULT, ...JSON.parse(fs.readFileSync(TCFG_FILE, "utf8")) }; } catch { return { ...TCFG_DEFAULT }; } }
 let tcfg = readTCfg();
 function writeTCfg() { try { fs.mkdirSync(path.dirname(TCFG_FILE), { recursive: true }); fs.writeFileSync(TCFG_FILE, JSON.stringify(tcfg)); } catch {} }

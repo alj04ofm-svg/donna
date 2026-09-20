@@ -1,7 +1,7 @@
 {
   "name": "donna",
   "productName": "Donna",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Donna — a local-first personal assistant for macOS",
   "author": "ALJ",
   "private": true,
@@ -44,10 +44,21 @@
       "icon": "assets/build/donna.icns",
       "identity": "-",
       "hardenedRuntime": false,
-      "gatekeeperAssess": false
+      "gatekeeperAssess": false,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Donna uses the microphone for voice input, only when you ask.",
+        "NSCalendarsUsageDescription": "Donna reads your calendar to plan your day, on this Mac only.",
+        "NSCalendarsFullAccessUsageDescription": "Donna reads your calendar to plan your day, on this Mac only.",
+        "NSAppleEventsUsageDescription": "Donna reads app and window info for the optional local tracker.",
+        "NSHumanReadableCopyright": "MIT licensed"
+      }
     },
     "dmg": {
-      "title": "Donna"
+      "title": "Donna",
+      "contents": [
+        { "x": 140, "y": 200 },
+        { "x": 400, "y": 200, "type": "link", "path": "/Applications" }
+      ]
     },
     "asar": true
   }

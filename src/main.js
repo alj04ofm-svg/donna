@@ -25,6 +25,17 @@ const { createWatchers } = require("./lib/watchers");
 const { dataPath } = require("./lib/paths");
 
 const config = appConfig.load();
+
+/* Make the key entered in Settings actually usable: expose it to the selected
+   provider client via the environment (real env vars always win). */
+function applyProviderEnv(cfg) {
+  if (!cfg || !cfg.apiKey) return;
+  const provider = cfg.provider || "anthropic";
+  const name = provider === "openai" ? "OPENAI_API_KEY" : provider === "minimax" ? "MINIMAX_API_KEY" : "ANTHROPIC_API_KEY";
+  if (!process.env[name]) process.env[name] = cfg.apiKey;
+}
+applyProviderEnv(config);
+
 const captureStore = createCaptureStore(dataPath("capture.json"));
 const clients = {
   anthropic: (p, s) => askAnthropic(p, { system: s }),
@@ -390,6 +401,7 @@ app.whenReady().then(() => {
   ipcMain.handle("donna:getConfig", () => config);
   ipcMain.handle("donna:setConfig", (_e, patch) => {
     Object.assign(config, patch || {});
+    applyProviderEnv(config);
     notifyEnabled = config.notifications !== false;
     if (patch && "launchAtLogin" in patch) syncLoginItem();
     try { appConfig.save(config); } catch {}

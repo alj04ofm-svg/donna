@@ -3,6 +3,17 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] — 2026-09-20
+
+- Fixed: the API key entered in Settings is now actually used by the AI providers.
+- Privacy: tracker screenshots default **off**.
+- macOS usage descriptions added (microphone / calendar / automation) so prompts
+  name Donna correctly.
+- Removed half-wired Voice + Wake-word toggles.
+- Added a strict Content-Security-Policy to the renderer.
+- DMG now includes an Applications shortcut; release CI runs tests before building.
+- Renamed `views-ops.js` → `views-ask.js`.
+
 ## [1.0.1] — 2026-09-20
 
 - Cleanup pass for the public build: removed all app-specific/agency content,
