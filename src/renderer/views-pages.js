@@ -1151,16 +1151,16 @@ async function vIdeas(root = main, bare = false) {
 
 /* Library — Capture + Notes + Ideas fused into one tabbed page (no more three
    near-identical nav items). Tabs, not scroll. */
-let libTab = localStorage.getItem("donna.libTab") || "capture";
+let libTab = localStorage.getItem("donna.libTab") || "notes";
 function vLibrary() {
   stagger = 0;
   main.innerHTML = `<div class="view">
     <div class="lib-head">
-      <div><h1 class="h1">Library</h1><p class="sub">Everything you capture, keep, and dream up — in one place</p></div>
+      <div><h1 class="h1">Notes</h1><p class="sub">Your notes, ideas and captures — all in one place</p></div>
       <div class="seg lib-seg">
-        <button data-lib="capture" class="${libTab === "capture" ? "on" : ""}">Capture</button>
         <button data-lib="notes" class="${libTab === "notes" ? "on" : ""}">Notes</button>
         <button data-lib="ideas" class="${libTab === "ideas" ? "on" : ""}">Ideas</button>
+        <button data-lib="capture" class="${libTab === "capture" ? "on" : ""}">Captures</button>
       </div>
     </div>
     <div id="lib-body"></div>

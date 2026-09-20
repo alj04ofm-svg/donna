@@ -3,6 +3,10 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.11.2] — 2026-09-20
+
+- Notes page: titled Notes (was Library) and opens on the Notes tab by default.
+
 ## [1.11.1] — 2026-09-20
 
 - The morning brief never shows provider/rate-limit errors, including any stale
