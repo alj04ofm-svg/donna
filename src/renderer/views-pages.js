@@ -84,6 +84,10 @@ async function vSettings() {
         <button class="wind-btn" id="btn-export" style="width:auto;margin:0;padding:8px 14px">Export</button></div>
     </div>
     <div class="set-group">
+      <div class="set-row"><div><div class="set-label">Updates</div><div class="set-hint">Check for a newer version of Donna</div></div>
+        <button class="wind-btn" id="btn-update" style="width:auto;margin:0;padding:8px 14px">Check for updates</button></div>
+    </div>
+    <div class="set-group">
       <div class="set-row"><div><div class="set-label">Markdown export</div><div class="set-hint">One .md per surface — copy or save to Desktop. Beautiful human-readable.</div></div></div>
       <div class="md-export-grid">
         ${["goals", "activity", "waiting", "log", "notes", "all"].map((s) => `<div class="md-export-cell">
@@ -158,6 +162,17 @@ async function vSettings() {
     $("#wh-s").textContent = s; $("#wh-e").textContent = e;
   }));
   const ex = $("#btn-export"); if (ex) ex.onclick = async () => { await window.donna.exportData(); toast("Backup saved to Desktop"); };
+  const up = $("#btn-update");
+  if (up) up.onclick = async () => {
+    up.disabled = true; up.textContent = "Checking…";
+    try {
+      const r = await window.donna.checkUpdate();
+      if (r && r.newer) { toast(`Donna ${r.latest} is available`); window.donna.openExternal(r.url); }
+      else if (r && r.current) { toast(`You're on the latest (v${r.current})`); }
+      else { toast("Couldn't reach GitHub"); }
+    } catch { toast("Couldn't check for updates"); }
+    up.disabled = false; up.textContent = "Check for updates";
+  };
   const re = $("#btn-reonboard"); if (re) re.onclick = async () => { cfg = await window.donna.setConfig({ onboarded: false }); toast("Tour will replay next launch"); };
   const aiSave = $("#set-ai-save");
   if (aiSave) aiSave.onclick = async () => {

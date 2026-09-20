@@ -21,6 +21,17 @@ Everything stays on your Mac. No account, no cloud sync, no telemetry.
 
 ## Install
 
+### One-line install (recommended — no Gatekeeper warning)
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/alj04ofm-svg/donna/main/install.sh | bash
+```
+
+Downloads the latest release with `curl` (so macOS never sets the quarantine
+flag), installs to `/Applications`, and clears any quarantine defensively.
+
+### Manual (DMG)
+
 1. Download `Donna-<version>-universal.dmg` from Releases.
 2. Open it and drag **Donna** to **Applications**.
 3. First launch: right-click the app → **Open** (it's not notarized yet), or run:

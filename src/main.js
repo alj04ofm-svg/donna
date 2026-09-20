@@ -397,6 +397,24 @@ app.whenReady().then(() => {
   });
   // is Donna running as the installed .app (vs a terminal `npm start`)?
   ipcMain.handle("donna:appInfo", () => ({ packaged: !!app.isPackaged, loginAtStart: !!config.launchAtLogin }));
+  const RELEASES_URL = "https://github.com/alj04ofm-svg/donna/releases/latest";
+  ipcMain.handle("donna:checkUpdate", async () => {
+    const current = app.getVersion();
+    try {
+      const r = await fetch("https://api.github.com/repos/alj04ofm-svg/donna/releases", {
+        headers: { "User-Agent": "Donna" },
+        signal: AbortSignal.timeout(6000),
+      });
+      if (!r.ok) return { current, latest: null, newer: false, url: RELEASES_URL };
+      const rel = await r.json();
+      const latest = Array.isArray(rel) && rel[0] ? String(rel[0].tag_name || "").replace(/^v/, "") : null;
+      const newer = !!latest && latest !== current && latest.localeCompare(current, undefined, { numeric: true }) > 0;
+      return { current, latest, newer, url: RELEASES_URL };
+    } catch {
+      return { current, latest: null, newer: false, url: RELEASES_URL };
+    }
+  });
+  ipcMain.handle("donna:openExternal", (_e, url) => { try { require("electron").shell.openExternal(String(url)); } catch {} return true; });
   ipcMain.handle("donna:setMode", (_e, m) => { if (MODES[m]) applyMode(m); return mode; });
   ipcMain.handle("donna:orbToggle", () => { toggleOrb(); return orbWin ? orbWin.isVisible() : false; });
   ipcMain.handle("donna:orbStatus", () => ({ visible: !!(orbWin && orbWin.isVisible()) }));

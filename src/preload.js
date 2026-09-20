@@ -133,6 +133,8 @@ contextBridge.exposeInMainWorld("donna", {
   lifeSetScore: (domain, score, note) => ipcRenderer.invoke("donna:lifeSetScore", { domain, score, note }),
   getConfig: () => ipcRenderer.invoke("donna:getConfig"),
   setConfig: (patch) => ipcRenderer.invoke("donna:setConfig", patch),
+  checkUpdate: () => ipcRenderer.invoke("donna:checkUpdate"),
+  openExternal: (url) => ipcRenderer.invoke("donna:openExternal", url),
   appInfo: () => ipcRenderer.invoke("donna:appInfo"),
   ask: (text) => ipcRenderer.invoke("donna:ask", text),
   askInternal: (text) => ipcRenderer.invoke("donna:askInternal", text),
