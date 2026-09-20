@@ -1,4 +1,0 @@
-# Local Ximena voice clone (Task 9). Needs Python 3.10+ in a venv.
-# Default engine: Coqui XTTS-v2. If the bake-off picks F5-TTS, swap this for `f5-tts`.
-coqui-tts
-soundfile
