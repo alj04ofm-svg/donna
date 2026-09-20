@@ -515,7 +515,10 @@ app.whenReady().then(() => {
   ipcMain.handle("donna:trackerToggle", () => { const t = require("./lib/tracker").toggle(); if (win) win.webContents.send("donna:notify", t.tracking ? "Tracking on — clocked in" : "Tracking off — clocked out"); return t; });
   ipcMain.handle("donna:trackerConfigGet", () => require("./lib/tracker").getTrackerConfig());
   ipcMain.handle("donna:trackerConfigSet", (_e, patch) => require("./lib/tracker").setTrackerConfig(patch));
-  ipcMain.handle("donna:patterns", () => require("./lib/patterns"));
+  ipcMain.handle("donna:patterns", () => {
+    const p = require("./lib/patterns");
+    return { focusByHour: p.focusByHour(), focusByDay: p.focusByDay(), interruptionsToday: p.interruptionsToday(), peak: p.peak() };
+  });
   ipcMain.handle("donna:aliasesList", () => require("./lib/aliases").list());
   ipcMain.handle("donna:capacity", () => require("./lib/capacity").load21Days());
   ipcMain.handle("donna:demoLoad", () => require("./lib/demo").ensureDemo());

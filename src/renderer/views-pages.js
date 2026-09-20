@@ -428,17 +428,17 @@ async function vRhythm() {
     const slot = $("#pat-slot");
     if (!slot) return;
     const intr = todayItems.filter((e) => /capture|reminder|note_added|goal/.test(e.kind)).length;
-    const hMax = Math.max(1, ...p.focusByHour());
-    const dMax = Math.max(1, ...p.focusByDay());
+    const hMax = Math.max(1, ...p.focusByHour);
+    const dMax = Math.max(1, ...p.focusByDay);
     slot.innerHTML = `
       <div class="pat-grid">
         <div class="pat-card">
           <div class="pat-card-h">By hour <span class="pat-when">${p.peak.bestHour ? `peak ${p.peak.bestHour}` : "—"}</span></div>
-          <div class="pat-hours">${p.focusByHour().map((m, h) => `<div class="pat-h" style="height:${Math.max(2, (m / hMax) * 36)}px" title="${h}:00 · ${m}m"><span>${h % 6 === 0 ? h : ""}</span></div>`).join("")}</div>
+          <div class="pat-hours">${p.focusByHour.map((m, h) => `<div class="pat-h" style="height:${Math.max(2, (m / hMax) * 36)}px" title="${h}:00 · ${m}m"><span>${h % 6 === 0 ? h : ""}</span></div>`).join("")}</div>
         </div>
         <div class="pat-card">
           <div class="pat-card-h">By day <span class="pat-when">${p.peak.bestDay ? `${p.peak.bestDay} is your day` : "—"}</span></div>
-          <div class="pat-days">${p.focusByDay().map((m, i) => `<div class="pat-d"><div class="pat-d-bar" style="height:${Math.max(2, (m / dMax) * 36)}px"></div><span>${["S","M","T","W","T","F","S"][i]}</span></div>`).join("")}</div>
+          <div class="pat-days">${p.focusByDay.map((m, i) => `<div class="pat-d"><div class="pat-d-bar" style="height:${Math.max(2, (m / dMax) * 36)}px"></div><span>${["S","M","T","W","T","F","S"][i]}</span></div>`).join("")}</div>
         </div>
         <div class="pat-card">
           <div class="pat-card-h">Interruptions <span class="pat-when">today</span></div>
