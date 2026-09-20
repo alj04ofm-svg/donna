@@ -118,8 +118,8 @@ function remove(id) { write(read().filter((x) => x.id !== id)); }
 
 /* Resolve a free-form needle (from the `>>phrase` task grammar) to a goal id.
    Slug-exact match first, then case-insensitive substring of objective —
-   matches the user's mental model: "ship reel >>world cup" finds the
-   "World Cup reels live" goal. Returns null if no match; the renderer
+   matches the user's mental model: "draft chapter >>book" finds the
+   "Finish the book" goal. Returns null if no match; the renderer
    treats null as "unlinked", not error. */
 function findObjective(needle) {
   if (!needle) return null;

@@ -15,16 +15,7 @@ const path = require("node:path");
 const FILE = dataPath("replacements.json");
 const LOG = dataPath("replacements_log.json");
 
-const DEFAULTS = [
-  {
-    id: "r_weed", name: "Cut daily weed", domain: "health",
-    cue: "stress spike after a hard editing session, or the 4pm energy crash",
-    oldRoutine: "roll up",
-    newRoutine: "5 min outside + water, then back to it",
-    reward: "same relief, minus the fog — and it stops feeding the inverted sleep",
-    createdAt: new Date(0).toISOString(),
-  },
-];
+const DEFAULTS = [];
 
 const read = () => { try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catch { return DEFAULTS; } };
 const write = (a) => { try { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify(a)); } catch {} };

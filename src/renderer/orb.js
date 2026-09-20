@@ -21,8 +21,8 @@ document.getElementById("ex-collapse").onclick = () => setExpanded(false);
    stripped-down afterthought. */
 const ORB_SUGGESTIONS = [
   "What should I hit first today?",
-  "best: a punchy World Cup reel opener",
-  "What's blocking the pipeline right now?",
+  "best: draft a sharp opening line for a message",
+  "What should I NOT touch today?",
   "Plan my next 2 hours",
   "What shipped today?",
   "think: what's my highest-leverage move this week?",

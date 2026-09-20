@@ -3,6 +3,11 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.4] — 2026-09-20
+
+- Removed the last personal seed content (habit/replacement examples) so every
+  new user starts clean and generic.
+
 ## [1.3.3] — 2026-09-20
 
 - Native macOS shell: SF system typography (no web fonts), wider sidebar,

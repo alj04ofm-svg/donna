@@ -17,14 +17,13 @@ const LOG = dataPath("habits_log.json");
 
 const DEFAULTS = [
   {
-    id: "h_wake", name: "Wake 5–6am", anchor: "alarm goes off — feet on the floor before the phone",
-    identity: "I'm someone who wins the morning before it starts", keystone: true,
-    microVersion: "just get up, even 10 minutes late beats not at all", freq: "daily",
+    id: "h_wake", name: "Wake at a consistent time", anchor: "feet on the floor before the phone",
+    identity: "I start the day on my terms", keystone: true,
+    microVersion: "just get up — even 10 minutes late beats not at all", freq: "daily",
   },
-  { id: "h_credits", name: "Check Higgsfield credits", anchor: "after the Victory Hour", identity: "", keystone: false, freq: "daily" },
-  { id: "h_qc", name: "QC pass on new reels", anchor: "after lunch", identity: "", keystone: false, freq: "daily" },
-  { id: "h_post", name: "Post to the accounts", anchor: "before dinner", identity: "I ship daily, no exceptions", keystone: false, freq: "daily" },
-  { id: "h_models", name: "Reply to the models", anchor: "anytime", identity: "", keystone: false, freq: "daily" },
+  { id: "h_move", name: "Move for 20 minutes", anchor: "before the day gets loud", identity: "I move, so I think", keystone: false, freq: "daily" },
+  { id: "h_plan", name: "Plan tomorrow", anchor: "2 minutes before you close the laptop", identity: "I end each day ready for the next", keystone: false, freq: "daily" },
+  { id: "h_read", name: "Read 10 pages", anchor: "before bed", identity: "", keystone: false, freq: "daily" },
   { id: "h_review", name: "Weekly review", anchor: "anytime", identity: "", keystone: false, freq: "weekly" },
 ];
 

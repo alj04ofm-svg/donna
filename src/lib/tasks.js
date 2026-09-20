@@ -222,8 +222,8 @@ function add(input, priority, detail) {
   const { parsed } = nlTokenize(input);
   if (priority) parsed.priority = priority;
   /* resolve >>needle to objectiveId — natural-language goal linking.
-     "ship reel p1 >>world cup" finds the goal whose objective matches
-     "world cup" (slug-exact, then substring) and auto-links the task. */
+     "draft chapter p1 >>book" finds the goal whose objective matches
+     "book" (slug-exact, then substring) and auto-links the task. */
   if (parsed.objectiveNeedle) {
     try {
       const goalId = require("./goals").findObjective(parsed.objectiveNeedle);

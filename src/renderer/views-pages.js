@@ -850,8 +850,8 @@ function goalCard(g, linkedTasks = 0) {
         <div class="kr-top"><span class="kr-text">${esc(k.text)}</span><span class="kr-num">${k.current || 0}/${k.target}${k.unit ? " " + esc(k.unit) : ""}</span></div>
         <div class="kr-bar"><div class="kr-fill" style="width:${krPct(k)}%"></div></div>
         <div class="kr-acts"><button class="kr-step" data-krdec="${g.id}|${k.id}">−</button><button class="kr-step" data-krinc="${g.id}|${k.id}">+</button><button class="kr-del" data-krdel="${g.id}|${k.id}">remove</button></div>
-      </div>`).join("") : `<p class="goal2-emptyhint">A number that proves the objective is actually done — not a restatement of it. "30 reels live" the objective → "reels live =30 reels" the key result.</p>`}
-      <input class="goal2-krin" data-addkr="${g.id}" placeholder='Add key result — "reels live =30 reels" ↵'>
+      </div>`).join("") : `<p class="goal2-emptyhint">A number that proves the objective is actually done — not a restatement of it. E.g. objective "Run a 10k" → key result "runs =10".</p>`}
+      <input class="goal2-krin" data-addkr="${g.id}" placeholder='Add key result — "runs =10" ↵'>
 
       <div class="goal2-sec">Milestones <span>the path</span></div>
       ${(g.milestones || []).length ? (g.milestones || []).map((m) => `<div class="ms"><button class="mscheck ${m.done ? "on" : ""}" data-mstog="${g.id}|${m.id}">${CHECK_SVG}</button><span class="ms-t ${m.done ? "done" : ""}">${esc(m.text)}</span><button class="ms-del" data-msdel="${g.id}|${m.id}">✕</button></div>`).join("") : `<p class="goal2-emptyhint">The 3-5 waypoints between here and done — the path, not the outcome.</p>`}
@@ -982,7 +982,7 @@ async function vGoals() {
     ${empty.length ? `<div class="coverage-banner">⚠ <span><b>${esc(empty.join(", "))}</b> ${empty.length > 1 ? "have" : "has"} no active goals this quarter — the 12 Week Year rule is every domain gets a seat.</span></div>` : ""}
     ${shown.length ? `<div class="goal-list">${shown.map((g) => goalCard(g, linkedByGoal[g.id] || 0)).join("")}</div>`
       : goals.length ? `<div class="rows" style="margin-top:14px"><div class="empty">No goals in this domain yet.</div></div>`
-      : `<div class="rows" style="margin-top:14px"><div class="empty">No goals yet. Name an ambitious <b>12-week objective</b> — "30 World Cup reels live", "8 accounts posting daily" — then give it measurable <b>key results</b>, the <b>one lever</b> that moves it, and score your <b>weekly execution</b>. That's OKRs + The 12 Week Year, the way the best operators actually hit goals.</div></div>`}
+      : `<div class="rows" style="margin-top:14px"><div class="empty">No goals yet. Name an ambitious <b>12-week objective</b> — "Run a 10k", "Read 12 books" — then give it measurable <b>key results</b>, the <b>one lever</b> that moves it, and score your <b>weekly execution</b>. That's OKRs + The 12 Week Year, the way the best operators actually hit goals.</div></div>`}
   </div>`;
   const inp = $("#goal-add");
   const domSel = $("#goal-domain");
