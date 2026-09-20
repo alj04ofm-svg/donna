@@ -1,0 +1,15 @@
+{
+  "hotkey": "CommandOrControl+Shift+Space",
+  "voice": false,
+  "ximenaRef": "/Users/cam/Desktop/ALJ-HOME/UGC/work/anastasia/voice_source_pack_2026-06-04/ximena_production_clone/bb001_02_financially_intentional_ximena_c_default_v1.mp3",
+  "contextRoots": [
+    "/Users/cam/.claude/projects/-Users-cam-Desktop-ALJ-HOME-UGC/memory/MEMORY.md",
+    "/Users/cam/Desktop/ALJ-HOME/UGC/CLAUDE.md",
+    "/Users/cam/Desktop/ALJ-HOME/UGC/work/staff/tasks.json",
+    "/Users/cam/Desktop/ALJ-HOME/UGC/work"
+  ],
+  "capacityHours": 8,
+  "onboarded": true,
+  "orbX": 1187,
+  "orbY": 502
+}

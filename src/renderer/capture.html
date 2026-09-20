@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  /* quick capture — a floating bar, one job: text in, gone. Matches the app's
+     void-dark system but standalone so it opens in <100ms. */
+  :root {
+    --bg: oklch(0.08 0.006 250 / 92%); --line: oklch(1 0 0 / 10%);
+    --ink: oklch(0.955 0.005 250); --mut: oklch(0.72 0.012 250); --dim: oklch(0.56 0.014 250);
+    --signal: oklch(0.76 0.12 250);
+    --sans: Geist, -apple-system, BlinkMacSystemFont, sans-serif;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: transparent; overflow: hidden; }
+  .bar { margin: 6px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg);
+    padding: 6px 14px 10px; font: 400 14px var(--sans); color: var(--ink);
+    animation: drop-in 160ms var(--ease) backwards; }
+  @keyframes drop-in { from { opacity: 0; transform: translateY(-8px) scale(0.985); } to { opacity: 1; transform: none; } }
+  .row1 { display: flex; align-items: center; gap: 10px; }
+  .orb { width: 8px; height: 8px; border-radius: 50%; background: var(--signal); flex-shrink: 0; }
+  .wrap { position: relative; flex: 1; }
+  input { width: 100%; border: none; outline: none; background: transparent; color: var(--ink);
+    font: 400 15px var(--sans); padding: 9px 0; }
+  input::placeholder { color: var(--dim); }
+  .mirror { position: absolute; left: 0; right: 0; top: 0; padding: 9px 0; font: 400 15px var(--sans);
+    color: transparent; white-space: pre; overflow: hidden; pointer-events: none; }
+  .mirror mark { color: transparent; border-radius: 4px;
+    background: oklch(0.76 0.12 250 / 22%); box-shadow: 0 1.5px 0 oklch(0.76 0.12 250 / 55%); }
+  .mirror mark.tk-priority, .mirror mark.tk-deadline { background: oklch(0.68 0.19 25 / 22%); box-shadow: 0 1.5px 0 oklch(0.68 0.19 25 / 55%); }
+  .mirror mark.tk-estimate { background: oklch(0.79 0.13 85 / 22%); box-shadow: 0 1.5px 0 oklch(0.79 0.13 85 / 55%); }
+  .mirror mark.tk-project { background: oklch(0.72 0.16 330 / 22%); box-shadow: 0 1.5px 0 oklch(0.72 0.16 330 / 55%); }
+  .mirror mark.tk-area { background: oklch(0.76 0.14 160 / 22%); box-shadow: 0 1.5px 0 oklch(0.76 0.14 160 / 55%); }
+  .kbd { color: var(--dim); font-size: 11px; border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; }
+  .foot { display: flex; align-items: center; gap: 8px; min-height: 20px; }
+  .ctx { display: none; align-items: center; gap: 6px; max-width: 100%; overflow: hidden;
+    font-size: 11.5px; color: var(--mut); cursor: pointer; border: 1px solid var(--line);
+    border-radius: 20px; padding: 2px 10px; white-space: nowrap; text-overflow: ellipsis; }
+  .ctx.on { display: inline-flex; }
+  .ctx.off { opacity: 0.38; text-decoration: line-through; }
+  .ctx b { color: var(--ink); font-weight: 500; }
+  .hint { margin-left: auto; color: var(--dim); font-size: 11px; }
+  .saved { color: oklch(0.8 0.13 160); font-size: 12px; display: none; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="row1">
+    <span class="orb"></span>
+    <div class="wrap">
+      <div class="mirror" id="mirror"></div>
+      <input id="in" placeholder='Capture — "fix hook friday 3pm p1 #worldcup =1h" · note: … also works' spellcheck="false">
+    </div>
+    <span class="kbd">esc</span>
+  </div>
+  <div class="foot">
+    <button class="ctx" id="ctx"></button>
+    <span class="saved" id="saved">✓ captured</span>
+    <span class="hint">↵ save · context attaches automatically</span>
+  </div>
+</div>
+<script src="../lib/nlparse.js"></script>
+<script src="capture.js"></script>
+</body>
+</html>

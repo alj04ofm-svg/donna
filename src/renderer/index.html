@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-mode="full">
+
+  <!-- ═══ FULL ═══ -->
+  <div id="full-app" class="root">
+    <aside id="sidebar">
+      <div class="brand drag">
+        <span class="orb" id="orb-full"></span>
+        <span class="wordmark">Donna</span>
+      </div>
+      <nav id="nav">
+        <button class="nav-item active" data-view="today" data-section="page.today">
+          <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><circle cx="8" cy="8" r="1.6" fill="currentColor" stroke="none"/></svg>
+          Today</button>
+        <button class="nav-item" data-view="plan" data-section="page.plan">
+          <svg viewBox="0 0 16 16"><rect x="2.4" y="3.2" width="11.2" height="10.4" rx="2.2"/><path d="M2.4 6.2h11.2M5.2 2v2.4M10.8 2v2.4"/></svg>
+          Plan</button>
+
+        <div class="nav-sec">Work</div>
+        <button class="nav-item" data-view="tasks" data-section="page.tasks">
+          <svg viewBox="0 0 16 16"><rect x="2.2" y="2.2" width="11.6" height="11.6" rx="3"/><path d="M5.4 8.2l1.8 1.8 3.4-3.8"/></svg>
+          Tasks<span class="nav-count" id="count-tasks"></span></button>
+        <button class="nav-item" data-view="ask" data-section="page.ask">
+          <svg viewBox="0 0 16 16"><path d="M8 1.8l1.5 3.6 3.6 1.5-3.6 1.5L8 12l-1.5-3.6-3.6-1.5 3.6-1.5z"/></svg>
+          Ask</button>
+
+        <div class="nav-sec">System</div>
+        <button class="nav-item" data-view="rhythm" data-section="page.rhythm">
+          <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.4 1.4"/></svg>
+          Tracker</button>
+        <button class="nav-item" data-view="comms" data-section="page.comms">
+          <svg viewBox="0 0 16 16"><path d="M2.5 4.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>
+          Comms</button>
+
+        <div class="nav-sec">Library</div>
+        <button class="nav-item" data-view="library" data-section="page.library">
+          <svg viewBox="0 0 16 16"><path d="M3 2.5h3.5v11H3zM6.5 2.5H10v11H6.5z"/><path d="M10.3 3l2.6.5 1.6 10.4-2.6-.4z"/></svg>
+          Library</button>
+        <button class="nav-item" data-view="canvas" data-section="page.canvas">
+          <svg viewBox="0 0 16 16"><rect x="2.2" y="3" width="11.6" height="10" rx="1.6"/><path d="M2.2 6.2h11.6M6 3v10"/></svg>
+          Canvas</button>
+        <button class="nav-item" data-view="life" data-section="page.life">
+          <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 2v12M2 8h12"/></svg>
+          Life</button>
+        <button class="nav-item" data-view="goals" data-section="page.goals">
+          <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3.2"/><circle cx="8" cy="8" r="0.6" fill="currentColor" stroke="none"/></svg>
+          Goals</button>
+        <button class="nav-item" data-view="activity" data-section="page.activity">
+          <svg viewBox="0 0 16 16"><circle cx="3" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="13" cy="8" r="1.2"/><path d="M3 8h12"/></svg>
+          Activity<span class="nav-count" id="count-activity"></span></button>
+        <button class="nav-item" data-view="log" data-section="page.log">
+          <svg viewBox="0 0 16 16"><path d="M4 2h6l3 3v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M9 2v3h3"/></svg>
+          Log</button>
+
+        <button class="nav-item nav-settings" data-view="settings" data-section="page.settings">
+          <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.4"/><path d="M8 1.6v1.8M8 12.6v1.8M2.6 5l1.6.9M11.8 10.1l1.6.9M2.6 11l1.6-.9M11.8 5.9l1.6-.9"/></svg>
+          Settings</button>
+      </nav>
+      <div id="sidefoot">
+        <div id="foot-status"></div>
+        <button class="ghost-btn" id="btn-orb" title="Pop the orb out onto your desktop">
+          <span class="orb" style="width:9px;height:9px"></span>
+          Orb
+        </button>
+        <button class="ghost-btn" id="btn-compact" title="Dock to corner (compact)">
+          <svg viewBox="0 0 16 16"><path d="M9.5 2.5h4v4"/><path d="M13.5 2.5L9 7"/><path d="M6.5 13.5h-4v-4"/><path d="M2.5 13.5L7 9"/></svg>
+          Dock
+        </button>
+      </div>
+    </aside>
+    <main id="main"></main>
+  </div>
+
+  <!-- ═══ COMPACT ═══ -->
+  <div id="compact-app" class="root">
+    <header id="c-head" class="drag">
+      <span class="orb" id="orb-compact"></span>
+      <span class="c-title">Donna</span>
+      <span class="c-sub" id="c-counts"></span>
+      <span class="spacer"></span>
+      <button class="icon-btn nodrag" id="btn-full" title="Expand to full">
+        <svg viewBox="0 0 16 16"><path d="M6.5 2.5h-4v4"/><path d="M2.5 2.5L7 7"/><path d="M9.5 13.5h4v-4"/><path d="M13.5 13.5L9 9"/></svg>
+      </button>
+      <button class="icon-btn nodrag" id="btn-pill" title="Collapse to pill">
+        <svg viewBox="0 0 16 16"><path d="M3.5 6.5L8 11l4.5-4.5"/></svg>
+      </button>
+    </header>
+    <div id="c-body"></div>
+    <div id="c-askzone">
+      <div id="c-answer" hidden></div>
+      <input id="c-ask" placeholder="Ask or todo: …">
+    </div>
+  </div>
+
+  <!-- ═══ PILL ═══ -->
+  <button id="pill-app" class="root" title="Open Donna">
+    <span class="pill-dot"></span>
+    <span id="pill-text">Donna</span>
+    <svg viewBox="0 0 16 16" class="pill-chev"><path d="M11 10L8 6.8 5 10"/></svg>
+  </button>
+
+  <!-- ═══ COMMAND PALETTE (⌘K) ═══ -->
+  <div id="palette" hidden>
+    <div id="palette-panel">
+      <input id="palette-in" placeholder="Type a command, task, or question…" spellcheck="false">
+      <div id="palette-list"></div>
+      <div id="palette-foot"><span>↑↓ navigate</span><span>↵ run</span><span>esc close</span></div>
+    </div>
+  </div>
+
+  <!-- ═══ HUD TOAST ═══ -->
+  <div id="toast" hidden></div>
+
+<!-- shared global scope, order matters: grammar → core state/helpers → physics → cues → widgets → views → shell boots last -->
+<script src="../lib/nlparse.js"></script>
+<script src="../lib/sections.js"></script>
+<script src="core.js"></script>
+<script src="motion.js"></script>
+<script src="sound.js"></script>
+<script src="widgets.js"></script>
+<script src="views-today.js"></script>
+<script src="views-tasks.js"></script>
+<script src="views-ops.js"></script>
+<script src="views-pages.js"></script>
+<script src="views-canvas.js"></script>
+<script src="shell.js"></script>
+</body>
+</html>

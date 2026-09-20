@@ -1,0 +1,53 @@
+{
+  "name": "donna",
+  "productName": "Donna",
+  "version": "0.1.0",
+  "description": "Donna — a local-first personal assistant for macOS",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "icon": "rm -rf /tmp/Donna.iconset && mkdir -p /tmp/Donna.iconset && for s in 16 32 128 256 512; do sips -z $s $s assets/appicon.png --out /tmp/Donna.iconset/icon_${s}x${s}.png >/dev/null; d=$((s*2)); sips -z $d $d assets/appicon.png --out /tmp/Donna.iconset/icon_${s}x${s}@2x.png >/dev/null; done && mkdir -p assets/build && iconutil -c icns /tmp/Donna.iconset -o assets/build/donna.icns",
+    "dist": "electron-builder --mac",
+    "dist:dir": "electron-builder --mac dir"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "app.donna.mac",
+    "productName": "Donna",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "src/main.js"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/build/donna.icns",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "Donna"
+    },
+    "asar": true
+  }
+}
