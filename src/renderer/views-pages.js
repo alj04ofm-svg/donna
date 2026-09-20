@@ -165,13 +165,30 @@ async function vSettings() {
   const up = $("#btn-update");
   if (up) up.onclick = async () => {
     up.disabled = true; up.textContent = "Checking…";
+    const reset = () => { up.disabled = false; up.textContent = "Check for updates"; };
     try {
       const r = await window.donna.checkUpdate();
-      if (r && r.newer) { toast(`Donna ${r.latest} is available`); window.donna.openExternal(r.url); }
-      else if (r && r.current) { toast(`You're on the latest (v${r.current})`); }
-      else { toast("Couldn't reach GitHub"); }
-    } catch { toast("Couldn't check for updates"); }
-    up.disabled = false; up.textContent = "Check for updates";
+      if (r && r.newer) {
+        up.textContent = "Updating…";
+        toast(`Downloading Donna ${r.latest}…`);
+        const res = await window.donna.update();
+        if (!res || !res.ok) {
+          toast("Couldn't auto-update — opening downloads");
+          window.donna.openExternal(r.url);
+          reset();
+        }
+        // On success Donna quits and relaunches on the new version.
+      } else if (r && r.current) {
+        toast(`You're on the latest (v${r.current})`);
+        reset();
+      } else {
+        toast("Couldn't reach GitHub");
+        reset();
+      }
+    } catch {
+      toast("Couldn't check for updates");
+      reset();
+    }
   };
   const re = $("#btn-reonboard"); if (re) re.onclick = async () => { cfg = await window.donna.setConfig({ onboarded: false }); toast("Tour will replay next launch"); };
   const aiSave = $("#set-ai-save");

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Donna — a local-first personal assistant for macOS</title>
+<meta name="description" content="Donna is a local-first personal assistant for macOS. Tasks, goals, habits, notes and Ask — powered by your own AI key. No account, no cloud, no telemetry.">
+<style>
+  :root{
+    --bg:#0a0a0f; --panel:#12121a; --line:#22222e; --text:#e8e8f0; --dim:#9aa0b4;
+    --indigo:#818cf8; --indigo2:#6366f1; --amber:#e8a445;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:var(--indigo);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
+  header{padding:96px 0 56px;text-align:center;position:relative;overflow:hidden}
+  header:before{content:"";position:absolute;inset:-40% 0 auto 0;height:70%;
+    background:radial-gradient(ellipse 60% 60% at 50% 40%,rgba(99,102,241,.20),transparent 70%);
+    pointer-events:none}
+  .logo{width:88px;height:88px;border-radius:24px;margin:0 auto 22px;display:block;
+    background:linear-gradient(150deg,#3b3b6b,#6d5bd0 55%,#8b7bf0);
+    box-shadow:0 20px 60px rgba(99,102,241,.35), inset 0 1px 0 rgba(255,255,255,.25)}
+  h1{font-size:clamp(38px,7vw,64px);line-height:1.05;margin:0 0 14px;letter-spacing:-.02em}
+  .sub{font-size:clamp(16px,2.4vw,20px);color:var(--dim);max-width:620px;margin:0 auto 30px}
+  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:9px;padding:13px 22px;border-radius:12px;
+    font-weight:600;border:1px solid transparent;cursor:pointer;font-size:15px}
+  .btn.primary{background:linear-gradient(135deg,var(--indigo),var(--indigo2));color:#fff;
+    box-shadow:0 8px 26px rgba(99,102,241,.35)}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--text)}
+  .cmd{margin:26px auto 0;max-width:560px;display:flex;align-items:center;gap:10px;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .cmd code{flex:1;text-align:left;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:#cdd3e6;overflow-x:auto;white-space:nowrap}
+  .cmd button{background:#1b1b26;border:1px solid var(--line);color:var(--dim);border-radius:8px;
+    padding:7px 11px;font-size:12px;cursor:pointer}
+  section{padding:56px 0;border-top:1px solid var(--line)}
+  h2{font-size:24px;margin:0 0 6px;letter-spacing:-.01em}
+  .muted{color:var(--dim)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:28px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px}
+  .card h3{margin:0 0 6px;font-size:15px}
+  .card p{margin:0;color:var(--dim);font-size:13.5px}
+  .tag{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--amber);border:1px solid rgba(232,164,69,.3);background:rgba(232,164,69,.08);
+    padding:3px 9px;border-radius:20px;margin-bottom:14px}
+  ul.checks{list-style:none;padding:0;margin:22px 0 0;display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+  ul.checks li{padding-left:26px;position:relative;color:var(--dim);font-size:14.5px}
+  ul.checks li:before{content:"✓";position:absolute;left:0;color:var(--indigo);font-weight:700}
+  footer{padding:44px 0 70px;border-top:1px solid var(--line);color:var(--dim);font-size:13.5px;
+    display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .fine{font-size:12.5px;color:#6b7086;margin-top:18px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo" aria-hidden="true"></div>
+    <h1>Donna</h1>
+    <p class="sub">A local-first personal assistant for macOS. Tasks, goals, habits,
+      notes and a chat that actually knows your world — powered by your own AI key.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/alj04ofm-svg/donna/releases/latest">Download for macOS</a>
+      <a class="btn ghost" href="https://github.com/alj04ofm-svg/donna">View on GitHub</a>
+    </div>
+    <div class="cmd">
+      <code id="oneliner">curl -fsSL https://raw.githubusercontent.com/alj04ofm-svg/donna/main/install.sh | bash</code>
+      <button id="copybtn" type="button">Copy</button>
+    </div>
+    <p class="fine">Universal build (Apple Silicon + Intel) · macOS 13+ · MIT licensed</p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <span class="tag">Private by default</span>
+    <h2>Your data never leaves your Mac</h2>
+    <p class="muted">No account, no cloud sync, no telemetry. Your tasks, notes, goals and
+      tracked time live in <code>~/Library/Application Support/Donna</code>. AI requests go
+      straight from your Mac to the provider you choose — nothing in between.</p>
+    <ul class="checks">
+      <li>Bring your own key (Anthropic · OpenAI · MiniMax)</li>
+      <li>Or use the local <code>claude</code> CLI</li>
+      <li>Works offline for everything except Ask</li>
+      <li>Export a full backup any time</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="tag">One place</span>
+    <h2>Everything in one calm surface</h2>
+    <div class="grid">
+      <div class="card"><h3>Today</h3><p>Your focus task, today's list and habits, at a glance.</p></div>
+      <div class="card"><h3>Tasks</h3><p>Horizons and a board — priorities, due dates, estimates, focus timers.</p></div>
+      <div class="card"><h3>Plan</h3><p>Time-block your day around your calendar.</p></div>
+      <div class="card"><h3>Goals</h3><p>Objectives, key results and weekly commitment.</p></div>
+      <div class="card"><h3>Habits</h3><p>Flexible daily/weekly habits with streaks.</p></div>
+      <div class="card"><h3>Notes &amp; Library</h3><p>Durable notes, highlights and quick captures.</p></div>
+      <div class="card"><h3>Ask Donna</h3><p>Chat grounded in the files and folders you point her at.</p></div>
+      <div class="card"><h3>Tracker</h3><p>Optional, fully local time tracking and focus sessions.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="tag">Fast to use</span>
+    <h2>Built to feel native</h2>
+    <ul class="checks">
+      <li><code>⌘⇧Space</code> summons Donna from anywhere</li>
+      <li><code>⌥Space</code> opens quick capture</li>
+      <li>Lives in the Dock and menu bar</li>
+      <li>Optional desktop orb you can park anywhere</li>
+      <li>Launch at login, notifications, and a setup wizard on first run</li>
+      <li>One-click self-update — no Apple Developer account needed</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap" style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap">
+    <span>Donna · MIT licensed</span>
+    <span>
+      <a href="https://github.com/alj04ofm-svg/donna">GitHub</a> ·
+      <a href="https://github.com/alj04ofm-svg/donna/releases">Releases</a> ·
+      <a href="https://github.com/alj04ofm-svg/donna/blob/main/README.md">Docs</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById("copybtn").addEventListener("click", function () {
+    var text = document.getElementById("oneliner").textContent;
+    var btn = this;
+    navigator.clipboard.writeText(text).then(function () {
+      btn.textContent = "Copied";
+      setTimeout(function () { btn.textContent = "Copy"; }, 1400);
+    }).catch(function () { btn.textContent = "Select & copy"; });
+  });
+</script>
+</body>
+</html>

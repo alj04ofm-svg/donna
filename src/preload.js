@@ -134,6 +134,7 @@ contextBridge.exposeInMainWorld("donna", {
   getConfig: () => ipcRenderer.invoke("donna:getConfig"),
   setConfig: (patch) => ipcRenderer.invoke("donna:setConfig", patch),
   checkUpdate: () => ipcRenderer.invoke("donna:checkUpdate"),
+  update: () => ipcRenderer.invoke("donna:update"),
   openExternal: (url) => ipcRenderer.invoke("donna:openExternal", url),
   appInfo: () => ipcRenderer.invoke("donna:appInfo"),
   ask: (text) => ipcRenderer.invoke("donna:ask", text),

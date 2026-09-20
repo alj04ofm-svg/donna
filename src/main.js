@@ -415,6 +415,64 @@ app.whenReady().then(() => {
     }
   });
   ipcMain.handle("donna:openExternal", (_e, url) => { try { require("electron").shell.openExternal(String(url)); } catch {} return true; });
+  /* Self-update without code signing: download the latest DMG, then a detached
+     helper swaps the app bundle once Donna has quit, re-signs it ad-hoc, and
+     relaunches. Works on Apple Silicon with no Developer ID. */
+  ipcMain.handle("donna:update", async () => {
+    if (!app.isPackaged) return { ok: false, error: "not-packaged" };
+    const { spawn } = require("node:child_process");
+    const os = require("node:os");
+    const run = (cmd, args) => new Promise((res, rej) => {
+      const p = spawn(cmd, args, { stdio: "ignore" });
+      p.on("error", rej);
+      p.on("close", (c) => (c === 0 ? res() : rej(new Error(`${cmd} exited ${c}`))));
+    });
+    try {
+      const r = await fetch("https://api.github.com/repos/alj04ofm-svg/donna/releases", {
+        headers: { "User-Agent": "Donna" },
+        signal: AbortSignal.timeout(8000),
+      });
+      const rel = await r.json();
+      let dmgUrl = null;
+      for (const release of Array.isArray(rel) ? rel : []) {
+        const a = (release.assets || []).find((x) => String(x.name || "").endsWith(".dmg"));
+        if (a) { dmgUrl = a.browser_download_url; break; }
+      }
+      if (!dmgUrl) return { ok: false, error: "no-dmg" };
+
+      const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "donna-upd-"));
+      const dmg = path.join(tmp, "Donna.dmg");
+      const mnt = path.join(tmp, "mnt");
+      fs.mkdirSync(mnt, { recursive: true });
+      await run("/usr/bin/curl", ["-fL", dmgUrl, "-o", dmg]);
+      await run("/usr/bin/hdiutil", ["attach", dmg, "-nobrowse", "-readonly", "-mountpoint", mnt]);
+      const src = fs.readdirSync(mnt).find((n) => n.endsWith(".app"));
+      if (!src) return { ok: false, error: "no-app" };
+
+      const bundle = process.execPath.replace(/\/Contents\/MacOS\/.*$/, "");
+      const q = (s) => JSON.stringify(s);
+      const script = [
+        "#!/bin/zsh",
+        "sleep 2",
+        `rm -rf ${q(bundle)}`,
+        `cp -R ${q(path.join(mnt, src))} ${q(bundle)}`,
+        `hdiutil detach ${q(mnt)} >/dev/null 2>&1 || true`,
+        `xattr -dr com.apple.quarantine ${q(bundle)} 2>/dev/null || true`,
+        `codesign --force --deep --sign - ${q(bundle)} 2>/dev/null || true`,
+        `open ${q(bundle)}`,
+        `rm -rf ${q(tmp)}`,
+        "",
+      ].join("\n");
+      const sp = path.join(tmp, "update.sh");
+      fs.writeFileSync(sp, script);
+      fs.chmodSync(sp, 0o755);
+      spawn("/bin/zsh", [sp], { detached: true, stdio: "ignore" }).unref();
+      setTimeout(() => { app.isQuitting = true; app.quit(); }, 500);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
   ipcMain.handle("donna:setMode", (_e, m) => { if (MODES[m]) applyMode(m); return mode; });
   ipcMain.handle("donna:orbToggle", () => { toggleOrb(); return orbWin ? orbWin.isVisible() : false; });
   ipcMain.handle("donna:orbStatus", () => ({ visible: !!(orbWin && orbWin.isVisible()) }));
