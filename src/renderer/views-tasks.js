@@ -35,6 +35,7 @@ async function vTasks() {
         <p class="sub">${data.counts.open} open<span class="sep">·</span>${data.done.length} done<span class="sep">·</span>kept on this Mac${dueFilter ? `<span class="sep">·</span>filtering to ${esc(dueFilter)}` : ""}</p></div>
         <div class="tasks-head-acts">
           ${filterChip}
+          <button class="triage-btn" id="btn-newtask">＋ New task</button>
           ${untriaged.length >= 3 ? `<button class="triage-btn" id="btn-triage">▤ Triage ${untriaged.length}</button>` : ""}
           ${segHtml}
         </div>
@@ -66,6 +67,17 @@ async function vTasks() {
   $("#tf-project").onchange = (e) => { localStorage.setItem("donna.taskFilterProject", e.target.value); vTasks(); };
   $("#tf-sort").onchange = (e) => { localStorage.setItem("donna.taskSort", e.target.value); vTasks(); };
   const tb = $("#btn-triage"); if (tb) tb.onclick = () => openTriage(untriaged);
+  const ntb = $("#btn-newtask"); if (ntb) ntb.onclick = () => openTaskDetail(null);
+  if (!window.__donnaNewTaskKey) {
+    window.__donnaNewTaskKey = true;
+    document.addEventListener("keydown", (e) => {
+      const tag = (document.activeElement && document.activeElement.tagName) || "";
+      if (view === "tasks" && !e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "n" && !/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) {
+        e.preventDefault();
+        openTaskDetail(null);
+      }
+    });
+  }
   const tc = $("#tasks-filter-clear"); if (tc) tc.onclick = () => { localStorage.removeItem("donna.dueFilter"); vTasks(); };
   $("#main .seg").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
@@ -261,8 +273,9 @@ function paintProjects(open) {
    Open from the ⋯ / ✎ button on a row, or double-click any task. Edit title,
    notes, priority, due date, project and estimate; delete or mark won't-do. */
 async function openTaskDetail(id) {
-  const t = [...(data.open || []), ...(data.done || [])].find((x) => x.id === id);
-  if (!t) return;
+  const existing = id ? [...(data.open || []), ...(data.done || [])].find((x) => x.id === id) : null;
+  const isNew = !existing;
+  const t = existing || { id: null, title: "", detail: "", priority: 2, dueAt: null, project_id: "", assignee: "", subtasks: [], recurrence: null, estimatedMinutes: null };
   let people = [];
   try { people = await window.donna.peopleList(); } catch {}
   let subs = (Array.isArray(t.subtasks) ? t.subtasks : []).map((x) => ({ ...x }));
@@ -273,7 +286,7 @@ async function openTaskDetail(id) {
   const projList = [...new Set([...(data.open || []), ...(data.done || [])].map((x) => x.project_id).filter(Boolean))];
   el.innerHTML = `<div class="sd-panel" style="width:min(540px,94vw);background:var(--surface,#12121a);border:1px solid var(--line,#252530);border-radius:16px;padding:22px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font:600 15px var(--sans);color:var(--ink,#e8e8f0)">Edit task</div>
+      <div style="font:600 15px var(--sans);color:var(--ink,#e8e8f0)">${isNew ? "New task" : "Edit task"}</div>
       <button id="td-close" class="icon-btn" title="Close" style="background:none;border:none;color:#9aa0b4;cursor:pointer;font-size:16px">×</button>
     </div>
     <input id="td-title" class="sd-input" value="${esc(t.title)}" placeholder="Title"
@@ -312,8 +325,8 @@ async function openTaskDetail(id) {
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
-      <button id="td-del" style="padding:9px 14px;border-radius:9px;border:1px solid rgba(255,107,107,.35);background:transparent;color:#ff6b6b;cursor:pointer">Delete</button>
-      <button id="td-wont" style="padding:9px 14px;border-radius:9px;border:1px solid #252530;background:transparent;color:#9aa0b4;cursor:pointer">Won't do</button>
+      ${isNew ? "" : `<button id="td-del" style="padding:9px 14px;border-radius:9px;border:1px solid rgba(255,107,107,.35);background:transparent;color:#ff6b6b;cursor:pointer">Delete</button>
+      <button id="td-wont" style="padding:9px 14px;border-radius:9px;border:1px solid #252530;background:transparent;color:#9aa0b4;cursor:pointer">Won't do</button>`}
       <button id="td-save" style="margin-left:auto;padding:9px 18px;border-radius:9px;border:none;background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-weight:600;cursor:pointer">Save</button>
     </div>
   </div>`;
@@ -345,6 +358,20 @@ async function openTaskDetail(id) {
   const after = async (msg) => { close(); await refresh(); if (view === "tasks") vTasks(); try { renderCompactBody(); } catch {} if (msg) toast(msg); };
   el.querySelector("#td-save").onclick = async () => {
     const title = el.querySelector("#td-title").value.trim();
+    if (isNew) {
+      if (!title) { const ti = el.querySelector("#td-title"); ti.focus(); return; }
+      const newId = await window.donna.addTask(title);
+      const notes0 = el.querySelector("#td-notes").value; if (notes0) await window.donna.setTaskField(newId, "detail", notes0);
+      const pr0 = Number(el.querySelector("#td-priority").value); if (pr0 !== 2) await window.donna.setPriority(newId, pr0);
+      const due0 = el.querySelector("#td-due").value; if (due0) await window.donna.setDue(newId, due0);
+      const proj0 = el.querySelector("#td-project").value.trim(); if (proj0) await window.donna.setTaskField(newId, "project_id", proj0);
+      const asg0 = (el.querySelector("#td-assignee").value || "").trim(); if (asg0) await window.donna.setTaskField(newId, "assignee", asg0);
+      const est0 = el.querySelector("#td-est").value; if (est0) await window.donna.setTaskField(newId, "estimatedMinutes", Number(est0));
+      if (subs.length) await window.donna.setTaskField(newId, "subtasks", subs);
+      const freq0 = el.querySelector("#td-recur").value; if (freq0) await window.donna.setTaskField(newId, "recurrence", { freq: freq0 });
+      await after("Added");
+      return;
+    }
     if (title && title !== t.title) await window.donna.setTaskField(id, "title", title);
     const notes = el.querySelector("#td-notes").value;
     if (notes !== (t.detail || "")) await window.donna.setTaskField(id, "detail", notes);
@@ -364,12 +391,12 @@ async function openTaskDetail(id) {
     if (freq !== ((t.recurrence && t.recurrence.freq) || "")) await window.donna.setTaskField(id, "recurrence", freq ? { freq } : null);
     await after("Saved");
   };
-  el.querySelector("#td-del").onclick = async () => {
+  const delBtn = el.querySelector("#td-del"); if (delBtn) delBtn.onclick = async () => {
     if (!confirm("Delete this task?")) return;
     await window.donna.removeTask(id);
     await after("Deleted");
   };
-  el.querySelector("#td-wont").onclick = async () => {
+  const wontBtn = el.querySelector("#td-wont"); if (wontBtn) wontBtn.onclick = async () => {
     await window.donna.setWontDo(id, "not this time");
     await after("Marked won't do");
   };

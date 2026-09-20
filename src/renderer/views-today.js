@@ -411,8 +411,11 @@ async function ensureBrief() {
   const today = new Date().toISOString().slice(0, 10);
   let c = null; try { c = JSON.parse(localStorage.getItem("donna.brief")); } catch {}
   if (c && c.date === today) return c.dismissed ? null : c.text;
-  const res = await window.donna.askInternal("quick: In ONE short punchy sentence, tell me how to start my day given my open tasks and pipeline. Just the sentence — no preamble, no lists.");
-  const text = (res.answer || "").trim().replace(/^["']|["']$/g, "");
+  const res = await window.donna.askInternal("quick: In ONE short punchy sentence, tell me how to start my day given my open tasks. Just the sentence — no preamble, no lists.");
+  const raw = (res.answer || "").trim();
+  // Never surface provider/config errors as a "brief".
+  if (!raw || /^\((?:[^)]*(?:not set|unavailable|couldn.t reach|error))/i.test(raw)) return null;
+  const text = raw.replace(/^["']|["']$/g, "");
   localStorage.setItem("donna.brief", JSON.stringify({ date: today, text, dismissed: false }));
   return text;
 }

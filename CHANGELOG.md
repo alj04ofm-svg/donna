@@ -3,6 +3,13 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] — 2026-09-20
+
+- **New task composer**: “＋ New task” button and the `n` shortcut open the full
+  editor (title, notes, priority, due, project, assignee, estimate, subtasks,
+  recurrence) to create a task properly — not just quick-add.
+- Today's morning brief no longer shows provider/config errors.
+
 ## [1.4.0] — 2026-09-20
 
 - **OpenCode gateway provider** (OpenAI-compatible): point Donna at your own
