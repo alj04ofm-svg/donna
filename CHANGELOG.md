@@ -3,6 +3,13 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] — 2026-09-20
+
+- **Subtasks** on tasks (checklist in the editor, progress chip on rows/cards).
+- **Recurrence** setting in the task editor (daily / weekdays / weekly).
+- **Search, filter and sort** on the Tasks page (by text, priority, project,
+  due date or newest).
+
 ## [1.2.0] — 2026-09-20
 
 - **Assignees on tasks** — assign a task to a person (or leave it as you); shown

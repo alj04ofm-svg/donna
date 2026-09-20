@@ -5,10 +5,19 @@ const isUntriaged = (t) => !t.bucket && !t.dueAt && t.status !== "doing" && !t.w
 async function vTasks() {
   stagger = 0;
   const dueFilter = localStorage.getItem("donna.dueFilter");
-  let allOpen = data.open.slice().sort((a, b) => a.priority - b.priority);
-  if (dueFilter) {
-    allOpen = allOpen.filter((t) => t.dueAt && t.dueAt.slice(0, 10) === dueFilter);
-  }
+  const search = localStorage.getItem("donna.taskSearch") || "";
+  const fPr = localStorage.getItem("donna.taskFilterPriority") || "";
+  const fProj = localStorage.getItem("donna.taskFilterProject") || "";
+  const sort = localStorage.getItem("donna.taskSort") || "priority";
+  let allOpen = data.open.slice();
+  if (dueFilter) allOpen = allOpen.filter((t) => t.dueAt && t.dueAt.slice(0, 10) === dueFilter);
+  if (search.trim()) { const q = search.toLowerCase(); allOpen = allOpen.filter((t) => (t.title + " " + (t.detail || "")).toLowerCase().includes(q)); }
+  if (fPr) allOpen = allOpen.filter((t) => String(t.priority) === fPr);
+  if (fProj) allOpen = allOpen.filter((t) => (t.project_id || "") === fProj);
+  if (sort === "due") allOpen.sort((a, b) => String(a.dueAt || "9999").localeCompare(String(b.dueAt || "9999")) || a.priority - b.priority);
+  else if (sort === "newest") allOpen.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+  else allOpen.sort((a, b) => a.priority - b.priority);
+  const projects = [...new Set(data.open.map((t) => t.project_id).filter(Boolean))].sort();
   const open = allOpen;
   curList = open;
   const untriaged = open.filter(isUntriaged);
@@ -31,10 +40,31 @@ async function vTasks() {
         </div>
       </div>
       <div class="quick-add tasks-add"><input id="task-in" placeholder='New task — "email sam friday 3pm p1 #work @work =2h" parses live'></div>
+      <div class="task-filters">
+        <input id="tf-search" class="tf-search" placeholder="Search…" value="${esc(search)}">
+        <select id="tf-priority" class="tf-select">
+          <option value="">All priorities</option>
+          ${[1, 2, 3, 4].map((p) => `<option value="${p}"${fPr === String(p) ? " selected" : ""}>P${p}</option>`).join("")}
+        </select>
+        <select id="tf-project" class="tf-select">
+          <option value="">All projects</option>
+          ${projects.map((p) => `<option value="${esc(p)}"${fProj === p ? " selected" : ""}>${esc(p)}</option>`).join("")}
+        </select>
+        <select id="tf-sort" class="tf-select">
+          <option value="priority"${sort === "priority" ? " selected" : ""}>Sort: Priority</option>
+          <option value="due"${sort === "due" ? " selected" : ""}>Sort: Due date</option>
+          <option value="newest"${sort === "newest" ? " selected" : ""}>Sort: Newest</option>
+        </select>
+      </div>
     </div>
     <div id="task-body"></div>
   </div>`;
   wireAdd($("#task-in"));
+  const tfSearch = $("#tf-search");
+  tfSearch.oninput = () => { localStorage.setItem("donna.taskSearch", tfSearch.value); vTasks(); const el = $("#tf-search"); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } };
+  $("#tf-priority").onchange = (e) => { localStorage.setItem("donna.taskFilterPriority", e.target.value); vTasks(); };
+  $("#tf-project").onchange = (e) => { localStorage.setItem("donna.taskFilterProject", e.target.value); vTasks(); };
+  $("#tf-sort").onchange = (e) => { localStorage.setItem("donna.taskSort", e.target.value); vTasks(); };
   const tb = $("#btn-triage"); if (tb) tb.onclick = () => openTriage(untriaged);
   const tc = $("#tasks-filter-clear"); if (tc) tc.onclick = () => { localStorage.removeItem("donna.dueFilter"); vTasks(); };
   $("#main .seg").addEventListener("click", (e) => {
@@ -118,7 +148,7 @@ function cardHtml(t) {
   const col = colOf(t);
   return `<div class="card ${col === "done" ? "done" : ""} ${col === "now" ? "now" : ""}" data-id="${t.id}" data-colnow="${col}"${si()}>
     <div class="card-title">${esc(t.title)}</div>
-    <div class="card-meta">${pGlyph(t.priority)}${col === "now" ? `<span class="chip now-chip">${elapsed(t.startedAt)}</span>` : ""}${t.assignee && t.assignee !== "me" ? `<span class="chip who">@${esc(t.assignee)}</span>` : ""}${t.waitingOn ? `<span class="chip wait">${esc(t.waitingOn)}</span>` : ""}${dueChip(t.dueAt)}</div>
+    <div class="card-meta">${pGlyph(t.priority)}${col === "now" ? `<span class="chip now-chip">${elapsed(t.startedAt)}</span>` : ""}${t.assignee && t.assignee !== "me" ? `<span class="chip who">@${esc(t.assignee)}</span>` : ""}${t.waitingOn ? `<span class="chip wait">${esc(t.waitingOn)}</span>` : ""}${t.subtasks && t.subtasks.length ? `<span class="chip sub">${t.subtasks.filter((s) => s.done).length}/${t.subtasks.length}</span>` : ""}${dueChip(t.dueAt)}</div>
   </div>`;
 }
 function paintBoard(open) {
@@ -235,6 +265,7 @@ async function openTaskDetail(id) {
   if (!t) return;
   let people = [];
   try { people = await window.donna.peopleList(); } catch {}
+  let subs = (Array.isArray(t.subtasks) ? t.subtasks : []).map((x) => ({ ...x }));
   const el = document.createElement("div");
   el.id = "task-detail-ov";
   el.className = "sd-overlay";
@@ -265,6 +296,21 @@ async function openTaskDetail(id) {
       <label style="font:600 11px var(--sans);color:#8b90a6;text-transform:uppercase;letter-spacing:.06em">Estimate (min)
         <input id="td-est" type="number" min="0" value="${t.estimatedMinutes || ""}" placeholder="30" style="width:100%;margin-top:5px;padding:9px 10px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0"></label>
     </div>
+    <label style="display:block;font:600 11px var(--sans);color:#8b90a6;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">Repeats
+      <select id="td-recur" style="width:100%;margin-top:5px;padding:9px 10px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0">
+        <option value="">Never</option>
+        <option value="daily"${(t.recurrence && t.recurrence.freq === "daily") ? " selected" : ""}>Daily</option>
+        <option value="weekdays"${(t.recurrence && t.recurrence.freq === "weekdays") ? " selected" : ""}>Weekdays</option>
+        <option value="weekly"${(t.recurrence && t.recurrence.freq === "weekly") ? " selected" : ""}>Weekly</option>
+      </select></label>
+    <div style="margin-bottom:16px">
+      <div style="font:600 11px var(--sans);color:#8b90a6;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Subtasks</div>
+      <div id="td-subs"></div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <input id="td-sub-in" placeholder="Add a subtask…" style="flex:1;padding:8px 10px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0">
+        <button id="td-sub-add" style="padding:8px 12px;border-radius:9px;border:1px solid #252530;background:transparent;color:#9aa0b4;cursor:pointer">Add</button>
+      </div>
+    </div>
     <div style="display:flex;gap:8px;align-items:center">
       <button id="td-del" style="padding:9px 14px;border-radius:9px;border:1px solid rgba(255,107,107,.35);background:transparent;color:#ff6b6b;cursor:pointer">Delete</button>
       <button id="td-wont" style="padding:9px 14px;border-radius:9px;border:1px solid #252530;background:transparent;color:#9aa0b4;cursor:pointer">Won't do</button>
@@ -275,6 +321,27 @@ async function openTaskDetail(id) {
   const close = () => el.remove();
   el.addEventListener("click", (e) => { if (e.target === el) close(); });
   el.querySelector("#td-close").onclick = close;
+  const subsWrap = el.querySelector("#td-subs");
+  const renderSubs = () => {
+    subsWrap.innerHTML = subs.length ? subs.map((x, i) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0">
+        <button data-subtoggle="${i}" style="width:16px;height:16px;border-radius:4px;border:1px solid #3a3a4a;background:${x.done ? "#6366f1" : "transparent"};color:#fff;cursor:pointer;line-height:1">${x.done ? "✓" : ""}</button>
+        <span style="flex:1;font-size:13px;color:${x.done ? "#6b7280" : "#e8e8f0"};text-decoration:${x.done ? "line-through" : "none"}">${esc(x.text)}</span>
+        <button data-subrm="${i}" style="background:none;border:none;color:#6b7280;cursor:pointer">×</button>
+      </div>`).join("") : '<div style="font-size:12px;color:#6b7280">No subtasks.</div>';
+    subsWrap.querySelectorAll("[data-subtoggle]").forEach((b) => (b.onclick = () => { const i = +b.dataset.subtoggle; subs[i].done = !subs[i].done; renderSubs(); }));
+    subsWrap.querySelectorAll("[data-subrm]").forEach((b) => (b.onclick = () => { subs.splice(+b.dataset.subrm, 1); renderSubs(); }));
+  };
+  renderSubs();
+  const addSub = () => {
+    const inp = el.querySelector("#td-sub-in");
+    const v = (inp.value || "").trim();
+    if (!v) return;
+    subs.push({ id: `s_${Date.now()}`, text: v, done: false });
+    inp.value = ""; renderSubs(); inp.focus();
+  };
+  el.querySelector("#td-sub-add").onclick = addSub;
+  el.querySelector("#td-sub-in").onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); addSub(); } };
   const after = async (msg) => { close(); await refresh(); if (view === "tasks") vTasks(); try { renderCompactBody(); } catch {} if (msg) toast(msg); };
   el.querySelector("#td-save").onclick = async () => {
     const title = el.querySelector("#td-title").value.trim();
@@ -292,6 +359,9 @@ async function openTaskDetail(id) {
     if (asg !== (t.assignee || "")) await window.donna.setTaskField(id, "assignee", asg || null);
     const est = el.querySelector("#td-est").value;
     if ((t.estimatedMinutes || null) !== (est ? Number(est) : null)) await window.donna.setTaskField(id, "estimatedMinutes", est ? Number(est) : null);
+    await window.donna.setTaskField(id, "subtasks", subs);
+    const freq = el.querySelector("#td-recur").value;
+    if (freq !== ((t.recurrence && t.recurrence.freq) || "")) await window.donna.setTaskField(id, "recurrence", freq ? { freq } : null);
     await after("Saved");
   };
   el.querySelector("#td-del").onclick = async () => {

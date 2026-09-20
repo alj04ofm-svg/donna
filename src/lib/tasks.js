@@ -25,6 +25,7 @@ function normalize(t) {
     wontDo: !!t.wontDo,                // consciously abandoned ≠ done ≠ deleted (TickTick) — shared store sees "done"
     wontDoReason: t.wontDoReason || null,
     assignee: t.assignee || null,      // who owns it (you, or a teammate/person)
+    subtasks: Array.isArray(t.subtasks) ? t.subtasks : [], // lightweight checklist
     waitingOn: t.waitingOn || null,    // Donna-only field: who it is blocked on.
     startedAt: t.startedAt || null,    // set when moved to doing — powers the Now timer
     updatedAt: t.updatedAt || null,
@@ -114,6 +115,8 @@ function nextInstance(t) {
     deadline: t.deadline || null, deadlineHard: t.deadlineHard || false,
     priority: t.priority || 3, estimatedMinutes: t.estimatedMinutes || null,
     bucket: t.bucket || null, area: t.area || null, waitingOn: t.waitingOn || null,
+    assignee: t.assignee || null,
+    subtasks: (Array.isArray(t.subtasks) ? t.subtasks : []).map((s) => ({ ...s, done: false })),
     createdAt: new Date().toISOString(), createdBy: "donna", updatedAt: new Date().toISOString(),
     updatedBy: "donna", completedAt: null,
     recurrence: r,
@@ -155,7 +158,7 @@ function setStatus(id, status) {
 
 /* Donna-only field setters — all passthrough fields the dashboard ignores.
    One guarded generic instead of five copies of the same read-find-write. */
-const DONNA_FIELDS = ["title", "detail", "project_id", "assignee", "bucket", "area", "estimatedMinutes", "deadline", "deadlineHard", "objectiveId"];
+const DONNA_FIELDS = ["title", "detail", "project_id", "assignee", "subtasks", "recurrence", "bucket", "area", "estimatedMinutes", "deadline", "deadlineHard", "objectiveId"];
 function setField(id, field, value) {
   if (!DONNA_FIELDS.includes(field)) return false;
   const data = readJson(TASKS_FILE, { version: 1, tasks: [] });
