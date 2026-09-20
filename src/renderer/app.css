@@ -26,9 +26,10 @@
   --glass-bd:   oklch(1 0 0 / 7%);
   /* row accent — the 2px left edge that lights on hover */
   --accent-row: oklch(0.76 0.12 250 / 50%);
-  --sans: Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --display: Syne, var(--sans);
-  --mono: "JetBrains Mono", ui-monospace, monospace;
+  /* native macOS typography — SF Pro via the system stack, no web fonts */
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Monaco, monospace;
   --ease: cubic-bezier(0.22, 1, 0.36, 1); /* ease-out-quint */
   --t-fast: 130ms; --t-med: 200ms;
   --r-sm: 8px; --r-md: 10px; --r-lg: 14px;
@@ -94,7 +95,7 @@ body[data-mode="pill"]    #pill-app    { display: flex; }
 
 /* ════════ FULL ════════ */
 #full-app { height: 100vh; }
-#sidebar { width: 216px; flex-shrink: 0; background: var(--panel);
+#sidebar { width: 232px; flex-shrink: 0; background: var(--panel);
   border-right: 1px solid var(--line); display: flex; flex-direction: column; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 52px 20px 20px; }
 .wordmark { font: 700 16px/1 var(--display); letter-spacing: 0.01em; }
