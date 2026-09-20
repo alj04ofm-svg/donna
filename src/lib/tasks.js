@@ -154,7 +154,7 @@ function setStatus(id, status) {
 
 /* Donna-only field setters — all passthrough fields the dashboard ignores.
    One guarded generic instead of five copies of the same read-find-write. */
-const DONNA_FIELDS = ["bucket", "area", "estimatedMinutes", "deadline", "deadlineHard", "objectiveId"];
+const DONNA_FIELDS = ["title", "detail", "project_id", "bucket", "area", "estimatedMinutes", "deadline", "deadlineHard", "objectiveId"];
 function setField(id, field, value) {
   if (!DONNA_FIELDS.includes(field)) return false;
   const data = readJson(TASKS_FILE, { version: 1, tasks: [] });

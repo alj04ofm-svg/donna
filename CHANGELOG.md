@@ -3,6 +3,11 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] — 2026-09-20
+
+- Task editor now saves title, notes and project (they were silently ignored by
+  a field whitelist).
+
 ## [1.1.0] — 2026-09-20
 
 - **Task editor.** Open any task (the ✎ button on a row, or double-click a task
