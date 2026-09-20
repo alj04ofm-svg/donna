@@ -247,7 +247,7 @@ async function vSettings() {
     const el = $("#tc-dir"); if (el) el.textContent = dirLabel;
     toast("Save location updated");
   };
-  main.querySelectorAll("[data-perm]").forEach((el) => (el.onclick = async () => { await window.donna.requestPerm(el.dataset.perm); toast("Opening System Settings — toggle Electron on"); }));
+  main.querySelectorAll("[data-perm]").forEach((el) => (el.onclick = async () => { await window.donna.requestPerm(el.dataset.perm); toast("Opening System Settings — toggle Donna on"); }));
   /* Sections tab — one toggle per page + per strip. Live: flips update the
      sidebar + every view instantly. */
   const re2 = $("#sec-reset-all"); if (re2) re2.onclick = () => {
@@ -333,6 +333,10 @@ let tkTab = localStorage.getItem("donna.tkTab") || "overview";
 const TK_TABS = [["overview", "Overview"], ["breakdown", "Breakdown"], ["shots", "Screenshots"], ["focus", "Focus"]];
 async function vRhythm() {
   const [r, tk, hist] = await Promise.all([window.donna.rhythm(), window.donna.trackerDay(), window.donna.trackerHistory(14)]);
+  try { __tcfg = await window.donna.trackerConfigGet(); } catch {}
+  const showShots = !!(__tcfg && __tcfg.shotsEnabled);
+  const tabs = TK_TABS.filter(([k]) => k !== "shots" || showShots);
+  if (!showShots && tkTab === "shots") { tkTab = "overview"; localStorage.setItem("donna.tkTab", tkTab); }
   stagger = 0;
   const fmtT = (s) => new Date(s * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   /* timeline geometry: from first activity (or 7am) to now, as % of span */
@@ -351,7 +355,7 @@ async function vRhythm() {
       <div><h1 class="h1">Tracker</h1>
       <p class="sub">${tk.tracking ? `<span class="tk-dot"></span> watching quietly` : "paused"}<span class="sep">·</span>100% local, nothing leaves this Mac</p></div>
       <div style="display:flex;gap:8px;align-items:center">
-        <div class="seg vz-seg">${TK_TABS.map(([k, l]) => `<button data-tktab="${k}" class="${tkTab === k ? "on" : ""}">${l}</button>`).join("")}</div>
+        <div class="seg vz-seg">${tabs.map(([k, l]) => `<button data-tktab="${k}" class="${tkTab === k ? "on" : ""}">${l}</button>`).join("")}</div>
         <button class="tk-clock ${tk.tracking ? "on" : ""}" id="tk-toggle">${tk.tracking ? "❚❚ Pause" : "● Resume"}</button>
       </div>
     </div>
@@ -390,7 +394,7 @@ async function vRhythm() {
     ${pane("shots", `
     <div class="sec">Screenshots <span class="rh-avg">${tk.shots.length ? `${tk.shots.length} today · kept ${__tcfg ? __tcfg.keepDays : 14} days` : "kept " + (__tcfg ? __tcfg.keepDays : 14) + " days"}</span></div>
     ${tk.shots.length ? `<div class="tk-shots" id="tk-shots">${tk.shots.slice(-12).reverse().map((s) => `<button class="tk-shot" data-full="${esc(s.full)}" data-thumb="${esc(s.thumb)}"><span class="tk-shot-t">${fmtT(s.t)}</span></button>`).join("")}</div>`
-      : `<div class="rows"><div class="empty">First screenshot lands soon after boot. Blank shots → grant <b>Electron</b> Screen Recording.</div></div>`}
+      : `<div class="rows"><div class="empty">First screenshot lands soon after boot. Blank shots → grant <b>Donna</b> Screen Recording.</div></div>`}
     `)}
 
     ${pane("focus", `
@@ -405,7 +409,7 @@ async function vRhythm() {
   main.querySelector(".vz-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; tkTab = b.dataset.tktab; localStorage.setItem("donna.tkTab", tkTab); vRhythm(); });
   $("#tk-toggle").onclick = async () => { await window.donna.trackerToggle(); if (view === "rhythm") vRhythm(); };
   const wr = $("#tk-weekrev"); if (wr) wr.onclick = openWeeklyReview;
-  main.querySelectorAll("[data-perm]").forEach((el) => (el.onclick = async () => { await window.donna.requestPerm(el.dataset.perm); toast("Opening System Settings — toggle Electron on"); }));
+  main.querySelectorAll("[data-perm]").forEach((el) => (el.onclick = async () => { await window.donna.requestPerm(el.dataset.perm); toast("Opening System Settings — toggle Donna on"); }));
   /* evidence drawer — the Rize pattern: every block explains itself */
   const drawer = $("#tk-drawer");
   main.querySelectorAll("[data-blk]").forEach((b) => (b.onclick = async () => {

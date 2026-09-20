@@ -3,6 +3,11 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.10.0] — 2026-09-20
+
+- Tracker: the Screenshots tab only appears when screenshot capture is enabled;
+  permission copy names Donna.
+
 ## [1.9.0] — 2026-09-20
 
 - Cleaner Today: low-value strips (week, reminders, diagnostic, sleep) off by
