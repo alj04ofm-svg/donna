@@ -453,8 +453,11 @@ async function vWaiting() {
   stagger = 0;
   const ageH = (h) => h < 1 ? "just now" : h < 24 ? `${h}h` : h < 48 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${Math.floor(h / 24)}d`;
   main.innerHTML = `<div class="view">
-    <h1 class="h1">Waiting on</h1>
-    <p class="sub">Blocked on other people — stale at 3 days, alert at 7${items.length ? `<span class="sep">·</span>${items.length} open${items.filter((w) => w.alert).length ? ` · <b style="color:oklch(0.78 0.18 25)">${items.filter((w) => w.alert).length} alert</b>` : ""}${items.filter((w) => w.stale && !w.alert).length ? ` · <b style="color:oklch(0.78 0.16 70)">${items.filter((w) => w.stale && !w.alert).length} stale</b>` : ""}` : ""}</p>
+    <div class="lib-head">
+      <div><h1 class="h1">Waiting on</h1>
+      <p class="sub">Blocked on other people — stale at 3 days, alert at 7${items.length ? `<span class="sep">·</span>${items.length} open${items.filter((w) => w.alert).length ? ` · <b style="color:oklch(0.78 0.18 25)">${items.filter((w) => w.alert).length} alert</b>` : ""}${items.filter((w) => w.stale && !w.alert).length ? ` · <b style="color:oklch(0.78 0.16 70)">${items.filter((w) => w.stale && !w.alert).length} stale</b>` : ""}` : ""}</p></div>
+      ${peopleHubTabs("waiting")}
+    </div>
     <div class="quick-add" style="margin-top:16px"><input id="wait-add" placeholder='Hand-off — "Invoice · Sam"'></div>
     ${items.length ? `<div class="rows" style="margin-top:14px">${items.map((w) => `
       <div class="row wait-row ${w.alert ? "alert" : w.stale ? "stale" : ""}">
@@ -478,6 +481,7 @@ async function vWaiting() {
     else await window.donna.waitingResolve(b.dataset.clear);
     await refresh(); vWaiting(); toast("Back on you");
   }));
+  wirePeopleTabs();
 }
 
 /* Plan — the day as a vertical timeline: calendar events + auto-scheduled task
@@ -629,6 +633,25 @@ async function vNotes(root = main, bare = false) {
   if (notes[0]) paintBacklinks(notes[0].id);
 }
 
+/* People hub tabs — People and Waiting-on are one surface: the people you
+   keep warm, and the things they owe you. */
+function peopleHubTabs(active) {
+  return `<div class="seg lib-seg" id="people-tabs">
+    <button data-hub="people" class="${active === "people" ? "on" : ""}">People</button>
+    <button data-hub="waiting" class="${active === "waiting" ? "on" : ""}">Waiting on them</button>
+  </div>`;
+}
+function wirePeopleTabs() {
+  const el = document.getElementById("people-tabs");
+  if (!el) return;
+  el.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.hub === "waiting") vWaiting();
+    else vPeople();
+  });
+}
+
 /* People — light CRM with the drift radar (Clay/Dex/Monica): every person has
    a cadence; warmth decays toward it; drifting people surface first. */
 async function vPeople() {
@@ -641,8 +664,10 @@ async function vPeople() {
   // message as an unlabeled circle that read like a dead button.
   const warmthRing = (p) => p.warmth === null ? "" : `<div class="ppl-warmth ${p.drifting ? "cold" : p.warmth < 40 ? "cooling" : ""}" style="--pct:${p.warmth}" title="warmth ${p.warmth}% · every ${p.cadenceDays}d">${p.daysSince}d</div>`;
   main.innerHTML = `<div class="view">
-    <h1 class="h1">People</h1>
-    <p class="sub">Your circle — cadence, warmth, and what they owe you</p>
+    <div class="lib-head">
+      <div><h1 class="h1">People</h1><p class="sub">Your circle — cadence, warmth, and what they owe you</p></div>
+      ${peopleHubTabs("people")}
+    </div>
     ${drifting.length ? `<div class="coverage-banner">☎ <span><b>${esc(drifting.map((p) => p.name).join(", "))}</b> ${drifting.length > 1 ? "are" : "is"} drifting past cadence — one message keeps it warm.</span></div>` : ""}
     <div class="quick-add" style="margin-top:14px"><input id="ppl-add" placeholder='Add someone — "Mikee · VA", then ↵'></div>
     <div class="ppl-list">${sorted.map((p) => `
@@ -672,6 +697,7 @@ async function vPeople() {
     await window.donna.peopleUpdate(p.id, { cadenceDays: next });
     vPeople();
   }));
+  wirePeopleTabs();
   openCoachButton("people", {
     total: people.length,
     drifting: drifting.length,

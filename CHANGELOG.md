@@ -5,9 +5,13 @@ All notable changes to Donna are documented here. This project follows
 
 ## [1.0.3] — 2026-09-20
 
-- Leaner app: sidebar trimmed to the genuinely useful set — Today, Plan, Tasks,
-  Goals, Tracker, Ask, Library, Settings. Removed Comms, Canvas, Life, Activity
-  and Log from the nav (and their section toggles).
+- **Clearer IA, fewer pages.** Sidebar is now Today · Tasks · Goals · People ·
+  Notes · Ask · Tracker · Settings (Plan sits at the top).
+- **People and Waiting merged** into one page with tabs (your circle + what they
+  owe you).
+- **Library renamed Notes** (Notes · Ideas · Captures in one place).
+- Removed Comms, Canvas, Life, Activity and Log from the nav entirely (their
+  section toggles too).
 
 ## [1.0.2] — 2026-09-20
 

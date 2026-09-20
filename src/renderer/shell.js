@@ -1,6 +1,6 @@
 
-const VIEWS = { today: vToday, tasks: vTasks, plan: vPlan, ask: vAsk, rhythm: vRhythm, comms: vComms, library: vLibrary, canvas: vCanvas, life: vLife, goals: vGoals, activity: vActivity, log: vLog, settings: vSettings,
-  // still callable (embedded elsewhere / palette), not in the sidebar:
+const VIEWS = { today: vToday, tasks: vTasks, plan: vPlan, ask: vAsk, rhythm: vRhythm, library: vLibrary, goals: vGoals, people: vPeople, settings: vSettings,
+  // still callable (embedded elsewhere / tabs), not in the sidebar:
   waiting: vWaiting, capture: vCapture, notes: vNotes, ideas: vIdeas, memory: vMemory };
 function render() {
   if (!data) return;
@@ -182,8 +182,8 @@ function buildActions(q) {
   }
   const nav = [
     ["today", "Go to Today", "⌘1"], ["plan", "Go to Plan", "⌘2"], ["tasks", "Go to Tasks", "⌘3"],
-    ["goals", "Go to Goals", "⌘4"], ["rhythm", "Go to Tracker", "⌘5"], ["ask", "Go to Ask", "⌘6"],
-    ["library", "Go to Library", "⌘7"], ["settings", "Go to Settings", "⌘8"],
+    ["goals", "Go to Goals", "⌘4"], ["people", "Go to People", "⌘5"], ["ask", "Go to Ask", "⌘6"],
+    ["library", "Go to Notes", "⌘7"], ["rhythm", "Go to Tracker", "⌘8"], ["settings", "Go to Settings", "⌘9"],
   ];
   for (const [v, label, hint] of nav)
     acts.push({ sec: "Navigate", icon: ICONS.view, label, hint, score: fuzzy(q, label), run: () => gotoView(v) });
@@ -262,7 +262,7 @@ window.addEventListener("keydown", (e) => {
 
   if (mod && e.key.toLowerCase() === "k") { e.preventDefault(); pal.hidden ? openPalette() : closePalette(); return; }
   if (mod && e.key >= "1" && e.key <= "9") {
-    const v = ["today", "plan", "tasks", "goals", "rhythm", "ask", "library", "settings"][Number(e.key) - 1];
+    const v = ["today", "plan", "tasks", "goals", "people", "ask", "library", "rhythm", "settings"][Number(e.key) - 1];
     if (v) { e.preventDefault(); gotoView(v); }
     return;
   }
