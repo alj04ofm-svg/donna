@@ -24,6 +24,7 @@ function normalize(t) {
     objectiveId: t.objectiveId || null, // links execution to a weekly objective / Goals OKR
     wontDo: !!t.wontDo,                // consciously abandoned ≠ done ≠ deleted (TickTick) — shared store sees "done"
     wontDoReason: t.wontDoReason || null,
+    assignee: t.assignee || null,      // who owns it (you, or a teammate/person)
     waitingOn: t.waitingOn || null,    // Donna-only field: who it is blocked on.
     startedAt: t.startedAt || null,    // set when moved to doing — powers the Now timer
     updatedAt: t.updatedAt || null,
@@ -154,7 +155,7 @@ function setStatus(id, status) {
 
 /* Donna-only field setters — all passthrough fields the dashboard ignores.
    One guarded generic instead of five copies of the same read-find-write. */
-const DONNA_FIELDS = ["title", "detail", "project_id", "bucket", "area", "estimatedMinutes", "deadline", "deadlineHard", "objectiveId"];
+const DONNA_FIELDS = ["title", "detail", "project_id", "assignee", "bucket", "area", "estimatedMinutes", "deadline", "deadlineHard", "objectiveId"];
 function setField(id, field, value) {
   if (!DONNA_FIELDS.includes(field)) return false;
   const data = readJson(TASKS_FILE, { version: 1, tasks: [] });

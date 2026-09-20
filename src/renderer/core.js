@@ -128,7 +128,7 @@ function rowHtml(t, { compact = false, idx = -1 } = {}) {
       ${t.detail ? `<div class="row-detail">${esc(t.detail)}</div>` : ""}
     </div>
     <div class="row-meta">
-      ${projChip(t)}${estChip(t)}${recurChip(t)}
+      ${t.assignee && t.assignee !== "me" ? `<span class="chip who">@${esc(t.assignee)}</span>` : ""}${projChip(t)}${estChip(t)}${recurChip(t)}
       <div class="row-acts">
         <button class="icon-btn" data-start="${t.id}" title="${doing ? "Stop (D)" : "Start now (D)"}">
           ${doing ? '<svg viewBox="0 0 16 16"><rect x="4.5" y="4.5" width="7" height="7" rx="1.5"/></svg>'

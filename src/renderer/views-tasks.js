@@ -118,7 +118,7 @@ function cardHtml(t) {
   const col = colOf(t);
   return `<div class="card ${col === "done" ? "done" : ""} ${col === "now" ? "now" : ""}" data-id="${t.id}" data-colnow="${col}"${si()}>
     <div class="card-title">${esc(t.title)}</div>
-    <div class="card-meta">${pGlyph(t.priority)}${col === "now" ? `<span class="chip now-chip">${elapsed(t.startedAt)}</span>` : ""}${t.waitingOn ? `<span class="chip wait">${esc(t.waitingOn)}</span>` : ""}${dueChip(t.dueAt)}</div>
+    <div class="card-meta">${pGlyph(t.priority)}${col === "now" ? `<span class="chip now-chip">${elapsed(t.startedAt)}</span>` : ""}${t.assignee && t.assignee !== "me" ? `<span class="chip who">@${esc(t.assignee)}</span>` : ""}${t.waitingOn ? `<span class="chip wait">${esc(t.waitingOn)}</span>` : ""}${dueChip(t.dueAt)}</div>
   </div>`;
 }
 function paintBoard(open) {
@@ -230,9 +230,11 @@ function paintProjects(open) {
 /* ── Task detail editor ──────────────────────────────────────────────────────
    Open from the ⋯ / ✎ button on a row, or double-click any task. Edit title,
    notes, priority, due date, project and estimate; delete or mark won't-do. */
-function openTaskDetail(id) {
+async function openTaskDetail(id) {
   const t = [...(data.open || []), ...(data.done || [])].find((x) => x.id === id);
   if (!t) return;
+  let people = [];
+  try { people = await window.donna.peopleList(); } catch {}
   const el = document.createElement("div");
   el.id = "task-detail-ov";
   el.className = "sd-overlay";
@@ -248,6 +250,9 @@ function openTaskDetail(id) {
     <textarea id="td-notes" class="sd-input" rows="3" placeholder="Notes / detail"
       style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:10px 12px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0;resize:vertical">${esc(t.detail || "")}</textarea>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <label style="font:600 11px var(--sans);color:#8b90a6;text-transform:uppercase;letter-spacing:.06em">Assignee
+        <input id="td-assignee" list="td-people" value="${esc(t.assignee || "")}" placeholder="me" style="width:100%;margin-top:5px;padding:9px 10px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0">
+        <datalist id="td-people">${people.map((p) => `<option value="${esc(p.name)}"></option>`).join("")}</datalist></label>
       <label style="font:600 11px var(--sans);color:#8b90a6;text-transform:uppercase;letter-spacing:.06em">Priority
         <select id="td-priority" style="width:100%;margin-top:5px;padding:9px 10px;border-radius:9px;border:1px solid #252530;background:#0e0e15;color:#e8e8f0">
           ${[1, 2, 3, 4].map((p) => `<option value="${p}"${t.priority === p ? " selected" : ""}>P${p}</option>`).join("")}
@@ -283,6 +288,8 @@ function openTaskDetail(id) {
     else if (t.dueAt) await window.donna.setDue(id, null);
     const proj = el.querySelector("#td-project").value.trim();
     if (proj !== (t.project_id || "")) await window.donna.setTaskField(id, "project_id", proj || null);
+    const asg = (el.querySelector("#td-assignee").value || "").trim();
+    if (asg !== (t.assignee || "")) await window.donna.setTaskField(id, "assignee", asg || null);
     const est = el.querySelector("#td-est").value;
     if ((t.estimatedMinutes || null) !== (est ? Number(est) : null)) await window.donna.setTaskField(id, "estimatedMinutes", est ? Number(est) : null);
     await after("Saved");

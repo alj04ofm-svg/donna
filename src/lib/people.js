@@ -35,11 +35,14 @@ function touch(id) {
   try { const a = read(); const p = a.find((x) => x.id === id); if (p) require("./activity").log("person_touched", p.name, { domain: "relationships", ref: { type: "person", id } }); } catch {}
   return ok;
 }
-function add(name, role) {
+const TYPES = ["Work", "Client", "Partner", "Friend", "Family"];
+
+function add(name, role, type) {
   const a = read();
-  const p = { id: `p_${Date.now()}`, name: name || "New person", role: role || "", notes: "" };
+  const p = { id: `p_${Date.now()}`, name: name || "New person", role: role || "", type: type || "", notes: "" };
   a.push(p); write(a);
   try { require("./activity").log("person_added", p.name + (p.role ? ` · ${p.role}` : ""), { domain: "relationships", ref: { type: "person", id: p.id } }); } catch {}
+  return p;
 }
 
 module.exports = { list, update, touch, add };

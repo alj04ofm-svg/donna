@@ -676,7 +676,7 @@ async function vPeople() {
         <div class="ppl-av">${esc((p.name || "?")[0])}</div>
         <div class="ppl-body">
           <div class="ppl-name">${esc(p.name)}${p.waitingCount ? `<span class="ppl-badge ${p.staleCount ? "stale" : ""}">${p.waitingCount} waiting</span>` : ""}</div>
-          <div class="ppl-role">${esc(p.role || "")}</div>
+          <div class="ppl-role">${esc(p.role || "")}<button class="chip who" data-type="${p.id}" title="Relationship type — click to cycle">${esc(p.type || "+ type")}</button></div>
           <textarea class="ppl-notes" data-id="${p.id}" placeholder="Notes on ${esc(p.name)}…">${esc(p.notes || "")}</textarea>
           <div class="ppl-foot">
             <button class="ppl-touch" data-touch="${p.id}">✓ talked</button>
@@ -691,6 +691,14 @@ async function vPeople() {
   inp.onkeydown = async (e) => { if (e.key === "Enter" && inp.value.trim()) { const [name, role] = inp.value.split(/[·|,]/).map((s) => s.trim()); await window.donna.peopleAdd(name, role || ""); inp.value = ""; vPeople(); } };
   main.querySelectorAll(".ppl-notes").forEach((t) => (t.onblur = async () => { await window.donna.peopleUpdate(t.dataset.id, { notes: t.value }); }));
   main.querySelectorAll("[data-touch]").forEach((b) => (b.onclick = async () => { await window.donna.peopleTouch(b.dataset.touch); try { snd.chime(); } catch {} toast("Warm again"); vPeople(); }));
+  main.querySelectorAll("[data-type]").forEach((b) => (b.onclick = async (e) => {
+    e.stopPropagation();
+    const p = people.find((x) => x.id === b.dataset.type);
+    const steps = ["Work", "Client", "Partner", "Friend", "Family", ""];
+    const next = steps[(steps.indexOf(p.type || "") + 1) % steps.length];
+    await window.donna.peopleUpdate(p.id, { type: next });
+    vPeople();
+  }));
   main.querySelectorAll("[data-cad]").forEach((b) => (b.onclick = async () => {
     const p = people.find((x) => x.id === b.dataset.cad);
     const steps = [3, 7, 14, 30];

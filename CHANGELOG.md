@@ -3,6 +3,13 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] — 2026-09-20
+
+- **Assignees on tasks** — assign a task to a person (or leave it as you); shown
+  as an @chip on lists and cards, set in the task editor.
+- **Relationship types on people** — tag each person Work / Client / Partner /
+  Friend / Family (click the chip to cycle).
+
 ## [1.1.1] — 2026-09-20
 
 - Task editor now saves title, notes and project (they were silently ignored by
