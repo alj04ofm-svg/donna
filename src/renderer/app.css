@@ -2359,3 +2359,30 @@ input, textarea { font-size: 13px; }
 .tf-select { padding: 9px 10px; border-radius: 9px; border: 1px solid var(--line, #252530); background: var(--surface2, #0e0e15); color: var(--ink, #e8e8f0); font-size: 13px; cursor: pointer; }
 .chip.sub { color: #9aa0b4; }
 .chip.who { color: #a5b4fc; }
+
+/* ─── 2026 refinement — quieter surfaces, more air, consistent geometry ───
+   Appended overrides only: softer hairlines, roomier rows, unified radii and
+   a calmer palette. No layout/structure changes. */
+:root {
+  --r-sm: 9px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px;
+  --line: oklch(1 0 0 / 9%);
+  --line-soft: oklch(1 0 0 / 6%);
+  --mut: oklch(0.74 0.012 250);
+  --dim: oklch(0.58 0.014 250);
+  --surface-hi: oklch(0.17 0.008 250 / 88%);
+}
+body { font: 400 14.5px/1.6 var(--sans); }
+.h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.022em; }
+.sub { font-size: 13.5px; margin-top: 7px; line-height: 1.55; }
+.rows { border-radius: var(--r-lg); }
+.row { padding: 11px 16px; transition: background 160ms var(--ease); }
+.row:hover { background: oklch(1 0 0 / 3%); }
+.card, .panel, .set-group { border-radius: var(--r-lg); }
+#sidebar { width: 240px; }
+.nav-item { border-radius: 11px; padding: 9px 12px; }
+.nav-item.active { background: oklch(0.76 0.12 250 / 12%); color: var(--ink); }
+.nav-sec { letter-spacing: 0.1em; margin: 16px 0 6px; }
+.seg { border-radius: 999px; padding: 3px; background: oklch(0 0 0 / 22%); }
+.seg button { border-radius: 999px; }
+.set-group { border: 1px solid var(--line); background: var(--surface); }
+.triage-btn, .wind-btn, .hero-btn { border-radius: 11px; }

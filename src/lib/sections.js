@@ -28,14 +28,14 @@ const SECTIONS = [
   /* Today strips */
   { id: "today.brief",     label: "AI morning brief",     group: "Today", desc: "One AI sentence on how to start the day", default: true },
   { id: "today.lead",      label: "This week's lead",     group: "Today", desc: "Top goal's oneThing as a focused strip", default: true },
-  { id: "today.week",      label: "Week lead-measure",    group: "Today", desc: "X/Y committed actions done across active goals", default: true },
+  { id: "today.week",      label: "Week lead-measure",    group: "Today", desc: "X/Y committed actions done across active goals", default: false },
   { id: "today.nudge",     label: "Smart nudge",          group: "Today", desc: "One contextual suggestion from real state", default: true },
   { id: "today.also",      label: "Also on your plate",   group: "Today", desc: "Next 3 priorities below the hero", default: true },
   { id: "today.routines",  label: "Routines",             group: "Today", desc: "Daily non-negotiables checklist", default: true },
-  { id: "today.reminders", label: "Reminders",            group: "Today", desc: "Upcoming reminders strip", default: true },
+  { id: "today.reminders", label: "Reminders",            group: "Today", desc: "Upcoming reminders strip", default: false },
   { id: "today.waiting",   label: "Waiting on others",    group: "Today", desc: "Who owes you what — stale and alert timers", default: true },
-  { id: "today.diagnostic", label: "Boot diagnostic",      group: "Today", desc: "Silent-issue radar (tracker perm, stale goals, alerts)", default: true },
-  { id: "today.sleep",      label: "Sleep chip",          group: "Today", desc: "Last night's sleep + 7-day average", default: true },
+  { id: "today.diagnostic", label: "Boot diagnostic",      group: "Today", desc: "Silent-issue radar (tracker perm, stale goals, alerts)", default: false },
+  { id: "today.sleep",      label: "Sleep chip",          group: "Today", desc: "Last night's sleep + 7-day average", default: false },
 
   /* Compact mode — the docked panel. Each card is a separate toggle. */
   { id: "compact.lead",      label: "Lead action card",    group: "Compact", desc: "This week's lead (the goal's oneThing)", default: true },

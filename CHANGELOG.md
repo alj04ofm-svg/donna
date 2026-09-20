@@ -3,6 +3,12 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.9.0] — 2026-09-20
+
+- Cleaner Today: low-value strips (week, reminders, diagnostic, sleep) off by
+  default (toggle back on in Settings › Sections).
+- Design refresh: softer hairlines, roomier rows, unified radii, calm palette.
+
 ## [1.8.0] — 2026-09-20
 
 - Notes: search and pinning.
