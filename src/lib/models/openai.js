@@ -4,17 +4,22 @@
 
 const DEFAULTS = {
   model: "gpt-4o-mini",
+  baseUrl: "https://api.openai.com/v1",
   maxTokens: 1500,
   temperature: 0.4,
   timeoutMs: 30000,
 };
 
+function baseUrl() {
+  return (process.env.OPENAI_BASE_URL || DEFAULTS.baseUrl).replace(/\/$/, "");
+}
+
 function isConfigured() {
-  return !!process.env.OPENAI_API_KEY;
+  return !!(process.env.OPENAI_API_KEY || process.env.OPENCODE_API_KEY);
 }
 
 async function askOpenAI(prompt, { system, model, maxTokens, temperature, timeoutMs } = {}) {
-  const key = process.env.OPENAI_API_KEY;
+  const key = process.env.OPENCODE_API_KEY || process.env.OPENAI_API_KEY;
   if (!key) return "(OPENAI_API_KEY not set)";
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), timeoutMs || DEFAULTS.timeoutMs);
@@ -22,11 +27,11 @@ async function askOpenAI(prompt, { system, model, maxTokens, temperature, timeou
     const messages = [];
     if (system) messages.push({ role: "system", content: system });
     messages.push({ role: "user", content: prompt });
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+    const r = await fetch(`${baseUrl()}/chat/completions`, {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: model || DEFAULTS.model,
+        model: model || process.env.DONNA_MODEL || DEFAULTS.model,
         messages,
         max_tokens: maxTokens || DEFAULTS.maxTokens,
         temperature: temperature == null ? DEFAULTS.temperature : temperature,

@@ -338,6 +338,7 @@ function _obRenderBody(step) {
   if (step.kind === "name") return `<input id="ob-in" class="sd-input" placeholder="Your name" autofocus>`;
   if (step.kind === "ai") return `
     <select id="ob-provider" class="sd-input">
+      <option value="opencode">OpenCode gateway (recommended)</option>
       <option value="anthropic">Anthropic (Claude)</option>
       <option value="openai">OpenAI</option>
       <option value="minimax">MiniMax</option>

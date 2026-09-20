@@ -3,6 +3,12 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] — 2026-09-20
+
+- **OpenCode gateway provider** (OpenAI-compatible): point Donna at your own
+  gateway + model. No external paid providers by default.
+- Settings now has Gateway URL + Model fields alongside provider + key.
+
 ## [1.3.4] — 2026-09-20
 
 - Removed the last personal seed content (habit/replacement examples) so every

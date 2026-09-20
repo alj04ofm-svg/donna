@@ -30,10 +30,18 @@ const config = appConfig.load();
 /* Make the key entered in Settings actually usable: expose it to the selected
    provider client via the environment (real env vars always win). */
 function applyProviderEnv(cfg) {
-  if (!cfg || !cfg.apiKey) return;
+  if (!cfg) return;
   const provider = cfg.provider || "anthropic";
-  const name = provider === "openai" ? "OPENAI_API_KEY"
-    : provider === "minimax" ? "MINIMAX_API_KEY"
+  // OpenAI-compatible gateways (OpenAI, or your own OpenCode gateway).
+  if (provider === "opencode" || provider === "openai") {
+    const key = cfg.apiKey || process.env.OPENCODE_API_KEY || process.env.OPENAI_API_KEY;
+    if (key && !process.env.OPENAI_API_KEY) process.env.OPENAI_API_KEY = key;
+    if (cfg.baseUrl) process.env.OPENAI_BASE_URL = cfg.baseUrl;
+    if (cfg.model) process.env.DONNA_MODEL = cfg.model;
+    return;
+  }
+  if (!cfg.apiKey) return;
+  const name = provider === "minimax" ? "MINIMAX_API_KEY"
     : provider === "gemini" ? "GEMINI_API_KEY"
     : "ANTHROPIC_API_KEY";
   if (!process.env[name]) process.env[name] = cfg.apiKey;
@@ -44,6 +52,7 @@ const captureStore = createCaptureStore(dataPath("capture.json"));
 const clients = {
   anthropic: (p, s) => askAnthropic(p, { system: s }),
   openai: (p, s) => askOpenAI(p, { system: s }),
+  opencode: (p, s) => askOpenAI(p, { system: s }),
   minimax: (p, s) => askMinimax(p, { system: s }),
   gemini: (p, s) => askGemini(p, { system: s }),
   "claude-cli": (p, s) => askClaude(p, { model: "claude-opus-4-8", system: s }),

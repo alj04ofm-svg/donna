@@ -35,8 +35,9 @@ const DEFAULTS = {
   contextRoots: [],
 
   // AI provider — bring your own key.
-  provider: "anthropic", // anthropic | openai | minimax | claude-cli
+  provider: "anthropic", // anthropic | openai | minimax | gemini | opencode | claude-cli
   model: "",
+  baseUrl: "",
   apiKey: "",
 
   // Desktop orb position (null = default bottom-right)
@@ -70,6 +71,7 @@ function providerKey(cfg) {
   if (provider === "openai") return env.OPENAI_API_KEY || cfg.apiKey || "";
   if (provider === "minimax") return env.MINIMAX_API_KEY || cfg.apiKey || "";
   if (provider === "gemini") return env.GEMINI_API_KEY || cfg.apiKey || "";
+  if (provider === "opencode") return env.OPENCODE_API_KEY || env.OPENAI_API_KEY || cfg.apiKey || "";
   return cfg.apiKey || "";
 }
 

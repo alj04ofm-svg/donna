@@ -19,13 +19,16 @@ async function vSettings() {
       <div class="set-row"><div><div class="set-label">Your name</div><div class="set-hint">How Donna addresses you</div></div><input id="set-name" class="set-input" value="${esc(cfg.userName || "")}" placeholder="e.g. Sam"></div>
       <div class="set-row"><div><div class="set-label">AI provider</div><div class="set-hint">Bring your own key — stored locally on this Mac</div></div>
         <select id="set-provider" class="set-input">
+          <option value="opencode"${cfg.provider === "opencode" ? " selected" : ""}>OpenCode gateway (recommended)</option>
           <option value="anthropic"${cfg.provider === "anthropic" ? " selected" : ""}>Anthropic (Claude)</option>
           <option value="openai"${cfg.provider === "openai" ? " selected" : ""}>OpenAI</option>
           <option value="minimax"${cfg.provider === "minimax" ? " selected" : ""}>MiniMax</option>
           <option value="gemini"${cfg.provider === "gemini" ? " selected" : ""}>Google Gemini</option>
           <option value="claude-cli"${cfg.provider === "claude-cli" ? " selected" : ""}>Claude CLI (local)</option>
         </select></div>
-      <div class="set-row"><div><div class="set-label">API key</div><div class="set-hint">Or set ANTHROPIC_API_KEY / OPENAI_API_KEY in your environment</div></div><input id="set-key" class="set-input" type="password" value="${esc(cfg.apiKey || "")}" placeholder="sk-…"></div>
+      <div class="set-row"><div><div class="set-label">API key</div><div class="set-hint">Or set it in your environment</div></div><input id="set-key" class="set-input" type="password" value="${esc(cfg.apiKey || "")}" placeholder="sk-…"></div>
+      <div class="set-row"><div><div class="set-label">Gateway URL</div><div class="set-hint">For OpenAI-compatible gateways (OpenCode / your own)</div></div><input id="set-baseurl" class="set-input" value="${esc(cfg.baseUrl || "")}" placeholder="https://…/v1"></div>
+      <div class="set-row"><div><div class="set-label">Model</div><div class="set-hint">Optional model id</div></div><input id="set-model" class="set-input" value="${esc(cfg.model || "")}" placeholder="e.g. vast-qwen/qwen3.8-27b"></div>
       <div class="set-row"><div></div><button class="wind-btn" id="set-ai-save" style="width:auto;margin:0;padding:8px 14px">Save</button></div>
       <div class="set-row"><div><div class="set-label">Notifications</div><div class="set-hint">Native alerts when things change</div></div>${toggle("notifications", cfg.notifications !== false)}</div>
       <div class="set-row"><div><div class="set-label">Sounds</div><div class="set-hint">Tiny synthesized cues on complete · habit · capture</div></div>${toggle("sounds", cfg.sounds !== false)}</div>
@@ -196,6 +199,8 @@ async function vSettings() {
       userName: ($("#set-name") && $("#set-name").value.trim()) || "",
       provider: ($("#set-provider") && $("#set-provider").value) || "anthropic",
       apiKey: ($("#set-key") && $("#set-key").value.trim()) || "",
+      baseUrl: ($("#set-baseurl") && $("#set-baseurl").value.trim()) || "",
+      model: ($("#set-model") && $("#set-model").value.trim()) || "",
       onboarded: true,
     });
     toast("Saved — restart Donna to apply");
