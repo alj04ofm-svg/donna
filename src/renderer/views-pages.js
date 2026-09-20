@@ -1396,3 +1396,39 @@ function openForecastDay(day) {
   el.querySelector(".fcd-close").onclick = close;
   el.onclick = function (e) { if (e.target === el) close(); };
 }
+
+/* Habits — the daily non-negotiables. Keystone habits show their streak;
+   identity habits show their "votes this month" (Atoms). Tap to complete. */
+async function vHabits() {
+  const habits = await window.donna.habitsList();
+  stagger = 0;
+  const doneCount = habits.filter((h) => h.doneToday).length;
+  main.innerHTML = `<div class="view">
+    <div class="lib-head">
+      <div><h1 class="h1">Habits</h1>
+      <p class="sub">${habits.length ? `${doneCount} of ${habits.length} done today` : "The small things that compound"}</p></div>
+    </div>
+    ${habits.length ? `<div class="rows" style="margin-top:16px">${habits.map((h) => `
+      <div class="row ${h.doneToday ? "done" : ""}"${si()}>
+        <button class="check ${h.doneToday ? "on" : ""}" data-habit="${h.id}" aria-label="Toggle">${CHECK_SVG}</button>
+        <div class="row-body">
+          <div class="row-title">${esc(h.name)}</div>
+          ${h.anchor ? `<div class="row-detail">${esc(h.anchor)}</div>` : ""}
+          ${h.identity ? `<div class="row-detail" style="color:var(--dim)">“${esc(h.identity)}”</div>` : ""}
+        </div>
+        <div class="row-meta">
+          ${typeof h.streak === "number" && h.streak > 0 ? `<span class="chip">🔥 ${h.streak}</span>` : ""}
+          ${typeof h.votes === "number" ? `<span class="chip">${h.votes} this month</span>` : ""}
+          ${h.freq === "weekly" ? `<span class="chip">weekly</span>` : ""}
+        </div>
+      </div>`).join("")}</div>`
+    : `<div class="rows" style="margin-top:16px"><div class="empty">No habits yet. Add a few in Settings → the daily routines you actually want to keep.</div></div>`}
+  </div>`;
+  main.querySelectorAll("[data-habit]").forEach((el) => (el.onclick = async (e) => {
+    e.stopPropagation();
+    try { await window.donna.habitsToggle(el.dataset.habit); } catch {}
+    await vHabits();
+    try { await refresh(); renderCompactBody(); } catch {}
+  }));
+  openCoachButton("habits", { total: habits.length, done: doneCount, keystones: habits.filter((h) => h.keystone).map((h) => h.name) });
+}

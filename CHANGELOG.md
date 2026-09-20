@@ -3,6 +3,11 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] — 2026-09-20
+
+- **New Habits page** — daily routines with streaks, identity votes and
+  one-tap completion. Added to the sidebar (Life group).
+
 ## [1.5.0] — 2026-09-20
 
 - **New task composer**: “＋ New task” button and the `n` shortcut open the full
