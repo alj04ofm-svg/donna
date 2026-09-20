@@ -3,6 +3,11 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] — 2026-09-20
+
+- Notes: search and pinning.
+- Settings regrouped into You / AI assistant / Behaviour.
+
 ## [1.7.0] — 2026-09-20
 
 - Fixed the AI-coach button overlapping Plan's Timeline/Week/Forecast tabs.

@@ -15,9 +15,14 @@ async function vSettings() {
     </div>
 
     ${pane("general", `
+    <div class="sec">You</div>
     <div class="set-group">
       <div class="set-row"><div><div class="set-label">Your name</div><div class="set-hint">How Donna addresses you</div></div><input id="set-name" class="set-input" value="${esc(cfg.userName || "")}" placeholder="e.g. Sam"></div>
-      <div class="set-row"><div><div class="set-label">AI provider</div><div class="set-hint">Bring your own key — stored locally on this Mac</div></div>
+    </div>
+
+    <div class="sec">AI assistant</div>
+    <div class="set-group">
+      <div class="set-row"><div><div class="set-label">Provider</div><div class="set-hint">Bring your own key — stored locally on this Mac</div></div>
         <select id="set-provider" class="set-input">
           <option value="opencode"${cfg.provider === "opencode" ? " selected" : ""}>OpenCode gateway (recommended)</option>
           <option value="anthropic"${cfg.provider === "anthropic" ? " selected" : ""}>Anthropic (Claude)</option>
@@ -29,10 +34,14 @@ async function vSettings() {
       <div class="set-row"><div><div class="set-label">API key</div><div class="set-hint">Or set it in your environment</div></div><input id="set-key" class="set-input" type="password" value="${esc(cfg.apiKey || "")}" placeholder="sk-…"></div>
       <div class="set-row"><div><div class="set-label">Gateway URL</div><div class="set-hint">For OpenAI-compatible gateways (OpenCode / your own)</div></div><input id="set-baseurl" class="set-input" value="${esc(cfg.baseUrl || "")}" placeholder="https://…/v1"></div>
       <div class="set-row"><div><div class="set-label">Model</div><div class="set-hint">Optional model id</div></div><input id="set-model" class="set-input" value="${esc(cfg.model || "")}" placeholder="e.g. vast-qwen/qwen3.8-27b"></div>
-      <div class="set-row"><div></div><button class="wind-btn" id="set-ai-save" style="width:auto;margin:0;padding:8px 14px">Save</button></div>
+      <div class="set-row"><div></div><button class="wind-btn" id="set-ai-save" style="width:auto;margin:0;padding:8px 14px">Save AI settings</button></div>
+    </div>
+
+    <div class="sec">Behaviour</div>
+    <div class="set-group">
       <div class="set-row"><div><div class="set-label">Notifications</div><div class="set-hint">Native alerts when things change</div></div>${toggle("notifications", cfg.notifications !== false)}</div>
       <div class="set-row"><div><div class="set-label">Sounds</div><div class="set-hint">Tiny synthesized cues on complete · habit · capture</div></div>${toggle("sounds", cfg.sounds !== false)}</div>
-      <div class="set-row"><div><div class="set-label">Auto-track</div><div class="set-hint">Watch app/window activity from boot — all local, prunes after 14 days · restart to apply</div></div>${toggle("autoTrack", cfg.autoTrack !== false)}</div>
+      <div class="set-row"><div><div class="set-label">Auto-track</div><div class="set-hint">Watch app/window activity from boot — all local · restart to apply</div></div>${toggle("autoTrack", cfg.autoTrack !== false)}</div>
       <div class="set-row"><div><div class="set-label">Launch at login</div><div class="set-hint">Open Donna automatically when you start your Mac</div></div>${toggle("launchAtLogin", !!cfg.launchAtLogin)}</div>
     </div>
     <div class="set-group">
@@ -608,20 +617,35 @@ async function vPlanWeek() {
 /* Notes — durable knowledge library (distinct from Capture's fast inbox). */
 async function vNotes(root = main, bare = false) {
   const notes = await window.donna.notesList();
+  const nq = (localStorage.getItem("donna.noteSearch") || "").toLowerCase();
+  const shown = [...notes]
+    .filter((n) => !nq || ((n.title || "") + " " + (n.body || "")).toLowerCase().includes(nq))
+    .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
   stagger = 0;
   root.innerHTML = `${bare ? "" : `<div class="view"><h1 class="h1">Notes</h1><p class="sub">Your durable library — decisions, references, playbooks. Use <code>[[name]]</code> to backlink to any task, goal, note, or idea.${notes.length ? `<span class="sep">·</span>${notes.length}` : ""}</p>`}
-    <div class="quick-add" style="margin-top:16px"><input id="note-add" placeholder="New note — type a title, then ↵"></div>
-    ${notes.length ? `<div class="note-list">${notes.map((n) => `
+    <div class="task-filters" style="margin-top:16px">
+      <input id="note-search" class="tf-search" placeholder="Search notes…" value="${esc(localStorage.getItem("donna.noteSearch") || "")}">
+    </div>
+    <div class="quick-add" style="margin-top:10px"><input id="note-add" placeholder="New note — type a title, then ↵"></div>
+    ${shown.length ? `<div class="note-list">${shown.map((n) => `
       <div class="note-card" data-id="${n.id}">
         <div class="note-title" data-expand>${esc(n.title)}</div>
         <textarea class="note-edit" data-body="${n.id}" placeholder="Write… use [[name]] to backlink">${esc(n.body)}</textarea>
-        <div class="note-foot"><span>${new Date(n.updatedAt).toLocaleDateString()}</span><button class="note-del" data-del="${n.id}">delete</button></div>
+        <div class="note-foot"><span>${new Date(n.updatedAt).toLocaleDateString()}</span><button class="note-pin ${n.pinned ? "on" : ""}" data-pin="${n.id}">${n.pinned ? "★ pinned" : "☆ pin"}</button><button class="note-del" data-del="${n.id}">delete</button></div>
         <div class="note-bk" data-bk-for="${n.id}" hidden></div>
       </div>`).join("")}</div>`
       : `<div class="rows" style="margin-top:14px"><div class="empty">No notes yet. Keep decisions, references and playbook snippets here — anything worth remembering that isn't a task.</div></div>`}
   ${bare ? "" : "</div>"}`;
   const inp = $("#note-add");
-  inp.onkeydown = async (e) => { if (e.key === "Enter" && inp.value.trim()) { await window.donna.notesAdd(inp.value.trim(), ""); inp.value = ""; vNotes(root, bare); } };
+  if (inp) inp.onkeydown = async (e) => { if (e.key === "Enter" && inp.value.trim()) { await window.donna.notesAdd(inp.value.trim(), ""); inp.value = ""; vNotes(root, bare); } };
+  const ns = $("#note-search");
+  if (ns) ns.oninput = () => { localStorage.setItem("donna.noteSearch", ns.value); vNotes(root, bare); const el = $("#note-search"); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } };
+  root.querySelectorAll("[data-pin]").forEach((b) => (b.onclick = async (e) => {
+    e.stopPropagation();
+    const n = notes.find((x) => x.id === b.dataset.pin);
+    await window.donna.notesUpdate(n.id, { pinned: !n.pinned });
+    vNotes(root, bare);
+  }));
   root.querySelectorAll("[data-expand]").forEach((el) => (el.onclick = () => el.closest(".note-card").classList.toggle("open")));
   root.querySelectorAll("[data-body]").forEach((t) => (t.onblur = async () => { await window.donna.notesUpdate(t.dataset.body, { body: t.value }); paintBacklinks(t.dataset.body); }));
   root.querySelectorAll("[data-del]").forEach((el) => (el.onclick = async (e) => { e.stopPropagation(); await window.donna.notesRemove(el.dataset.del); vNotes(root, bare); toast("Deleted"); }));

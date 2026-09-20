@@ -1,7 +1,7 @@
 {
   "name": "donna",
   "productName": "Donna",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Donna — a local-first personal assistant for macOS",
   "author": "ALJ",
   "private": true,
