@@ -440,6 +440,14 @@ app.whenReady().then(() => {
     if (r.canceled || !r.filePaths[0]) return require("./lib/tracker").getTrackerConfig();
     return require("./lib/tracker").setTrackerConfig({ saveDir: r.filePaths[0] });
   });
+  ipcMain.handle("donna:pickContext", async () => {
+    const { dialog } = require("electron");
+    const r = await dialog.showOpenDialog(win, {
+      title: "What should Donna read?",
+      properties: ["openFile", "openDirectory", "multiSelections"],
+    });
+    return r.canceled ? [] : r.filePaths;
+  });
   /* the honest end-of-day recap — no commercial tracker does this well */
   ipcMain.handle("donna:dayRecap", async () => {
     try {

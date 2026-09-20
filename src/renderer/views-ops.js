@@ -27,7 +27,7 @@ function vProduction() {
     </div>
     ${p.voiceFiles.length ? `<div class="sec" style="color:var(--p2)">Voice-swap gate — <b>blocking post</b></div>
       <div class="rows">${p.voiceFiles.map((f) => `<div class="row"${si()}><div class="row-body"><div class="row-title">${esc(f)}</div></div>
-      <div class="row-meta"><span class="chip p2">swap to Ximena</span></div></div>`).join("")}</div>` : ""}
+      <div class="row-meta"><span class="chip p2">needs voice</span></div></div>`).join("")}</div>` : ""}
     ${p.agents && p.agents.length ? `<div class="sec">Agents — <b>live in herdr</b></div>
       <div class="rows">${p.agents.map((a) => `<div class="row">
         <span class="ag-dot ${a.status}" style="margin-top:5px"></span>

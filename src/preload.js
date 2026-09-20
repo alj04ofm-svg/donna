@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld("donna", {
   trackerConfigGet: () => ipcRenderer.invoke("donna:trackerConfigGet"),
   trackerConfigSet: (patch) => ipcRenderer.invoke("donna:trackerConfigSet", patch),
   trackerPickSaveDir: () => ipcRenderer.invoke("donna:trackerPickSaveDir"),
+  pickContext: () => ipcRenderer.invoke("donna:pickContext"),
   dayRecap: () => ipcRenderer.invoke("donna:dayRecap"),
   openShot: (p) => ipcRenderer.invoke("donna:openShot", p),
   waitingList: () => ipcRenderer.invoke("donna:waitingList"),

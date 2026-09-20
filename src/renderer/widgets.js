@@ -310,61 +310,63 @@ async function openWeeklyReview() {
   $("#wr-reflect").focus();
 }
 
-/* 5-step onboarding tour — shown once (config.onboarded). Each step is a
-   real interactive micro-task that creates an actual entity in Donna:
-   1. Add a task (literal one)
-   2. Set a goal (with a oneThing)
-   3. Add a person
-   4. Pick a routine (habit to track)
-   5. See it all on Today
-
-   Beautiful, animated, on-brand. Replaces the older static welcome. */
+/* First-run setup — 4 gentle steps: your name, your AI key, what Donna may
+   read, done. Values are saved to config via setConfig. Shown once. */
 const OB_STEPS = [
-  {
-    title: "Step 1 of 5 — Add your first task",
-    body: "Type something real you'd do today. The grammar recognises `p1`, `tomorrow`, `#project`, `@area`, `=2h`.",
-    placeholder: "Ship WC reel #4 p1 tomorrow #worldcup @work =2h",
-    kind: "task",
-    next: "Add task →",
-  },
-  {
-    title: "Step 2 of 5 — Set one goal for the next 12 weeks",
-    body: "Pick the ambitious outcome, then give it a oneThing — the single lever that moves it most.",
-    placeholder: "30 World Cup reels live",
-    oneThingPlaceholder: "Lock the script bank + ship one full end-to-end pipeline today",
-    kind: "goal",
-    next: "Save goal →",
-  },
-  {
-    title: "Step 3 of 5 — Add someone you don't want to lose touch with",
-    body: "A name + a role. Donna keeps a cadence for each person so the right ones drift to the top of your attention.",
-    placeholder: "George — partner",
-    kind: "person",
-    next: "Add person →",
-  },
-  {
-    title: "Step 4 of 5 — Pick one non-negotiable routine",
-    body: "Gym, reading, fast-mornings, anything. The one you actually want to keep.",
-    placeholder: "Wake at 5am — feet on the floor before the phone",
-    kind: "habit",
-    next: "Save routine →",
-  },
-  {
-    title: "All set — see it on Today",
-    body: "Your lead action, your top task, your people cadence, your routine — all on one screen, every morning.",
-    kind: "done",
-    next: "Open Today →",
-  },
+  { kind: "name", title: "Welcome to Donna", body: "What should I call you?", next: "Continue →" },
+  { kind: "ai", title: "Connect your AI", body: "Donna uses your own API key. It stays on this Mac — in ~/Library/Application Support/Donna.", next: "Continue →" },
+  { kind: "context", title: "What should Donna know?", body: "Add files or folders she can read when answering. Optional, and nothing is uploaded.", next: "Continue →" },
+  { kind: "done", title: "You're all set", body: "Press ⌘⇧Space anywhere to summon Donna. Everything stays local.", next: "Open Today →" },
 ];
 
 let _obStep = 0;
+let _obData = { userName: "", provider: "anthropic", apiKey: "", contextRoots: [] };
+
 function openOnboarding() {
   if ($("#onboard")) return;
   _obStep = 0;
+  _obData = {
+    userName: (cfg && cfg.userName) || "",
+    provider: (cfg && cfg.provider) || "anthropic",
+    apiKey: (cfg && cfg.apiKey) || "",
+    contextRoots: (cfg && cfg.contextRoots) || [],
+  };
   _renderObStep();
 }
+
+function _obRenderBody(step) {
+  if (step.kind === "name") return `<input id="ob-in" class="sd-input" placeholder="Your name" autofocus>`;
+  if (step.kind === "ai") return `
+    <select id="ob-provider" class="sd-input">
+      <option value="anthropic">Anthropic (Claude)</option>
+      <option value="openai">OpenAI</option>
+      <option value="minimax">MiniMax</option>
+      <option value="claude-cli">Claude CLI (local, no key)</option>
+    </select>
+    <input id="ob-key" class="sd-input" type="password" placeholder="Paste your API key (or set an env var instead)">
+    <div class="ob-hint">Change this later in Settings → General.</div>`;
+  if (step.kind === "context") return `
+    <div id="ob-roots" class="ob-roots"></div>
+    <button class="hero-btn" id="ob-pick" style="width:100%;justify-content:center;margin-top:10px">Choose files / folders…</button>`;
+  return `<div class="ob-done-art">✦</div>`;
+}
+
+function _obRenderRoots() {
+  const wrap = document.querySelector("#ob-roots");
+  if (!wrap) return;
+  const pretty = (r) => String(r).replace(/^\/Users\/[^/]+/, "~").replace(/^\/home\/[^/]+/, "~");
+  wrap.innerHTML = _obData.contextRoots.length
+    ? _obData.contextRoots.map((r) => `<div class="ob-root"><span class="mono">${esc(pretty(r))}</span><button data-rm="${esc(r)}">×</button></div>`).join("")
+    : `<div class="ob-hint">Nothing added yet — you can skip this.</div>`;
+  wrap.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => {
+    _obData.contextRoots = _obData.contextRoots.filter((x) => x !== b.dataset.rm);
+    _obRenderRoots();
+  }));
+}
+
 function _renderObStep() {
-  const old = $("#onboard"); if (old) old.remove();
+  const old = $("#onboard");
+  if (old) old.remove();
   const step = OB_STEPS[_obStep];
   const el = document.createElement("div");
   el.id = "onboard";
@@ -373,15 +375,7 @@ function _renderObStep() {
     <div class="ob-orb"></div>
     <div class="sd-h" style="text-align:center">${esc(step.title)}</div>
     <p class="ob-sub">${esc(step.body)}</p>
-    ${step.kind === "task" ? `<input id="ob-in" class="sd-input" placeholder="${esc(step.placeholder)}" autofocus>
-      <div class="ob-hint">try: <code>"chase george p1 tomorrow @relationships"</code></div>` : ""}
-    ${step.kind === "goal" ? `
-      <input id="ob-in" class="sd-input" placeholder="${esc(step.placeholder)}" autofocus>
-      <input id="ob-onething" class="sd-input" placeholder="${esc(step.oneThingPlaceholder)}">
-    ` : ""}
-    ${step.kind === "person" ? `<input id="ob-in" class="sd-input" placeholder="${esc(step.placeholder)}" autofocus>` : ""}
-    ${step.kind === "habit" ? `<input id="ob-in" class="sd-input" placeholder="${esc(step.placeholder)}" autofocus>` : ""}
-    ${step.kind === "done" ? `<div class="ob-done-art">✦</div>` : ""}
+    ${_obRenderBody(step)}
     <div class="sd-acts" style="margin-top:20px">
       <button class="hero-btn" id="ob-skip">Skip</button>
       <button class="hero-btn go" id="ob-next" style="flex:1;justify-content:center">${esc(step.next)}</button>
@@ -389,55 +383,59 @@ function _renderObStep() {
   </div>`;
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add("show"));
-  setTimeout(() => { const inp = el.querySelector("#ob-in"); if (inp) inp.focus(); }, 100);
-  el.querySelector("#ob-skip").onclick = () => _obAdvance(el, null);
+  if (step.kind === "name") {
+    const inp = el.querySelector("#ob-in");
+    if (inp) { inp.value = _obData.userName; setTimeout(() => inp.focus(), 100); }
+  }
+  if (step.kind === "ai") {
+    const sel = el.querySelector("#ob-provider");
+    if (sel) sel.value = _obData.provider;
+    const key = el.querySelector("#ob-key");
+    if (key) key.value = _obData.apiKey;
+  }
+  if (step.kind === "context") {
+    _obRenderRoots();
+    el.querySelector("#ob-pick").onclick = async () => {
+      try {
+        const paths = await window.donna.pickContext();
+        if (paths && paths.length) {
+          _obData.contextRoots = [...new Set([..._obData.contextRoots, ...paths])];
+          _obRenderRoots();
+        }
+      } catch (e) { /* ignore */ }
+    };
+  }
+  el.querySelector("#ob-skip").onclick = () => _obFinish(el);
   el.querySelector("#ob-next").onclick = async () => {
-    const btn = el.querySelector("#ob-next");
-    btn.disabled = true; btn.textContent = "Saving…";
-    try {
-      const inp = el.querySelector("#ob-in");
-      const val = inp ? inp.value.trim() : "";
-      if (step.kind !== "done" && !val) { btn.disabled = false; btn.textContent = step.next; inp && inp.focus(); return; }
-      await _obAdvance(el, val);
-    } catch (e) { console.error("[onboard]", e); btn.disabled = false; btn.textContent = step.next; }
+    const cur = OB_STEPS[_obStep];
+    if (cur.kind === "name") _obData.userName = (el.querySelector("#ob-in")?.value || "").trim();
+    if (cur.kind === "ai") {
+      _obData.provider = el.querySelector("#ob-provider")?.value || "anthropic";
+      _obData.apiKey = (el.querySelector("#ob-key")?.value || "").trim();
+    }
+    _obStep++;
+    if (_obStep >= OB_STEPS.length) { await _obFinish(el); return; }
+    _renderObStep();
   };
   const inp = el.querySelector("#ob-in");
   if (inp) inp.onkeydown = (e) => { if (e.key === "Enter") el.querySelector("#ob-next").click(); };
 }
-async function _obAdvance(el, val) {
-  const step = OB_STEPS[_obStep];
+
+async function _obFinish(el) {
   try {
-    if (step.kind === "task" && val) { await window.donna.addTask(val); }
-    if (step.kind === "goal" && val) {
-      const onething = el.querySelector("#ob-onething")?.value.trim() || "";
-      const id = await window.donna.goalsAddRpc ? window.donna.goalsAddRpc(val) : null;
-      /* fall back: use the IPC add endpoint by setting a oneThing */
-      try {
-        const list = await window.donna.goalsList();
-        const fresh = list.find((g) => g.objective === val || g.title === val);
-        if (fresh && onething) await window.donna.goalsUpdate(fresh.id, { oneThing: onething });
-      } catch {}
-    }
-    if (step.kind === "person" && val) {
-      const [name, role] = val.split(/[·\-|,]/).map((s) => s.trim());
-      await window.donna.peopleAdd(name, role || "");
-    }
-    /* habits are stored via the habits module — fall back to memory for now */
-    if (step.kind === "habit" && val) {
-      try { await window.donna.memoryAdd(val, "preference"); } catch {}
-    }
-  } catch (e) { console.warn("[onboard save]", e); }
-  _obStep++;
-  if (_obStep >= OB_STEPS.length) {
-    cfg = await window.donna.setConfig({ onboarded: true });
-    /* jump to Today so they see the result */
-    el.classList.remove("show"); setTimeout(() => el.remove(), 200);
-    try { gotoView("today"); } catch {}
-    try { await refresh(); } catch {}
-    toast("All set — enjoy");
-    return;
-  }
-  _renderObStep();
+    cfg = await window.donna.setConfig({
+      userName: _obData.userName || "",
+      provider: _obData.provider || "anthropic",
+      apiKey: _obData.apiKey || "",
+      contextRoots: _obData.contextRoots || [],
+      onboarded: true,
+    });
+  } catch (e) { console.warn("[onboard]", e); }
+  el.classList.remove("show");
+  setTimeout(() => el.remove(), 200);
+  try { gotoView("today"); } catch {}
+  try { await refresh(); } catch {}
+  toast("All set — enjoy");
 }
 
 /* Remind me — quick time-based poke; main fires the notification when due. */

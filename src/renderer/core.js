@@ -1,4 +1,4 @@
-/* Donna renderer — three window modes, live UGC data, Linear-grade keyboard,
+/* Donna renderer — three window modes, live local data, Linear-grade keyboard,
    Kanban board, streaming Ask. Vanilla JS, one keydown state machine. */
 
 window.__ver = "1.0";
@@ -146,15 +146,9 @@ function rowHtml(t, { compact = false, idx = -1 } = {}) {
   </div>`;
 }
 
-/* one compact operation line — replaces the 3-panel rail. click → Production */
+/* No external pipeline in the public build. */
 function opLine() {
-  if (!prod) return `<button class="op-line" id="op-line" data-goto="production"><span class="op-dot"></span><span class="op-txt">Reading the operation…</span></button>`;
-  const g = (k) => prod.stages.find((s) => s.key === k) || { n: 0 };
-  const alert = g("voice").n > 0;
-  return `<button class="op-line ${alert ? "alert" : ""}" id="op-line" data-goto="production">
-    <span class="op-dot"></span>
-    <span class="op-txt">${g("ready").n} ready${alert ? ` · <b>${g("voice").n} to voice-swap</b>` : ""} · ${g("post").n} post-ready</span>
-    <span class="op-arrow">→</span></button>`;
+  return "";
 }
 function wireOpLine(scope) { const el = scope.querySelector(".op-line"); if (el) el.onclick = () => gotoView(el.dataset.goto); }
 
