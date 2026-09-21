@@ -2658,3 +2658,41 @@ html,body{ font: 400 14px/1.55 var(--sans); letter-spacing: -0.005em; }
 .t2-block-btn.ok:hover{ color:oklch(0.78 0.14 160); border-color:oklch(0.76 0.14 160 / 45%); }
 .t2-overflow{ margin-top:10px; font-size:12.5px; color:var(--dim); }
 .t2-link{ border:0; background:none; color:var(--signal); cursor:pointer; font:inherit; padding:0; }
+
+/* ═══ Tables — local grids with import ═══ */
+.tbl-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:20px; padding:6px 0 20px; }
+.tbl-eyebrow{ font:600 11px var(--sans); letter-spacing:0.14em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
+.tbl-head-acts{ display:flex; gap:10px; flex-shrink:0; }
+.tbl-desk{ display:grid; grid-template-columns:236px minmax(0,1fr); gap:16px; align-items:start; }
+@media (max-width:900px){ .tbl-desk{ grid-template-columns:1fr; } }
+.tbl-list{ background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+.tbl-list-head{ font:600 10.5px var(--sans); letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); padding:12px 14px; border-bottom:1px solid var(--line); }
+.tbl-rows{ display:flex; flex-direction:column; }
+.tbl-row{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:11px 14px; border:0; border-top:1px solid var(--line-soft); background:transparent; color:var(--ink); cursor:pointer; text-align:left; transition:background 150ms var(--ease); }
+.tbl-row:first-child{ border-top:0; }
+.tbl-row:hover{ background:oklch(1 0 0 / 3%); }
+.tbl-row.on{ background:oklch(0.76 0.12 250 / 12%); }
+.tbl-row-name{ font-size:13.5px; font-weight:550; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tbl-row-meta{ font-size:11px; color:var(--dim); flex-shrink:0; }
+.tbl-empty-list{ padding:16px 14px; color:var(--dim); font-size:13px; }
+.tbl-blank{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:66px 24px; border:1px dashed var(--line); border-radius:16px; text-align:center; }
+.tbl-blank-art{ font-size:40px; color:var(--dim); opacity:0.55; }
+.tbl-blank h2{ margin:6px 0 0; font:700 18px var(--display,var(--sans)); color:var(--ink); }
+.tbl-blank p{ margin:0; color:var(--mut); font-size:13.5px; max-width:400px; }
+.tbl-blank-acts{ display:flex; gap:10px; margin-top:12px; }
+.tbl-wrap{ background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+.tbl-topbar{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--line); }
+.tbl-name{ border:0; background:transparent; color:var(--ink); font:700 16px var(--display,var(--sans)); outline:none; min-width:120px; flex:1; letter-spacing:-0.01em; }
+.tbl-name:focus{ box-shadow:0 1px 0 var(--signal); }
+.tbl-count{ font-size:11.5px; color:var(--dim); }
+.tbl-topacts{ display:flex; gap:8px; }
+.t2-btn.ghost.danger{ color:#ff6b6b; border-color:oklch(0.68 0.19 25 / 30%); }
+.tbl-scroll{ overflow:auto; max-height:calc(100vh - 330px); }
+.tbl{ border-collapse:separate; border-spacing:0; width:100%; font-size:13px; }
+.tbl th{ position:sticky; top:0; z-index:2; background:var(--panel); color:var(--dim); font:600 10.5px var(--sans); letter-spacing:0.09em; text-transform:uppercase; text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); border-right:1px solid var(--line-soft); white-space:nowrap; }
+.tbl td{ padding:8px 12px; border-bottom:1px solid var(--line-soft); border-right:1px solid var(--line-soft); color:var(--ink); min-width:150px; outline:none; }
+.tbl td[contenteditable]:focus{ background:oklch(0.76 0.12 250 / 8%); box-shadow:inset 0 0 0 1px oklch(0.76 0.12 250 / 45%); }
+.tbl-idx{ width:46px; min-width:46px; color:var(--dim); font:600 11px var(--mono,monospace); text-align:center; position:relative; }
+.tbl-delrow{ display:none; position:absolute; right:3px; top:50%; transform:translateY(-50%); width:18px; height:18px; border-radius:5px; border:0; background:oklch(0.68 0.19 25 / 22%); color:#ff9a9a; cursor:pointer; line-height:1; }
+.tbl tr:hover .tbl-delrow{ display:block; }
+.tbl-addcolcell{ width:40px; min-width:40px; }

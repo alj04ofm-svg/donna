@@ -575,6 +575,31 @@ app.whenReady().then(() => {
     if (r.canceled || !r.filePaths[0]) return require("./lib/tracker").getTrackerConfig();
     return require("./lib/tracker").setTrackerConfig({ saveDir: r.filePaths[0] });
   });
+  /* ── Tables (local Airtable/Sheets stand-in) ── */
+  ipcMain.handle("donna:tablesList", () => require("./lib/tables").list());
+  ipcMain.handle("donna:tablesGet", (_e, id) => require("./lib/tables").get(id));
+  ipcMain.handle("donna:tablesCreate", (_e, { name } = {}) => require("./lib/tables").create(name, [{ key: "name", name: "Name", type: "text" }], []));
+  ipcMain.handle("donna:tablesRemove", (_e, id) => require("./lib/tables").remove(id));
+  ipcMain.handle("donna:tablesRename", (_e, { id, name }) => require("./lib/tables").rename(id, name));
+  ipcMain.handle("donna:tablesSetCell", (_e, { id, rowIndex, key, value }) => require("./lib/tables").setCell(id, rowIndex, key, value));
+  ipcMain.handle("donna:tablesAddRow", (_e, { id, row } = {}) => require("./lib/tables").addRow(id, row));
+  ipcMain.handle("donna:tablesRemoveRow", (_e, { id, rowIndex }) => require("./lib/tables").removeRow(id, rowIndex));
+  ipcMain.handle("donna:tablesAddColumn", (_e, { id, name }) => require("./lib/tables").addColumn(id, name));
+  ipcMain.handle("donna:tablesImport", (_e, { name, matrix }) => require("./lib/tables").importRows(name, matrix));
+  ipcMain.handle("donna:importSheet", async () => {
+    const { dialog } = require("electron");
+    const r = await dialog.showOpenDialog(win, {
+      title: "Import a sheet",
+      properties: ["openFile", "multiSelections"],
+      filters: [{ name: "Sheets", extensions: ["csv", "tsv", "xlsx", "xls", "xlsm", "ods"] }],
+    });
+    if (r.canceled) return [];
+    const out = [];
+    for (const f of r.filePaths) {
+      try { out.push({ name: path.basename(f), base64: fs.readFileSync(f).toString("base64") }); } catch {}
+    }
+    return out;
+  });
   ipcMain.handle("donna:importNotes", async () => {
     const { dialog } = require("electron");
     const r = await dialog.showOpenDialog(win, {

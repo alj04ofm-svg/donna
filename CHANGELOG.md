@@ -3,6 +3,13 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.18.0] — 2026-09-20
+
+- **Tables** (new): local Airtable/Sheets-style grids. Create tables, edit
+  cells inline, add rows/columns, and **import CSV / TSV / Excel / Airtable
+  exports** (SheetJS). Plus a **NocoDB** link — set your NocoDB URL in Settings
+  and open the full database engine from here.
+
 ## [1.17.0] — 2026-09-20
 
 - **Your day** on Today: the scheduler's time-blocked plan, Motion-style — real

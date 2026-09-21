@@ -1,5 +1,5 @@
 
-const VIEWS = { today: vToday2, tasks: vTasks, plan: vPlan, ask: vAsk, rhythm: vRhythm, library: vLibrary, goals: vGoals, people: vPeople, habits: vHabits, settings: vSettings,
+const VIEWS = { today: vToday2, tasks: vTasks, plan: vPlan, ask: vAsk, rhythm: vRhythm, library: vLibrary, goals: vGoals, tables: vTables, people: vPeople, habits: vHabits, settings: vSettings,
   // still callable (embedded elsewhere / tabs), not in the sidebar:
   waiting: vWaiting, capture: vCapture, notes: vNotes, ideas: vIdeas, memory: vMemory };
 function render() {
@@ -182,7 +182,7 @@ function buildActions(q) {
   }
   const nav = [
     ["today", "Go to Today", "⌘1"], ["plan", "Go to Plan", "⌘2"], ["tasks", "Go to Tasks", "⌘3"],
-    ["goals", "Go to Goals", "⌘4"], ["library", "Go to Notes", "⌘5"], ["rhythm", "Go to Tracker", "⌘6"],
+    ["goals", "Go to Goals", "⌘4"], ["tables", "Go to Tables", "⌘5"], ["library", "Go to Notes", ""], ["rhythm", "Go to Tracker", "⌘6"],
     ["ask", "Go to Ask", "⌘7"], ["settings", "Go to Settings", "⌘8"],
   ];
   for (const [v, label, hint] of nav)
