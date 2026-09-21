@@ -486,3 +486,199 @@ window.openSinceLeftCard = function (items, lastSeenAt) {
   slot.querySelector(".since-x").onclick = () => { slot.innerHTML = ""; };
 };
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Today v2 — mission control. Hand-built, detail-first:
+   · a greeting header with the day's shape at a glance
+   · ONE focus card (the thing), with a live timer
+   · a slim "day bar" showing time blocks + a now-line (from the scheduler)
+   · "up next" list with quiet hover actions
+   · routines as tactile pills, waiting-on card, a deep quick-capture
+   ═══════════════════════════════════════════════════════════════════════════ */
+function _t2pct(v, a, b) { return Math.max(0, Math.min(100, ((v - a) / Math.max(1, b - a)) * 100)); }
+function _t2fmtMin(m) { const h = Math.floor(m / 60), mm = m % 60; const ap = h < 12 ? "am" : "pm"; const hh = ((h + 11) % 12) + 1; return `${hh}${mm ? ":" + String(mm).padStart(2, "0") : ""}${ap}`; }
+function _t2elapsed(iso) { if (!iso) return "0:00"; const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
+
+async function vToday2() {
+  stagger = 0;
+  const session = (typeof useSession === "function") ? useSession() : null;
+  const name = (cfg && cfg.userName) || (session && session.displayName) || "there";
+  let habits = [], waiting = null, plan = null;
+  try { habits = await window.donna.habitsList(); } catch {}
+  try { waiting = await window.donna.waitingRollup(); } catch {}
+  try { plan = await window.donna.plan(); } catch {}
+
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const open = (data.open || []).slice().sort((a, b) => a.priority - b.priority);
+  const doing = open.find((t) => t.status === "doing");
+  const hero = doing || open[0] || null;
+  const rest = open.filter((t) => t && t.id !== (hero && hero.id)).slice(0, 5);
+  const p1 = data.counts.p1 || 0;
+  const overdue = open.filter((t) => t.dueAt && String(t.dueAt).slice(0, 10) < new Date().toISOString().slice(0, 10) && t.status !== "doing").length;
+  const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  const habitsDone = habits.filter((h) => h.doneToday).length;
+
+  const blocks = (plan && plan.blocks) || [];
+  const busy = (plan && plan.busy) || [];
+  const nowMin = (plan && plan.nowMin) || (hour * 60);
+  const ds = ((plan && plan.dayStart) || 9) * 60, de = ((plan && plan.dayEnd) || 19) * 60;
+  const shape = `
+    <div class="t2-bar">
+      <span class="t2-bar-fill" style="left:${_t2pct(ds, ds, de)}%;width:${_t2pct(nowMin, ds, de) - _t2pct(ds, ds, de)}%"></span>
+      ${busy.map((b) => `<span class="t2-blk busy" style="left:${_t2pct(b.s, ds, de)}%;width:${Math.max(0.6, _t2pct(b.e, ds, de) - _t2pct(b.s, ds, de))}%"></span>`).join("")}
+      ${blocks.map((b) => `<span class="t2-blk work" style="left:${_t2pct(b.s, ds, de)}%;width:${Math.max(0.6, _t2pct(b.e, ds, de) - _t2pct(b.s, ds, de))}%" title="${esc(b.title || "task")}"></span>`).join("")}
+      <i class="t2-now" style="left:${_t2pct(nowMin, ds, de)}%"></i>
+    </div>
+    <div class="t2-bar-key"><span>${_t2fmtMin(ds)}</span><span class="t2-key-mid">${doing ? "in focus now" : boxesFree(blocks)}</span><span>${_t2fmtMin(de)}</span></div>`;
+  function boxesFree(bs) { const used = bs.reduce((n, b) => n + (b.e - b.s), 0); const total = de - ds; return `${Math.round((total - used) / 60)}h free`; }
+
+  main.innerHTML = `
+  <div class="view t2">
+    <header class="t2-head">
+      <div class="t2-head-l">
+        <div class="t2-eyebrow">${esc(dateLabel)}</div>
+        <h1 class="t2-greet">${esc(greet)}, <span>${esc(name)}</span></h1>
+        <div class="t2-vibe">
+          <span class="t2-dot ${p1 ? "p1" : "ok"}"></span>
+          ${open.length} open${p1 ? ` · ${p1} P1` : ""}${overdue ? ` · <b>${overdue} overdue</b>` : ""}${habits.length ? ` · routines ${habitsDone}/${habits.length}` : ""}
+        </div>
+      </div>
+      <div class="t2-head-r">
+        <button class="t2-btn ghost" id="t2-capture">⌥ Quick capture</button>
+        <button class="t2-btn primary" id="t2-plan">✦ Plan my day</button>
+      </div>
+    </header>
+
+    <section class="t2-shape">
+      <div class="t2-sec-head"><span>Today's shape</span><em>${_t2fmtMin(ds)} – ${_t2fmtMin(de)}</em></div>
+      ${shape}
+    </section>
+
+    <div class="t2-grid">
+      <div class="t2-main">
+        ${hero ? `
+        <section class="t2-focus" id="t2-focus" data-id="${hero.id}">
+          <div class="t2-focus-top">
+            <span class="t2-focus-kicker">${doing ? "In focus" : "Start here"}</span>
+            <span class="t2-pri p${hero.priority}">P${hero.priority}</span>
+          </div>
+          <h2 class="t2-focus-title">${esc(hero.title)}</h2>
+          <div class="t2-focus-meta">
+            ${hero.dueAt ? `<span class="t2-meta-chip">📅 ${esc(String(hero.dueAt).slice(0, 10))}</span>` : ""}
+            ${hero.estimatedMinutes ? `<span class="t2-meta-chip">⏱ ${hero.estimatedMinutes}m</span>` : ""}
+            ${hero.project_id ? `<span class="t2-meta-chip">◈ ${esc(hero.project_id)}</span>` : ""}
+            ${hero.subtasks && hero.subtasks.length ? `<span class="t2-meta-chip">☑ ${hero.subtasks.filter((s) => s.done).length}/${hero.subtasks.length}</span>` : ""}
+            ${doing ? `<span class="t2-timer" id="t2-timer">${_t2elapsed(doing.startedAt)}</span>` : ""}
+          </div>
+          <div class="t2-focus-acts">
+            <button class="t2-btn primary" id="t2-start">${doing ? "❚❚ Pause" : "▶ Start focus"}</button>
+            <button class="t2-btn ghost" id="t2-done">✓ Done</button>
+            <button class="t2-btn ghost" id="t2-edit">Edit</button>
+          </div>
+        </section>` : `
+        <section class="t2-focus empty">
+          <div class="t2-focus-top"><span class="t2-focus-kicker">Start here</span></div>
+          <h2 class="t2-focus-title">Nothing on your plate.</h2>
+          <div class="t2-focus-meta"><span>Capture something below and make it the first thing.</span></div>
+        </section>`}
+
+        <section class="t2-next">
+          <div class="t2-sec-head"><span>Up next</span>${rest.length ? `<em>${rest.length}</em>` : ""}</div>
+          ${rest.length ? `<div class="t2-list">${rest.map((t) => `
+            <div class="t2-row" data-id="${t.id}">
+              <button class="t2-check" data-done="${t.id}" aria-label="Complete"></button>
+              <div class="t2-row-body">
+                <div class="t2-row-title">${esc(t.title)}</div>
+                <div class="t2-row-sub">
+                  <span class="t2-pri-mini p${t.priority}"></span>
+                  ${t.dueAt ? `<span>${esc(String(t.dueAt).slice(0, 10))}</span>` : ""}
+                  ${t.project_id ? `<span>${esc(t.project_id)}</span>` : ""}
+                  ${t.subtasks && t.subtasks.length ? `<span>☑ ${t.subtasks.filter((s) => s.done).length}/${t.subtasks.length}</span>` : ""}
+                </div>
+              </div>
+              <button class="t2-row-go" data-open="${t.id}" title="Open">→</button>
+            </div>`).join("")}</div>`
+          : `<div class="t2-empty">Nothing else queued. <b>Clean board.</b></div>`}
+        </section>
+      </div>
+
+      <aside class="t2-side">
+        <section class="t2-card">
+          <div class="t2-sec-head"><span>Routines</span><em>${habitsDone}/${habits.length}</em></div>
+          <div class="t2-habits">
+            ${habits.length ? habits.map((h) => `<button class="t2-habit ${h.doneToday ? "on" : ""}" data-habit="${h.id}">
+              <span class="t2-habit-tick">${h.doneToday ? "✓" : ""}</span>
+              <span class="t2-habit-name">${esc(h.name)}</span>
+              ${typeof h.streak === "number" && h.streak > 0 ? `<span class="t2-habit-streak">${h.streak}d</span>` : ""}
+            </button>`).join("") : `<div class="t2-empty slim">No routines yet.</div>`}
+          </div>
+        </section>
+
+        <section class="t2-card">
+          <div class="t2-sec-head"><span>Waiting on</span>${waiting && waiting.total ? `<em>${waiting.total}</em>` : ""}</div>
+          ${waiting && waiting.total ? `<div class="t2-waiting">
+            ${waiting.alert ? `<div class="t2-wait alert">${waiting.alert} overdue for a nudge</div>` : ""}
+            ${waiting.stale ? `<div class="t2-wait stale">${waiting.stale} going quiet</div>` : ""}
+            ${!waiting.alert && !waiting.stale ? `<div class="t2-wait ok">All moving — nothing to chase.</div>` : ""}
+          </div>` : `<div class="t2-empty slim">Nothing on anyone else. Good.</div>`}
+        </section>
+
+        <section class="t2-card">
+          <div class="t2-sec-head"><span>Tomorrow</span></div>
+          ${(function () {
+            const tom = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+            const t = open.filter((x) => x.dueAt && String(x.dueAt).slice(0, 10) === tom);
+            return t.length ? `<div class="t2-tom">${t.slice(0, 3).map((x) => `<div class="t2-tom-row">${esc(x.title)}</div>`).join("")}</div>` : `<div class="t2-empty slim">Clear so far.</div>`;
+          })()}
+        </section>
+      </aside>
+    </div>
+
+    <div class="t2-capture">
+      <span class="t2-capture-ico">✎</span>
+      <input id="t2-input" placeholder="Capture a task, note or idea — try “call sam friday p1 @work =20m”">
+      <kbd>↵</kbd>
+    </div>
+  </div>`;
+
+  // ── wiring ────────────────────────────────────────────────────────────────
+  const inp = main.querySelector("#t2-input");
+  wireAdd(inp);
+  main.querySelector("#t2-capture").onclick = () => { try { openCapture(); } catch {} inp && inp.focus(); };
+  const planBtn = main.querySelector("#t2-plan"); if (planBtn) planBtn.onclick = () => { try { openMorningPlan(); } catch { gotoView("plan"); } };
+  main.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = async (e) => {
+    e.stopPropagation();
+    try { await window.donna.habitsToggle(b.dataset.habit); } catch {}
+    await refresh(); vToday2();
+  }));
+  main.querySelectorAll("[data-done]").forEach((b) => (b.onclick = async (e) => {
+    e.stopPropagation();
+    completeWithAnim(b.dataset.done, b.closest(".t2-row"));
+  }));
+  main.querySelectorAll("[data-open]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openTaskDetail(b.dataset.open); }));
+  main.querySelectorAll(".t2-row").forEach((r) => (r.onclick = () => openTaskDetail(r.dataset.id)));
+  const focus = main.querySelector("#t2-focus");
+  if (focus) {
+    const id = focus.dataset.id;
+    focus.onclick = (e) => { if (!e.target.closest("button")) openTaskDetail(id); };
+    main.querySelector("#t2-start").onclick = async (e) => {
+      e.stopPropagation();
+      const t = open.find((x) => x.id === id);
+      await window.donna.setStatus(id, t && t.status === "doing" ? "todo" : "doing");
+      await refresh(); vToday2();
+    };
+    main.querySelector("#t2-done").onclick = (e) => { e.stopPropagation(); completeWithAnim(id, main.querySelector("#t2-focus")); };
+    main.querySelector("#t2-edit").onclick = (e) => { e.stopPropagation(); openTaskDetail(id); };
+  }
+  // live timer for the focused task
+  const timerEl = main.querySelector("#t2-timer");
+  if (timerEl && doing) {
+    clearInterval(window.__t2timer);
+    window.__t2timer = setInterval(() => {
+      if (view !== "today" || !document.body.contains(timerEl)) { clearInterval(window.__t2timer); return; }
+      timerEl.textContent = _t2elapsed(doing.startedAt);
+    }, 1000);
+  }
+  try { applySections && applySections(); } catch {}
+}

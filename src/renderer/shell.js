@@ -1,5 +1,5 @@
 
-const VIEWS = { today: vToday, tasks: vTasks, plan: vPlan, ask: vAsk, rhythm: vRhythm, library: vLibrary, goals: vGoals, people: vPeople, habits: vHabits, settings: vSettings,
+const VIEWS = { today: vToday2, tasks: vTasks, plan: vPlan, ask: vAsk, rhythm: vRhythm, library: vLibrary, goals: vGoals, people: vPeople, habits: vHabits, settings: vSettings,
   // still callable (embedded elsewhere / tabs), not in the sidebar:
   waiting: vWaiting, capture: vCapture, notes: vNotes, ideas: vIdeas, memory: vMemory };
 function render() {

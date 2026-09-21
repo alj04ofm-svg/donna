@@ -3,6 +3,13 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.16.0] — 2026-09-20
+
+- **Today rebuilt as mission control**: greeting + day stats, a live "shape of
+  today" bar (blocks + now-line), a prominent focus card with run timer,
+  "up next" with quiet hover actions, tactile routines, waiting-on, tomorrow,
+  and a deep quick-capture bar. Hand-built design, not a card dump.
+
 ## [1.15.0] — 2026-09-20
 
 - Plan: added a real **Month calendar grid** — tasks by due date (colour =
