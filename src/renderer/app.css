@@ -2386,3 +2386,42 @@ body { font: 400 14.5px/1.6 var(--sans); }
 .seg button { border-radius: 999px; }
 .set-group { border: 1px solid var(--line); background: var(--surface); }
 .triage-btn, .wind-btn, .hero-btn { border-radius: 11px; }
+
+/* ═══ V2 visual system — layered surfaces, tighter type, calmer chrome ═══
+   Additive overrides: colours, spacing, radii, type. No structural changes. */
+:root{
+  --bg:          oklch(0.14 0.006 265);
+  --panel:       oklch(0.165 0.007 265);
+  --surface:     oklch(0.195 0.008 265);
+  --surface-hi:  oklch(0.24 0.010 265);
+  --line:        oklch(1 0 0 / 8%);
+  --line-soft:   oklch(1 0 0 / 5%);
+  --ink:         oklch(0.97 0.004 265);
+  --mut:         oklch(0.76 0.010 265);
+  --dim:         oklch(0.60 0.012 265);
+  --radius: 14px;
+  --shadow-1: 0 1px 2px oklch(0 0 0 / 40%), 0 6px 20px oklch(0 0 0 / 25%);
+}
+html,body{ font: 400 14px/1.55 var(--sans); letter-spacing: -0.005em; }
+#sidebar{ width: 244px; background: var(--panel); border-right: 1px solid var(--line); }
+.brand{ padding: 54px 18px 16px; }
+.nav-item{ height: 36px; border-radius: 10px; padding: 0 12px; font-weight: 500; color: var(--mut); }
+.nav-item:hover{ background: oklch(1 0 0 / 4%); color: var(--ink); }
+.nav-item.active{ background: oklch(0.76 0.12 250 / 14%); color: var(--ink); }
+.nav-item.active svg{ color: var(--signal); }
+.nav-sec{ margin: 18px 12px 6px; font: 600 10px var(--sans); letter-spacing: 0.12em; color: var(--dim); }
+.view{ padding-top: 30px; }
+.h1{ font-size: 28px; font-weight: 700; letter-spacing: -0.025em; }
+.sub{ font-size: 13.5px; color: var(--mut); margin-top: 6px; }
+.sec{ font: 600 11px var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin: 28px 0 10px; }
+.rows{ border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.row{ padding: 12px 16px; gap: 12px; border-top: 1px solid var(--line-soft); }
+.row:first-child{ border-top: 0; }
+.row:hover{ background: oklch(1 0 0 / 3.5%); }
+.card{ border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); }
+.panel{ border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-1); }
+.seg{ border-radius: 999px; padding: 3px; background: oklch(0 0 0 / 26%); border: 1px solid var(--line-soft); }
+.seg button{ height: 28px; border-radius: 999px; padding: 0 14px; font-weight: 500; }
+.chip{ height: 20px; border-radius: 999px; font-weight: 600; }
+.triage-btn,.wind-btn,.hero-btn{ height: 34px; border-radius: 10px; font-weight: 600; }
+.set-group{ border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); }

@@ -16,8 +16,6 @@ const SECTIONS = [
   { id: "page.ask",        label: "Ask",           group: "nav", desc: "The AI hub — chat, memory, jump-starts", default: true },
   { id: "page.rhythm",     label: "Tracker",       group: "nav", desc: "What you actually did today: focus, deep work, screenshots, Pulse", default: true },
   { id: "page.library",    label: "Notes",         group: "nav", desc: "Notes, ideas and quick captures", default: true },
-  { id: "page.people",     label: "People",        group: "nav", desc: "Your circle, cadence, and what they owe you", default: true },
-  { id: "page.habits",     label: "Habits",        group: "nav", desc: "Daily routines, streaks and identity votes", default: true },
   { id: "page.goals",      label: "Goals",         group: "nav", desc: "OKR + 12-Week Year objectives, key results, milestones, lead measure", default: true },
   { id: "page.settings",   label: "Settings",      group: "nav", desc: "Configure Donna", default: true },
 

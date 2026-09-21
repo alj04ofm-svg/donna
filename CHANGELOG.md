@@ -3,6 +3,14 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.12.0] — 2026-09-20
+
+- Tighter spine: sidebar is now Today · Plan · Tasks · Goals · Notes · Ask ·
+  Tracker · Settings. Habits and People leave the sidebar (still reachable
+  contextually — Habits from Today's routines, People from Waiting).
+- V2 visual system: layered surfaces, calmer chrome, tighter typography,
+  consistent radii and row rhythm across the app.
+
 ## [1.11.2] — 2026-09-20
 
 - Notes page: titled Notes (was Library) and opens on the Notes tab by default.
