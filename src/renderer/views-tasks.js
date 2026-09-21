@@ -26,6 +26,7 @@ async function vTasks() {
   const segHtml = `<div class="seg">
     <button class="${taskLayout === "list" ? "on" : ""}" data-lay="list">List</button>
     <button class="${taskLayout === "board" ? "on" : ""}" data-lay="board">Board</button>
+    <button class="${taskLayout === "table" ? "on" : ""}" data-lay="table">Table</button>
     <button class="${taskLayout === "projects" ? "on" : ""}" data-lay="projects">By project</button>
   </div>`;
   main.innerHTML = `<div class="view wide">
@@ -86,6 +87,7 @@ async function vTasks() {
     vTasks();
   });
   taskLayout === "board" ? paintBoard(open)
+    : taskLayout === "table" ? paintTable(open)
     : taskLayout === "projects" ? paintProjects(open)
     : paintList(open, handoffs);
   openCoachButton("tasks", {
@@ -163,6 +165,43 @@ function cardHtml(t) {
     <div class="card-meta">${pGlyph(t.priority)}${col === "now" ? `<span class="chip now-chip">${elapsed(t.startedAt)}</span>` : ""}${t.assignee && t.assignee !== "me" ? `<span class="chip who">@${esc(t.assignee)}</span>` : ""}${t.waitingOn ? `<span class="chip wait">${esc(t.waitingOn)}</span>` : ""}${t.subtasks && t.subtasks.length ? `<span class="chip sub">${t.subtasks.filter((s) => s.done).length}/${t.subtasks.length}</span>` : ""}${dueChip(t.dueAt)}</div>
   </div>`;
 }
+/* Table view — ClickUp-style columns: Name · Priority · Due · Project ·
+   Assignee · Status. Click a row to edit; the checkbox completes. */
+function paintTable(open) {
+  stagger = 0;
+  const all = [...open, ...data.done.slice(-8).reverse()];
+  $("#task-body").innerHTML = `<div class="ttable">
+    <div class="tt-head">
+      <span class="tt-c-name">Name</span><span>Priority</span><span>Due</span><span>Project</span><span>Assignee</span><span>Status</span>
+    </div>
+    <div class="tt-body">
+      ${all.length ? all.map((t) => {
+        const st = t.status === "done" ? "done" : colOf(t) === "now" ? "In progress" : "To do";
+        return `<div class="tt-row" data-tt="${t.id}">
+          <span class="tt-c-name">
+            <button class="check ${t.status === "done" ? "on" : ""}" data-ttdone="${t.id}" aria-label="Complete">${CHECK_SVG}</button>
+            <span class="tt-title">${esc(t.title)}</span>
+            ${t.subtasks && t.subtasks.length ? `<span class="chip sub">${t.subtasks.filter((s) => s.done).length}/${t.subtasks.length}</span>` : ""}
+          </span>
+          <span>${pGlyph(t.priority)}</span>
+          <span>${t.dueAt ? esc(String(t.dueAt).slice(0, 10)) : "—"}</span>
+          <span>${esc(t.project_id || "—")}</span>
+          <span>${esc(t.assignee || "me")}</span>
+          <span class="tt-status ${t.status === "done" ? "done" : colOf(t) === "now" ? "now" : ""}">${st}</span>
+        </div>`;
+      }).join("") : `<div class="empty" style="padding:18px">No tasks.</div>`}
+    </div>
+  </div>`;
+  $("#task-body").querySelectorAll("[data-ttdone]").forEach((el) => (el.onclick = (e) => {
+    e.stopPropagation();
+    completeWithAnim(el.dataset.ttdone, el.closest(".tt-row"));
+  }));
+  $("#task-body").querySelectorAll("[data-tt]").forEach((r) => (r.onclick = (e) => {
+    if (e.target.closest("[data-ttdone]")) return;
+    openTaskDetail(r.dataset.tt);
+  }));
+}
+
 function paintBoard(open) {
   stagger = 0;
   const all = [...open, ...data.done.slice(-5).reverse()];

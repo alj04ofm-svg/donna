@@ -3,6 +3,13 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.14.0] — 2026-09-20
+
+- Tasks: **Table view** (Name · Priority · Due · Project · Assignee · Status)
+  with click-to-edit and inline complete.
+- Notes: plain-text/markdown notes are auto-converted to rich text on open, and
+  the list updates live as you type a title.
+
 ## [1.13.0] — 2026-09-20
 
 - **Notes rebuilt** as a real two-pane rich-text editor (Quill): list + editor,

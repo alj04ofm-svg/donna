@@ -625,6 +625,23 @@ async function vPlanWeek() {
 let _quill = null, _notesActive = null, _notesSave = null;
 function _noteIsHtml(b) { return /<[a-z][\s\S]*>/i.test(b || ""); }
 function _stripHtml(b) { return String(b || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(); }
+function _mdToHtml(md) {
+  const es = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (t) => es(t).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2">$1</a>');
+  const lines = String(md || "").split(/\r?\n/);
+  let html = "", list = null;
+  for (const ln of lines) {
+    const h = ln.match(/^(#{1,3})\s+(.+)/);
+    const li = ln.match(/^\s*[-*]\s+(.+)/);
+    if (h) { if (list) { html += `</${list}>`; list = null; } const lvl = h[1].length + 1; html += `<h${lvl}>${inline(h[2])}</h${lvl}>`; continue; }
+    if (li) { if (list !== "ul") { if (list) html += `</${list}>`; html += "<ul>"; list = "ul"; } html += `<li>${inline(li[1])}</li>`; continue; }
+    if (list) { html += `</${list}>`; list = null; }
+    if (ln.trim() === "") continue;
+    html += `<p>${inline(ln)}</p>`;
+  }
+  if (list) html += `</${list}>`;
+  return html || "<p><br></p>";
+}
 
 async function notesDesk(root) {
   const notes = await window.donna.notesList();
@@ -677,7 +694,9 @@ async function notesDesk(root) {
     placeholder: "Start writing…",
     modules: { toolbar: [["bold", "italic", "underline", "strike"], [{ header: [1, 2, 3, false] }], [{ list: "ordered" }, { list: "bullet" }, { list: "check" }], ["blockquote", "code-block", "link"], ["clean"]] },
   });
-  if (_noteIsHtml(active.body)) _quill.clipboard.dangerouslyPasteHTML(active.body); else _quill.setText(active.body || "");
+  let _initial = active.body || "";
+  if (!_noteIsHtml(_initial)) { _initial = _mdToHtml(_initial); try { window.donna.notesUpdate(active.id, { body: _initial }); } catch {} }
+  _quill.clipboard.dangerouslyPasteHTML(_initial);
   const save = () => {
     clearTimeout(_notesSave);
     _notesSave = setTimeout(async () => {
@@ -685,6 +704,8 @@ async function notesDesk(root) {
       await window.donna.notesUpdate(active.id, { title: title.slice(0, 140), body: _quill.root.innerHTML.slice(0, 200000) });
       const row = root.querySelector(`[data-note="${active.id}"] .nr-sub`);
       if (row) row.textContent = _stripHtml(_quill.getText()).slice(0, 70) || "No additional text";
+      const tr = root.querySelector(`[data-note="${active.id}"] .nr-title`);
+      if (tr) tr.textContent = title || "Untitled";
     }, 500);
   };
   _quill.on("text-change", save);

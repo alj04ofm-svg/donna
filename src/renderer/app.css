@@ -2461,3 +2461,16 @@ html,body{ font: 400 14px/1.55 var(--sans); letter-spacing: -0.005em; }
 .notes-editor .ql-editor h1,.notes-editor .ql-editor h2,.notes-editor .ql-editor h3{ font-family:var(--display,var(--sans)); font-weight:700; }
 .notes-editor .ql-editor blockquote{ border-left:3px solid var(--signal); color:var(--mut); padding-left:12px; margin:8px 0; }
 .notes-editor .ql-editor a{ color:var(--signal); }
+
+/* ═══ Tasks — Table view ═══ */
+.ttable{ border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--surface); }
+.tt-head,.tt-row{ display:grid; grid-template-columns:minmax(0,2.4fr) 92px 118px 138px 118px 104px; align-items:center; gap:10px; padding:10px 14px; }
+.tt-head{ font:600 10.5px var(--sans); text-transform:uppercase; letter-spacing:0.09em; color:var(--dim); border-bottom:1px solid var(--line); }
+.tt-row{ border-top:1px solid var(--line-soft); cursor:pointer; font-size:13.5px; color:var(--ink); }
+.tt-row:hover{ background:oklch(1 0 0 / 3%); }
+.tt-body .tt-row:first-child{ border-top:0; }
+.tt-c-name{ display:flex; align-items:center; gap:9px; min-width:0; }
+.tt-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tt-status{ font-size:12px; color:var(--dim); }
+.tt-status.now{ color:var(--signal); font-weight:600; }
+.tt-status.done{ color:oklch(0.76 0.14 160); }
