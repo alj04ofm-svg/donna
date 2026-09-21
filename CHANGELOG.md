@@ -3,6 +3,12 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.16.1] — 2026-09-20
+
+- Today details: corrected primary-button gradient, sensible focus timer format
+  (h:mm, capped), a real day-shape bar with hour ticks, elapsed fill, now marker
+  and legend, and tidy priority tags in "Up next".
+
 ## [1.16.0] — 2026-09-20
 
 - **Today rebuilt as mission control**: greeting + day stats, a live "shape of

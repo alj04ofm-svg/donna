@@ -497,7 +497,13 @@ window.openSinceLeftCard = function (items, lastSeenAt) {
    ═══════════════════════════════════════════════════════════════════════════ */
 function _t2pct(v, a, b) { return Math.max(0, Math.min(100, ((v - a) / Math.max(1, b - a)) * 100)); }
 function _t2fmtMin(m) { const h = Math.floor(m / 60), mm = m % 60; const ap = h < 12 ? "am" : "pm"; const hh = ((h + 11) % 12) + 1; return `${hh}${mm ? ":" + String(mm).padStart(2, "0") : ""}${ap}`; }
-function _t2elapsed(iso) { if (!iso) return "0:00"; const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
+function _t2elapsed(iso) {
+  if (!iso) return "0:00";
+  const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s > 12 * 3600) return "—";           // stale/left running — don't show nonsense
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  return h ? `${h}:${String(m).padStart(2, "0")}` : `${m}:${String(ss).padStart(2, "0")}`;
+}
 
 async function vToday2() {
   stagger = 0;
@@ -523,14 +529,21 @@ async function vToday2() {
   const busy = (plan && plan.busy) || [];
   const nowMin = (plan && plan.nowMin) || (hour * 60);
   const ds = ((plan && plan.dayStart) || 9) * 60, de = ((plan && plan.dayEnd) || 19) * 60;
+  const pctNow = Math.max(0, Math.min(100, _t2pct(nowMin, ds, de)));
+  const ticks = []; for (let h = Math.ceil(ds / 60); h <= de / 60; h += 2) ticks.push(h * 60);
   const shape = `
     <div class="t2-bar">
-      <span class="t2-bar-fill" style="left:${_t2pct(ds, ds, de)}%;width:${_t2pct(nowMin, ds, de) - _t2pct(ds, ds, de)}%"></span>
-      ${busy.map((b) => `<span class="t2-blk busy" style="left:${_t2pct(b.s, ds, de)}%;width:${Math.max(0.6, _t2pct(b.e, ds, de) - _t2pct(b.s, ds, de))}%"></span>`).join("")}
-      ${blocks.map((b) => `<span class="t2-blk work" style="left:${_t2pct(b.s, ds, de)}%;width:${Math.max(0.6, _t2pct(b.e, ds, de) - _t2pct(b.s, ds, de))}%" title="${esc(b.title || "task")}"></span>`).join("")}
-      <i class="t2-now" style="left:${_t2pct(nowMin, ds, de)}%"></i>
+      <span class="t2-bar-past" style="width:${pctNow}%"></span>
+      ${busy.map((b) => `<span class="t2-blk busy" style="left:${_t2pct(b.s, ds, de)}%;width:${Math.max(0.8, _t2pct(b.e, ds, de) - _t2pct(b.s, ds, de))}%" title="${esc(b.title || "calendar")}"></span>`).join("")}
+      ${blocks.map((b) => `<span class="t2-blk work" style="left:${_t2pct(b.s, ds, de)}%;width:${Math.max(0.8, _t2pct(b.e, ds, de) - _t2pct(b.s, ds, de))}%" title="${esc(b.title || "task")}"></span>`).join("")}
+      <i class="t2-now" style="left:${pctNow}%"></i>
     </div>
-    <div class="t2-bar-key"><span>${_t2fmtMin(ds)}</span><span class="t2-key-mid">${doing ? "in focus now" : boxesFree(blocks)}</span><span>${_t2fmtMin(de)}</span></div>`;
+    <div class="t2-ticks">${ticks.map((m) => `<span style="left:${_t2pct(m, ds, de)}%">${_t2fmtMin(m).replace(":00", "")}</span>`).join("")}</div>
+    <div class="t2-bar-key">
+      <span class="t2-legend"><i class="lg work"></i>focus <i class="lg busy"></i>calendar</span>
+      <span class="t2-key-mid">${doing ? "in focus now" : boxesFree(blocks)}</span>
+      <span>${_t2fmtMin(ds)} – ${_t2fmtMin(de)}</span>
+    </div>`;
   function boxesFree(bs) { const used = bs.reduce((n, b) => n + (b.e - b.s), 0); const total = de - ds; return `${Math.round((total - used) / 60)}h free`; }
 
   main.innerHTML = `
@@ -591,7 +604,7 @@ async function vToday2() {
               <div class="t2-row-body">
                 <div class="t2-row-title">${esc(t.title)}</div>
                 <div class="t2-row-sub">
-                  <span class="t2-pri-mini p${t.priority}"></span>
+                  <span class="t2-tag p${t.priority}">P${t.priority}</span>
                   ${t.dueAt ? `<span>${esc(String(t.dueAt).slice(0, 10))}</span>` : ""}
                   ${t.project_id ? `<span>${esc(t.project_id)}</span>` : ""}
                   ${t.subtasks && t.subtasks.length ? `<span>☑ ${t.subtasks.filter((s) => s.done).length}/${t.subtasks.length}</span>` : ""}
