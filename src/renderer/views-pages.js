@@ -619,6 +619,112 @@ async function vPlanWeek() {
 }
 
 /* Notes — durable knowledge library (distinct from Capture's fast inbox). */
+
+/* ── Notes desk — a real two-pane editor (list + rich-text). This replaces the
+   old textarea and is meant to be a genuine replacement for Apple Notes. ── */
+let _quill = null, _notesActive = null, _notesSave = null;
+function _noteIsHtml(b) { return /<[a-z][\s\S]*>/i.test(b || ""); }
+function _stripHtml(b) { return String(b || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(); }
+
+async function notesDesk(root) {
+  const notes = await window.donna.notesList();
+  const q = (localStorage.getItem("donna.noteSearch") || "").toLowerCase();
+  const shown = [...notes]
+    .filter((n) => !q || ((n.title || "") + " " + _stripHtml(n.body)).toLowerCase().includes(q))
+    .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+  const active = shown.find((n) => n.id === _notesActive) || shown[0] || null;
+  _notesActive = active ? active.id : null;
+
+  root.innerHTML = `<div class="notes-desk">
+    <aside class="notes-list">
+      <div class="notes-list-head">
+        <input id="nd-search" class="nd-search" placeholder="Search notes" value="${esc(localStorage.getItem("donna.noteSearch") || "")}">
+        <button class="nd-new" id="nd-new" title="New note">＋</button>
+      </div>
+      <div class="notes-rows">
+        ${shown.length ? shown.map((n) => `<button class="notes-row ${n.id === _notesActive ? "on" : ""}" data-note="${n.id}">
+          <span class="nr-title">${n.pinned ? "★ " : ""}${esc(n.title || "Untitled")}</span>
+          <span class="nr-sub">${esc(_stripHtml(n.body).slice(0, 70) || "No additional text")}</span>
+          <span class="nr-date">${new Date(n.updatedAt || n.createdAt || Date.now()).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</span>
+        </button>`).join("") : `<div class="empty" style="padding:18px 12px">No notes yet — hit ＋.</div>`}
+      </div>
+    </aside>
+    <section class="notes-editor">
+      ${active ? `
+      <input id="nd-title" class="nd-title" placeholder="Title" value="${esc(active.title || "")}">
+      <div id="nd-quill" class="nd-quill"></div>
+      <div class="nd-foot">
+        <button class="nd-act" data-act="pin">${active.pinned ? "★ Pinned" : "☆ Pin"}</button>
+        <button class="nd-act" data-act="tidy">✨ Tidy</button>
+        <button class="nd-act" data-act="summary">Summarise</button>
+        <button class="nd-act" data-act="tasks">→ Tasks</button>
+        <span class="nd-spacer"></span>
+        <button class="nd-act danger" data-act="del">Delete</button>
+      </div>` : `<div class="empty" style="margin:auto">Select a note, or create one.</div>`}
+    </section>
+  </div>`;
+
+  const ns = root.querySelector("#nd-search");
+  if (ns) ns.oninput = () => { localStorage.setItem("donna.noteSearch", ns.value); notesDesk(root); const el = root.querySelector("#nd-search"); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } };
+  root.querySelector("#nd-new").onclick = async () => { const id = await window.donna.notesAdd("Untitled", ""); _notesActive = id; notesDesk(root); };
+  root.querySelectorAll("[data-note]").forEach((b) => (b.onclick = () => { _notesActive = b.dataset.note; notesDesk(root); }));
+
+  if (!active) return;
+  if (_quill && _quill.__root !== root) { try { _quill = null; } catch {} }
+  const host = root.querySelector("#nd-quill");
+  _quill = new Quill(host, {
+    theme: "snow",
+    placeholder: "Start writing…",
+    modules: { toolbar: [["bold", "italic", "underline", "strike"], [{ header: [1, 2, 3, false] }], [{ list: "ordered" }, { list: "bullet" }, { list: "check" }], ["blockquote", "code-block", "link"], ["clean"]] },
+  });
+  if (_noteIsHtml(active.body)) _quill.clipboard.dangerouslyPasteHTML(active.body); else _quill.setText(active.body || "");
+  const save = () => {
+    clearTimeout(_notesSave);
+    _notesSave = setTimeout(async () => {
+      const title = (root.querySelector("#nd-title") || {}).value || "Untitled";
+      await window.donna.notesUpdate(active.id, { title: title.slice(0, 140), body: _quill.root.innerHTML.slice(0, 200000) });
+      const row = root.querySelector(`[data-note="${active.id}"] .nr-sub`);
+      if (row) row.textContent = _stripHtml(_quill.getText()).slice(0, 70) || "No additional text";
+    }, 500);
+  };
+  _quill.on("text-change", save);
+  const titleEl = root.querySelector("#nd-title"); if (titleEl) titleEl.oninput = save;
+
+  root.querySelectorAll("[data-act]").forEach((b) => (b.onclick = async () => {
+    const act = b.dataset.act;
+    const body = _quill.getText().slice(0, 4000);
+    if (act === "pin") { await window.donna.notesUpdate(active.id, { pinned: !active.pinned }); notesDesk(root); return; }
+    if (act === "del") { if (confirm("Delete this note?")) { await window.donna.notesRemove(active.id); _notesActive = null; notesDesk(root); } return; }
+    if (act === "tidy") {
+      b.textContent = "…";
+      const r = await window.donna.askInternal(`quick: Tidy and structure the following note as clean HTML suitable for a rich-text editor. Keep the author's wording and facts; invent nothing. Return ONLY the HTML.\n\n${body}`);
+      const out = (r.answer || "").trim();
+      if (out && !/^\(/i.test(out)) { _quill.clipboard.dangerouslyPasteHTML(out); save(); toast("Tidied"); }
+      else toast("Couldn't tidy that one");
+      notesDesk(root); return;
+    }
+    if (act === "summary") {
+      b.textContent = "…";
+      const r = await window.donna.askInternal(`quick: In 2-3 sentences, summarise this note. Just the summary.\n\n${body}`);
+      const out = (r.answer || "").trim();
+      if (out && !/^\(/i.test(out)) { _quill.clipboard.dangerouslyPasteHTML(`<blockquote>${out.replace(/[<>]/g, "")}</blockquote><p><br></p>` + _quill.root.innerHTML); save(); toast("Summarised"); }
+      else toast("Couldn't summarise");
+      notesDesk(root); return;
+    }
+    if (act === "tasks") {
+      b.textContent = "…";
+      const r = await window.donna.askInternal(`quick: Extract the concrete action items from this note as a plain list, one per line, no numbering, no preamble. If none, reply NONE.\n\n${body}`);
+      const out = (r.answer || "").trim();
+      if (out && !/^\(/i.test(out) && out.toUpperCase() !== "NONE") {
+        const lines = out.split("\n").map((l) => l.replace(/^[-*•\d.\s]+/, "").trim()).filter((l) => l.length > 2).slice(0, 12);
+        for (const l of lines) { try { await window.donna.addTask(l); } catch {} }
+        toast(`Added ${lines.length} task${lines.length === 1 ? "" : "s"}`);
+      } else toast("No action items found");
+      b.textContent = "→ Tasks"; return;
+    }
+  }));
+}
+
 async function vNotes(root = main, bare = false) {
   const notes = await window.donna.notesList();
   const nq = (localStorage.getItem("donna.noteSearch") || "").toLowerCase();
@@ -1170,7 +1276,7 @@ function vLibrary() {
     libTab = b.dataset.lib; localStorage.setItem("donna.libTab", libTab); vLibrary();
   });
   const body = $("#lib-body");
-  if (libTab === "notes") vNotes(body, true);
+  if (libTab === "notes") notesDesk(body);
   else if (libTab === "ideas") vIdeas(body, true);
   else vCapture(body, true);
   openCoachButton("library", { tab: libTab });

@@ -3,6 +3,12 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.13.0] — 2026-09-20
+
+- **Notes rebuilt** as a real two-pane rich-text editor (Quill): list + editor,
+  headings, lists, checklists, quotes, code, links. Plus AI actions on a note:
+  Tidy, Summarise, → Tasks. A genuine replacement for Apple Notes.
+
 ## [1.12.0] — 2026-09-20
 
 - Tighter spine: sidebar is now Today · Plan · Tasks · Goals · Notes · Ask ·
