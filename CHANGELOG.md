@@ -3,6 +3,12 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.17.0] — 2026-09-20
+
+- **Your day** on Today: the scheduler's time-blocked plan, Motion-style — real
+  start times, priority dots, now/next/past states, start + complete inline, and
+  honest "N didn't fit" with a link to Tasks.
+
 ## [1.16.1] — 2026-09-20
 
 - Today details: corrected primary-button gradient, sensible focus timer format

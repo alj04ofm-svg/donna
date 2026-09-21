@@ -526,6 +526,7 @@ async function vToday2() {
   const habitsDone = habits.filter((h) => h.doneToday).length;
 
   const blocks = (plan && plan.blocks) || [];
+  const planBlocks = blocks.slice().sort((a, b) => a.s - b.s);
   const busy = (plan && plan.busy) || [];
   const nowMin = (plan && plan.nowMin) || (hour * 60);
   const ds = ((plan && plan.dayStart) || 9) * 60, de = ((plan && plan.dayEnd) || 19) * 60;
@@ -596,23 +597,24 @@ async function vToday2() {
           <div class="t2-focus-meta"><span>Capture something below and make it the first thing.</span></div>
         </section>`}
 
-        <section class="t2-next">
-          <div class="t2-sec-head"><span>Up next</span>${rest.length ? `<em>${rest.length}</em>` : ""}</div>
-          ${rest.length ? `<div class="t2-list">${rest.map((t) => `
-            <div class="t2-row" data-id="${t.id}">
-              <button class="t2-check" data-done="${t.id}" aria-label="Complete"></button>
-              <div class="t2-row-body">
-                <div class="t2-row-title">${esc(t.title)}</div>
-                <div class="t2-row-sub">
-                  <span class="t2-tag p${t.priority}">P${t.priority}</span>
-                  ${t.dueAt ? `<span>${esc(String(t.dueAt).slice(0, 10))}</span>` : ""}
-                  ${t.project_id ? `<span>${esc(t.project_id)}</span>` : ""}
-                  ${t.subtasks && t.subtasks.length ? `<span>☑ ${t.subtasks.filter((s) => s.done).length}/${t.subtasks.length}</span>` : ""}
-                </div>
+        <section class="t2-day">
+          <div class="t2-sec-head"><span>Your day</span><em>${planBlocks.length ? `${planBlocks.length} block${planBlocks.length === 1 ? "" : "s"}${plan && plan.overflow ? ` · ${plan.overflow} didn't fit` : ""}` : "nothing scheduled"}</em></div>
+          ${planBlocks.length ? `<div class="t2-timeline">${planBlocks.map((b) => {
+            const state = b.e <= nowMin ? "past" : (b.s <= nowMin && b.e > nowMin) ? "now" : "next";
+            return `<div class="t2-block ${state}" data-id="${b.id}">
+              <span class="t2-block-time">${_t2fmtMin(b.s)}</span>
+              <span class="t2-block-rail"><i class="t2-block-dot p${b.priority}"></i></span>
+              <div class="t2-block-body">
+                <div class="t2-block-title">${esc(b.title)}</div>
+                <div class="t2-block-sub">${esc((b.project_id || "no project"))} · ${b.e - b.s}m${b.doing ? " · in progress" : ""}</div>
               </div>
-              <button class="t2-row-go" data-open="${t.id}" title="Open">→</button>
-            </div>`).join("")}</div>`
-          : `<div class="t2-empty">Nothing else queued. <b>Clean board.</b></div>`}
+              <div class="t2-block-acts">
+                <button class="t2-block-btn" data-start2="${b.id}" title="${state === "now" ? "Pause" : "Start"}">${state === "now" ? "❚❚" : "▶"}</button>
+                <button class="t2-block-btn ok" data-done2="${b.id}" title="Complete">✓</button>
+              </div>
+            </div>`;
+          }).join("")}</div>` : `<div class="t2-empty">Nothing time-blocked. Add tasks, then hit <b>Plan my day</b>.</div>`}
+          ${plan && plan.overflow ? `<div class="t2-overflow">${plan.overflow} task${plan.overflow === 1 ? "" : "s"} didn't fit today — <button class="t2-link" data-goto="tasks">see them in Tasks →</button></div>` : ""}
         </section>
       </div>
 
@@ -671,6 +673,15 @@ async function vToday2() {
   }));
   main.querySelectorAll("[data-open]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openTaskDetail(b.dataset.open); }));
   main.querySelectorAll(".t2-row").forEach((r) => (r.onclick = () => openTaskDetail(r.dataset.id)));
+  main.querySelectorAll("[data-start2]").forEach((b) => (b.onclick = async (e) => {
+    e.stopPropagation();
+    const t = open.find((x) => x.id === b.dataset.start2);
+    await window.donna.setStatus(b.dataset.start2, t && t.status === "doing" ? "todo" : "doing");
+    await refresh(); vToday2();
+  }));
+  main.querySelectorAll("[data-done2]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); completeWithAnim(b.dataset.done2, b.closest(".t2-block")); }));
+  main.querySelectorAll(".t2-block").forEach((r) => (r.onclick = () => openTaskDetail(r.dataset.id)));
+  main.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); gotoView(b.dataset.goto); }));
   const focus = main.querySelector("#t2-focus");
   if (focus) {
     const id = focus.dataset.id;
