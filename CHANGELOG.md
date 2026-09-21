@@ -3,6 +3,12 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.15.0] — 2026-09-20
+
+- Plan: added a real **Month calendar grid** — tasks by due date (colour =
+  priority), today highlighted, month nav, click a day for its list + quick add.
+  Renamed the timeline tab to **Day**.
+
 ## [1.14.0] — 2026-09-20
 
 - Tasks: **Table view** (Name · Priority · Due · Project · Assignee · Status)

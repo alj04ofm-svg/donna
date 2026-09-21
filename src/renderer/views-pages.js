@@ -515,6 +515,7 @@ async function vWaiting() {
 let planLayout = localStorage.getItem("donna.planLayout") || "timeline";
 async function vPlan() {
   if (planLayout === "week") return vPlanWeek();
+  if (planLayout === "month") return vPlanMonth();
   if (planLayout === "forecast") return vPlanForecast();
   const p = await window.donna.plan();
   stagger = 0;
@@ -538,8 +539,9 @@ async function vPlan() {
       <p class="sub">${fmtT(nowMin)} now${p.calOk ? "" : `<span class="sep">·</span>calendar off`}</p></div>
       <div style="display:flex;gap:8px;padding-right:86px">
         <div class="seg">
-          <button class="on" data-planlay="timeline">Timeline</button>
+          <button class="on" data-planlay="timeline">Day</button>
           <button data-planlay="week">Week</button>
+          <button data-planlay="month">Month</button>
           <button data-planlay="forecast">Forecast</button>
         </div>
         <button class="triage-btn" id="replan-btn">↻ Replan</button>
@@ -1535,8 +1537,9 @@ async function vPlanForecast() {
   h.push('<div class="pl-topbar">');
   h.push('<div><h1 class="h1">Plan</h1><p class="sub">' + totalDue + ' tasks due over 3 weeks &middot; ' + capacity + 'h/day capacity</p></div>');
   h.push('<div class="seg pl-seg">');
-  h.push('<button data-planlay="timeline">Timeline</button>');
+  h.push('<button data-planlay="timeline">Day</button>');
   h.push('<button data-planlay="week">Week</button>');
+  h.push('<button data-planlay="month">Month</button>');
   h.push('<button class="on" data-planlay="forecast">Forecast</button>');
   h.push('</div></div>');
 
@@ -1628,4 +1631,97 @@ async function vHabits() {
     try { await refresh(); renderCompactBody(); } catch {}
   }));
   openCoachButton("habits", { total: habits.length, done: doneCount, keystones: habits.filter((h) => h.keystone).map((h) => h.name) });
+}
+
+/* ── Plan · Month — a real calendar grid. Each day shows the tasks due that
+   day (colour = priority). Click a day for the full list + quick add; click a
+   task chip to edit it. ── */
+let planMonth = (() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; })();
+function vPlanMonth() {
+  stagger = 0;
+  const { y, m } = planMonth;
+  const first = new Date(y, m, 1);
+  const startDow = (first.getDay() + 6) % 7; // Monday-first
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < startDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+  const iso = (d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const byDay = {};
+  for (const t of data.open) {
+    if (!t.dueAt) continue;
+    const k = String(t.dueAt).slice(0, 10);
+    (byDay[k] = byDay[k] || []).push(t);
+  }
+  const monthLabel = first.toLocaleString(undefined, { month: "long", year: "numeric" });
+  const dueThisMonth = Object.keys(byDay).filter((k) => k.startsWith(`${y}-${String(m + 1).padStart(2, "0")}`)).reduce((n, k) => n + byDay[k].length, 0);
+  main.innerHTML = `<div class="view wide">
+    <div class="lib-head">
+      <div><h1 class="h1">Plan</h1><p class="sub">${monthLabel}<span class="sep">·</span>${dueThisMonth} due this month</p></div>
+      <div style="display:flex;gap:8px;align-items:center;padding-right:86px">
+        <div class="seg">
+          <button data-planlay="timeline">Day</button>
+          <button data-planlay="week">Week</button>
+          <button class="on" data-planlay="month">Month</button>
+          <button data-planlay="forecast">Forecast</button>
+        </div>
+        <button class="triage-btn" id="pm-prev">‹</button>
+        <button class="triage-btn" id="pm-today">Today</button>
+        <button class="triage-btn" id="pm-next">›</button>
+      </div>
+    </div>
+    <div class="cal-dows">${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => `<span>${d}</span>`).join("")}</div>
+    <div class="cal-grid">
+      ${cells.map((d) => d ? `<div class="cal-cell ${iso(d) === todayIso ? "today" : ""}" data-day="${iso(d)}">
+        <div class="cal-num">${d}</div>
+        <div class="cal-tasks">
+          ${(byDay[iso(d)] || []).slice(0, 3).map((t) => `<button class="cal-task p${t.priority}" data-caltask="${t.id}" title="${esc(t.title)}">${esc(trunc(t.title, 24))}</button>`).join("")}
+          ${(byDay[iso(d)] || []).length > 3 ? `<span class="cal-more">+${byDay[iso(d)].length - 3} more</span>` : ""}
+        </div>
+      </div>` : `<div class="cal-cell empty"></div>`).join("")}
+    </div>
+  </div>`;
+  main.querySelectorAll("[data-planlay]").forEach((b) => (b.onclick = () => { planLayout = b.dataset.planlay; localStorage.setItem("donna.planLayout", planLayout); vPlan(); }));
+  $("#pm-prev").onclick = () => { planMonth.m--; if (planMonth.m < 0) { planMonth.m = 11; planMonth.y--; } vPlanMonth(); };
+  $("#pm-next").onclick = () => { planMonth.m++; if (planMonth.m > 11) { planMonth.m = 0; planMonth.y++; } vPlanMonth(); };
+  $("#pm-today").onclick = () => { const d = new Date(); planMonth = { y: d.getFullYear(), m: d.getMonth() }; vPlanMonth(); };
+  main.querySelectorAll("[data-caltask]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openTaskDetail(b.dataset.caltask); }));
+  main.querySelectorAll("[data-day]").forEach((cell) => (cell.onclick = () => openDayPlan(cell.dataset.day, byDay[cell.dataset.day] || [])));
+  openCoachButton("plan", { layout: "month", month: monthLabel, due: dueThisMonth });
+}
+
+/* day overlay — the day's tasks + quick add for that date */
+function openDayPlan(dayIso, tasks) {
+  const el = document.createElement("div");
+  el.className = "sd-overlay";
+  el.style.cssText = "position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(3,4,10,0.72);backdrop-filter:blur(6px)";
+  const nice = new Date(dayIso + "T00:00:00").toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  el.innerHTML = `<div class="sd-panel" style="width:min(520px,94vw);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font:700 16px var(--display,var(--sans));color:var(--ink)">${esc(nice)}</div>
+      <button id="dp-close" class="icon-btn" style="background:none;border:none;color:var(--mut);cursor:pointer;font-size:16px">×</button>
+    </div>
+    <div class="rows" style="background:transparent">
+      ${tasks.length ? tasks.map((t) => `<div class="row" data-dptask="${t.id}" style="cursor:pointer"><div class="row-body"><div class="row-title">${esc(t.title)}</div></div>${pGlyph(t.priority)}</div>`).join("") : `<div class="empty" style="padding:14px">Nothing due this day.</div>`}
+    </div>
+    <div class="quick-add" style="margin-top:12px"><input id="dp-add" placeholder="Add a task for this day…"></div>
+  </div>`;
+  document.body.appendChild(el);
+  const close = () => el.remove();
+  el.addEventListener("click", (e) => { if (e.target === el) close(); });
+  el.querySelector("#dp-close").onclick = close;
+  el.querySelectorAll("[data-dptask]").forEach((r) => (r.onclick = () => { close(); openTaskDetail(r.dataset.dptask); }));
+  const inp = el.querySelector("#dp-add");
+  inp.onkeydown = async (e) => {
+    if (e.key === "Enter" && inp.value.trim()) {
+      const id = await window.donna.addTask(inp.value.trim());
+      await window.donna.setDue(id, dayIso);
+      await refresh();
+      close(); if (view === "plan") vPlanMonth();
+      toast("Added");
+    }
+  };
+  inp.focus();
 }

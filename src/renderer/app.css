@@ -2474,3 +2474,22 @@ html,body{ font: 400 14px/1.55 var(--sans); letter-spacing: -0.005em; }
 .tt-status{ font-size:12px; color:var(--dim); }
 .tt-status.now{ color:var(--signal); font-weight:600; }
 .tt-status.done{ color:oklch(0.76 0.14 160); }
+
+/* ═══ Plan · Month calendar grid ═══ */
+.cal-dows{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin:18px 0 6px; }
+.cal-dows span{ font:600 10.5px var(--sans); text-transform:uppercase; letter-spacing:0.08em; color:var(--dim); text-align:center; }
+.cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+.cal-cell{ min-height:106px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:8px; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:border-color 150ms var(--ease), background 150ms var(--ease); }
+.cal-cell:hover{ border-color:oklch(0.76 0.12 250 / 40%); background:oklch(1 0 0 / 3%); }
+.cal-cell.empty{ background:transparent; border-color:transparent; cursor:default; }
+.cal-cell.today{ border-color:oklch(0.76 0.12 250 / 55%); box-shadow:inset 0 0 0 1px oklch(0.76 0.12 250 / 22%); }
+.cal-num{ font:600 12px var(--sans); color:var(--mut); }
+.cal-cell.today .cal-num{ color:var(--signal); }
+.cal-tasks{ display:flex; flex-direction:column; gap:3px; overflow:hidden; }
+.cal-task{ display:block; text-align:left; border:0; border-left:3px solid var(--line); background:oklch(1 0 0 / 4%); color:var(--ink); font-size:11px; padding:3px 6px; border-radius:5px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cal-task.p1{ border-left-color:oklch(0.68 0.19 25); }
+.cal-task.p2{ border-left-color:oklch(0.79 0.13 85); }
+.cal-task.p3{ border-left-color:oklch(0.76 0.12 250); }
+.cal-task.p4{ border-left-color:var(--dim); }
+.cal-task:hover{ background:oklch(1 0 0 / 8%); }
+.cal-more{ font-size:10.5px; color:var(--dim); padding-left:4px; }
