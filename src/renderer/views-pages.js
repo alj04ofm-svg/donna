@@ -44,6 +44,12 @@ async function vSettings() {
       <div class="set-row"><div><div class="set-label">Auto-track</div><div class="set-hint">Watch app/window activity from boot — all local · restart to apply</div></div>${toggle("autoTrack", cfg.autoTrack !== false)}</div>
       <div class="set-row"><div><div class="set-label">Launch at login</div><div class="set-hint">Open Donna automatically when you start your Mac</div></div>${toggle("launchAtLogin", !!cfg.launchAtLogin)}</div>
     </div>
+
+    <div class="sec">Connections</div>
+    <div class="set-group">
+      <div class="set-row"><div><div class="set-label">NocoDB URL</div><div class="set-hint">Your self-hosted NocoDB — Donna links to it from Tables</div></div><input id="set-nocodb" class="set-input" value="${esc(cfg.nocodbUrl || "")}" placeholder="http://localhost:8080"></div>
+      <div class="set-row"><div><div class="set-label">Apple Calendar</div><div class="set-hint">Read by Plan for meetings (grant access when prompted)</div></div><button class="wind-btn" id="btn-cal-perm" style="width:auto;margin:0;padding:8px 14px">Grant access</button></div>
+    </div>
     <div class="set-group">
       <div class="set-row"><div><div class="set-label">Setup wizard</div><div class="set-hint">Replay the setup wizard. Clears the onboarded flag.</div></div>
         <button class="wind-btn" id="btn-reonboard" style="width:auto;margin:0;padding:8px 14px">Replay tour</button></div>
@@ -202,6 +208,8 @@ async function vSettings() {
     }
   };
   const re = $("#btn-reonboard"); if (re) re.onclick = async () => { cfg = await window.donna.setConfig({ onboarded: false }); toast("Tour will replay next launch"); };
+  const nc = $("#set-nocodb"); if (nc) nc.onchange = async () => { cfg = await window.donna.setConfig({ nocodbUrl: nc.value.trim() }); toast("Saved"); };
+  const cp = $("#btn-cal-perm"); if (cp) cp.onclick = async () => { await window.donna.requestPerm("calendar"); };
   const aiSave = $("#set-ai-save");
   if (aiSave) aiSave.onclick = async () => {
     cfg = await window.donna.setConfig({

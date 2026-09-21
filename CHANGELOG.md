@@ -3,6 +3,11 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.18.1] — 2026-09-20
+
+- Settings → Connections: NocoDB URL field (used by the Tables “NocoDB” button)
+  and a one-tap “Grant access” for Apple Calendar.
+
 ## [1.18.0] — 2026-09-20
 
 - **Tables** (new): local Airtable/Sheets-style grids. Create tables, edit

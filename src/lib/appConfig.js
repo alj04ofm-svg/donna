@@ -39,6 +39,7 @@ const DEFAULTS = {
   model: "",
   baseUrl: "",
   apiKey: "",
+  nocodbUrl: "",
 
   // Desktop orb position (null = default bottom-right)
   orbX: null,
