@@ -3,6 +3,11 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.19.0] — 2026-09-20
+
+- Whole-app cohesion pass: Goals, People, Tracker, Ask and Settings now share the
+  same surfaces, radii, spacing, buttons and chips as Today/Notes/Tables/Plan.
+
 ## [1.18.1] — 2026-09-20
 
 - Settings → Connections: NocoDB URL field (used by the Tables “NocoDB” button)
