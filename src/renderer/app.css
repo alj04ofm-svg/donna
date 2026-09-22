@@ -1148,6 +1148,12 @@ body[data-mode="pill"]    #pill-app    { display: flex; }
 .pl-wcard.p2 { border-left-color: oklch(0.79 0.13 85); background: oklch(0.79 0.13 85 / 11%); }
 .pl-wcard.p3 { border-left-color: oklch(0.76 0.12 250); background: oklch(0.76 0.12 250 / 9%); }
 .pl-wempty { font-size: 11px; color: var(--faint); padding: 4px 8px; }
+.pl-wadd { width: 100%; margin-top: 4px; padding: 6px; border: 1px dashed var(--line-soft); border-radius: 7px;
+  background: transparent; color: var(--faint); font: 500 11px var(--sans); cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast); }
+.pl-wadd:hover { color: var(--ink); border-color: oklch(0.76 0.12 250 / 45%); }
+.pl-winput { width: 100%; padding: 6px 8px; border-radius: 7px; border: 1px solid oklch(0.76 0.12 250 / 45%);
+  background: oklch(0 0 0 / 25%); color: var(--ink); font: 400 11.5px var(--sans); outline: none; }
 .pl-unsched { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .pl-unsched .pl-wcard { flex: 0 0 auto; }
 

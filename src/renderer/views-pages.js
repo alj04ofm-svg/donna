@@ -618,7 +618,8 @@ async function vPlanWeek() {
       ${days.map((d, i) => `<div class="pl-wcol ${i === 0 ? "wtoday" : ""}"${si()}>
         <div class="pl-whead"><span>${dName(d, i)}</span><b>${d.getDate()}</b></div>
         <div class="pl-wbody">
-          ${byDay[i].length ? byDay[i].map((t) => `<div class="pl-wcard p${t.priority}" data-wtask="${t.id}">${esc(trunc(t.title, 50))}</div>`).join("") : `<div class="pl-wempty">—</div>`}
+          ${byDay[i].map((t) => `<div class="pl-wcard p${t.priority}" data-wtask="${t.id}">${esc(trunc(t.title, 50))}</div>`).join("")}
+          <button class="pl-wadd" data-wadd="${iso(d)}" title="Add a task on this day">＋ add</button>
         </div>
       </div>`).join("")}
     </div>
@@ -627,6 +628,29 @@ async function vPlanWeek() {
   </div>`;
   main.querySelectorAll("[data-planlay]").forEach((b) => (b.onclick = () => { planLayout = b.dataset.planlay; localStorage.setItem("donna.planLayout", planLayout); vPlan(); }));
   main.querySelectorAll("[data-wtask]").forEach((el) => (el.onclick = () => gotoView("tasks")));
+  main.querySelectorAll("[data-wadd]").forEach((b) => (b.onclick = () => {
+    const day = b.dataset.wadd;
+    const inp = document.createElement("input");
+    inp.className = "pl-winput";
+    inp.placeholder = "New task…";
+    b.replaceWith(inp);
+    inp.focus();
+    let done = false;
+    const finish = async (save) => {
+      if (done) return; done = true;
+      const v = inp.value.trim();
+      if (save && v) {
+        try {
+          const t = await window.donna.addTask(v);
+          const id = t && (t.id || (t.task && t.task.id));
+          if (id) await window.donna.setDue(id, day);
+        } catch {}
+      }
+      await vPlanWeek();
+    };
+    inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); finish(true); } else if (e.key === "Escape") finish(false); };
+    inp.onblur = () => finish(true);
+  }));
   openCoachButton("plan", { layout: "week", unscheduled: unscheduled.length, totalOpen: open.length });
 }
 
