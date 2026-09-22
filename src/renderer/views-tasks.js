@@ -212,7 +212,7 @@ function paintBoard(open) {
       const wip = key === "now" && cards.length > 2;
       return `<div class="col" data-col="${key}">
         <div class="col-head">${label} <span class="n">${cards.length}</span>${wip ? '<span class="wip">one thing?</span>' : ""}</div>
-        ${cards.map(cardHtml).join("") || '<div class="empty" style="padding:14px">—</div>'}
+        ${cards.map(cardHtml).join("") || '<div class="col-empty">Nothing here</div>'}
       </div>`;
     }).join("")}
   </div>`;

@@ -3,6 +3,17 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.20.0] — 2026-09-22
+
+- Fixed a CSS class collision that rendered Goals domain-coverage rows as giant
+  dashed boxes; they are compact bars again.
+- Today: removed the duplicated day-range label on the shape bar; a stale timer
+  now reads "timer idle" instead of a lone dash.
+- Plan: one consistent Day/Week/Month/Forecast switcher on every layout (the
+  Week view previously couldn't reach Month or Forecast).
+- Tasks board and the Week strip: tighter columns and real empty states instead
+  of tall blank boxes with an em-dash.
+
 ## [1.19.0] — 2026-09-20
 
 - Whole-app cohesion pass: Goals, People, Tracker, Ask and Settings now share the

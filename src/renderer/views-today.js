@@ -543,7 +543,6 @@ async function vToday2() {
     <div class="t2-bar-key">
       <span class="t2-legend"><i class="lg work"></i>focus <i class="lg busy"></i>calendar</span>
       <span class="t2-key-mid">${doing ? "in focus now" : boxesFree(blocks)}</span>
-      <span>${_t2fmtMin(ds)} – ${_t2fmtMin(de)}</span>
     </div>`;
   function boxesFree(bs) { const used = bs.reduce((n, b) => n + (b.e - b.s), 0); const total = de - ds; return `${Math.round((total - used) / 60)}h free`; }
 
@@ -583,7 +582,8 @@ async function vToday2() {
             ${hero.estimatedMinutes ? `<span class="t2-meta-chip">⏱ ${hero.estimatedMinutes}m</span>` : ""}
             ${hero.project_id ? `<span class="t2-meta-chip">◈ ${esc(hero.project_id)}</span>` : ""}
             ${hero.subtasks && hero.subtasks.length ? `<span class="t2-meta-chip">☑ ${hero.subtasks.filter((s) => s.done).length}/${hero.subtasks.length}</span>` : ""}
-            ${doing ? `<span class="t2-timer" id="t2-timer">${_t2elapsed(doing.startedAt)}</span>` : ""}
+            ${doing && _t2elapsed(doing.startedAt) === "—" ? `<span class="t2-meta-chip">⏱ timer idle</span>` : ""}
+            ${doing && _t2elapsed(doing.startedAt) !== "—" ? `<span class="t2-timer" id="t2-timer">${_t2elapsed(doing.startedAt)}</span>` : ""}
           </div>
           <div class="t2-focus-acts">
             <button class="t2-btn primary" id="t2-start">${doing ? "❚❚ Pause" : "▶ Start focus"}</button>

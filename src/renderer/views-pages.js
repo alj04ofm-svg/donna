@@ -607,8 +607,10 @@ async function vPlanWeek() {
       <div><h1 class="h1">Plan</h1><p class="sub">The 7 days ahead, at a glance</p></div>
       <div style="display:flex;gap:8px;padding-right:86px">
         <div class="seg">
-          <button data-planlay="timeline">Timeline</button>
+          <button data-planlay="timeline">Day</button>
           <button class="on" data-planlay="week">Week</button>
+          <button data-planlay="month">Month</button>
+          <button data-planlay="forecast">Forecast</button>
         </div>
       </div>
     </div>
@@ -763,7 +765,7 @@ async function vNotes(root = main, bare = false) {
     .filter((n) => !nq || ((n.title || "") + " " + (n.body || "")).toLowerCase().includes(nq))
     .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
   stagger = 0;
-  root.innerHTML = `${bare ? "" : `<div class="view"><h1 class="h1">Notes</h1><p class="sub">Your durable library — decisions, references, playbooks. Use <code>[[name]]</code> to backlink to any task, goal, note, or idea.${notes.length ? `<span class="sep">·</span>${notes.length}` : ""}</p>`}
+  root.innerHTML = `${bare ? "" : `<div class="view"><h1 class="h1">Notes</h1><p class="sub">Your durable library${notes.length ? ` <span class="sep">·</span> ${notes.length} notes` : ""}</p>`}
     <div class="task-filters" style="margin-top:16px">
       <input id="note-search" class="tf-search" placeholder="Search notes…" value="${esc(localStorage.getItem("donna.noteSearch") || "")}">
       <button class="wind-btn" id="note-import" style="width:auto;margin:0;padding:9px 14px">Import…</button>
@@ -1127,7 +1129,7 @@ function cycleHeaderHtml(goals) {
         <div class="cyc-cov-bars">${["work", "money", "health", "relationships"].map((d) => {
           const m = LIFE_META[d]; const n = cov[d] || 0;
           const pct = Math.round(n / covMax * 100);
-          return `<div class="cyc-cov-row${n === 0 ? " empty" : ""}" style="--h:${m.hue}">
+          return `<div class="cyc-cov-row${n === 0 ? " zero" : ""}" style="--h:${m.hue}">
             <span class="cyc-cov-dot"></span>
             <span class="cyc-cov-name">${m.label}</span>
             <div class="cyc-cov-bar"><div style="width:${pct}%"></div></div>
