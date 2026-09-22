@@ -110,6 +110,7 @@ contextBridge.exposeInMainWorld("donna", {
   aliasesRemove: (k) => ipcRenderer.invoke("donna:aliasesRemove", k),
   aliasesResolve: (q) => ipcRenderer.invoke("donna:aliasesResolve", q),
   dashOpen: (section) => ipcRenderer.invoke("donna:dashOpen", section),
+  ext: (mod, fn, ...args) => ipcRenderer.invoke("donna:ext", { mod, fn, args }),
   dashStart: () => ipcRenderer.invoke("donna:dashStart"),
   comms: () => ipcRenderer.invoke("donna:comms"),
   connectGmail: () => ipcRenderer.invoke("donna:connectGmail"),

@@ -818,6 +818,18 @@ app.whenReady().then(() => {
     setThinking(false);
     return res;
   });
+  /* generic extension bridge — lets a page module add backend capability in
+     its own src/lib/<name>-ext.js without editing this file. Module names are
+     restricted to a safe charset and resolved under ./lib only. */
+  ipcMain.handle("donna:ext", (_e, payload) => {
+    const mod = String((payload && payload.mod) || "").replace(/[^a-z0-9_-]/gi, "");
+    const fn = String((payload && payload.fn) || "");
+    const args = Array.isArray(payload && payload.args) ? payload.args : [];
+    if (!mod || !fn) throw new Error("ext: missing module or function");
+    const m = require(`./lib/${mod}`);
+    if (typeof m[fn] !== "function") throw new Error(`ext: ${mod}.${fn} is not a function`);
+    return m[fn](...args);
+  });
   /* ambient fact mining (Dot's green flash) — cheap pass over what the user
      said (never Donna's answer — no hallucinated selves), fire-and-forget */
   async function extractFacts(userText) {

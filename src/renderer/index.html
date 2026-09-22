@@ -5,6 +5,15 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'">
 <link rel="stylesheet" href="vendor/quill.snow.css">
 <link rel="stylesheet" href="app.css">
+<!-- per-page rebuild layers — loaded after app.css so page rules win -->
+<link rel="stylesheet" href="p-today.css">
+<link rel="stylesheet" href="p-tasks.css">
+<link rel="stylesheet" href="p-tables.css">
+<link rel="stylesheet" href="p-notes.css">
+<link rel="stylesheet" href="p-plan.css">
+<link rel="stylesheet" href="p-goals.css">
+<link rel="stylesheet" href="p-people.css">
+<link rel="stylesheet" href="p-ask.css">
 </head>
 <body data-mode="full">
 
@@ -121,6 +130,15 @@
 <script src="views-tables.js"></script>
 <script src="views-pages.js"></script>
 <script src="views-canvas.js"></script>
+<!-- per-page rebuild layers — loaded after views so later definitions win -->
+<script src="views-today2.js"></script>
+<script src="views-tasks2.js"></script>
+<script src="views-tables2.js"></script>
+<script src="views-notes2.js"></script>
+<script src="views-plan2.js"></script>
+<script src="views-goals2.js"></script>
+<script src="views-people2.js"></script>
+<script src="views-ask2.js"></script>
 <script src="shell.js"></script>
 </body>
 </html>
