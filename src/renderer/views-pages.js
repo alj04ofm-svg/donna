@@ -635,6 +635,24 @@ async function vPlan() {
 
     ${elapsedMin > 0 ? `<div class="pl-elapsed"><span class="pl-elapsed-label">Earlier — ${fmtT(dayStartMin)} → ${fmtT(Math.min(nowMin, dayEndMin))}</span><span class="pl-elapsed-hint">${pastEvents.length ? pastEvents.length + " event" + (pastEvents.length !== 1 ? "s" : "") + " passed" : "nothing logged"}</span></div>` : ""}
 
+    ${(() => {
+      const cur = p.blocks.find((b) => b.s <= nowMin && b.e > nowMin);
+      const next = p.blocks.find((b) => b.s > nowMin);
+      const b = cur || next;
+      if (!b) return "";
+      return `<div class="pl-focus">
+        <div class="pl-focus-l">
+          <div class="pl-focus-k">${cur ? "◷ In focus now" : "Up next"}</div>
+          <div class="pl-focus-t">${esc(b.title)}</div>
+          <div class="pl-focus-m">${fmtT(b.s)}–${fmtT(b.e)} · ${b.e - b.s}m${b.doing ? " · running" : ""}${b.project_id ? ` · ${esc(b.project_id)}` : ""}</div>
+        </div>
+        <div class="pl-focus-a">
+          <button class="triage-btn primary" data-plstart="${b.id}">${b.doing ? "❚❚ Pause" : "▶ Start"}</button>
+          <button class="triage-btn" data-pldone="${b.id}">✓ Done</button>
+        </div>
+      </div>`;
+    })()}
+
     ${dayOver ? `<div class="pl-dayover">☾ The work day's over.<button class="pl-tmrw" data-goto="today">Plan tomorrow morning →</button></div>` : `
     <div class="tl" style="height:${detailH + 12}px">
       ${hourMarks.map((hm) => `<div class="tl-hour" style="top:${top(hm)}px"><span class="tl-h">${fmtT(hm)}</span></div>`).join("")}
@@ -647,6 +665,19 @@ async function vPlan() {
     <p class="hint" style="margin-top:14px">Auto-blocked by priority around your calendar, from now forward. Tap a block to start focus.</p>
   </div>`;
   $("#replan-btn").onclick = () => { vPlan(); toast("Day rebuilt around now"); };
+  main.querySelectorAll("[data-plstart]").forEach((b) => (b.onclick = async () => {
+    const t = data.open.find((x) => x.id === b.dataset.plstart);
+    const starting = !(t && t.status === "doing");
+    if (starting && openDepIds(t || {}).length) { toast("Blocked — clear its dependencies first"); return; }
+    await window.donna.setStatus(b.dataset.plstart, starting ? "doing" : "todo");
+    await refresh(); if (view === "plan") vPlan(); renderCompactBody();
+    toast(starting ? "On it — focus started" : "Paused");
+  }));
+  main.querySelectorAll("[data-pldone]").forEach((b) => (b.onclick = async () => {
+    await window.donna.completeTask(b.dataset.pldone);
+    await refresh(); if (view === "plan") vPlan(); renderCompactBody();
+    toast("Done");
+  }));
   main.querySelectorAll("[data-goto]").forEach((el) => (el.onclick = () => gotoView(el.dataset.goto)));
   main.querySelectorAll("[data-planlay]").forEach((b) => (b.onclick = () => { planLayout = b.dataset.planlay; localStorage.setItem("donna.planLayout", planLayout); vPlan(); }));
   main.querySelectorAll(".tl-block[data-start]").forEach((el) => (el.onclick = async () => {

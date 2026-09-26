@@ -3,6 +3,12 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.26.0] — 2026-09-26
+
+- **Plan: "Focus now" hero.** The Day view leads with the block you're in
+  (or the next one) — title, exact window, project, and one-tap **Start** /
+  **Done**, so the plan is actionable, not just a picture.
+
 ## [1.25.0] — 2026-09-26
 
 The "wow" pass.

@@ -6,3 +6,14 @@
 .pl-lane.overdue .pl-lane-h { color: var(--alert); }
 .pl-lane-rows { display: flex; flex-wrap: wrap; gap: 8px; }
 .pl-lane-rows .pl-wcard { flex: 0 1 auto; }
+
+/* Plan — "focus now" hero */
+.pl-focus { display: flex; align-items: center; gap: 16px; margin: 14px 0 4px; padding: 16px 18px;
+  border-radius: var(--r-lg); border: 1px solid oklch(0.73 0.15 285 / 30%);
+  background: linear-gradient(120deg, oklch(0.73 0.15 285 / 14%), oklch(0.74 0.13 200 / 6%));
+  box-shadow: 0 18px 44px -24px oklch(0.73 0.15 285 / 60%); }
+.pl-focus-l { flex: 1; min-width: 0; }
+.pl-focus-k { font: 700 10.5px var(--sans); text-transform: uppercase; letter-spacing: 0.12em; color: var(--signal); }
+.pl-focus-t { font: 650 17px var(--sans); color: var(--ink); letter-spacing: -0.02em; margin: 5px 0 3px; }
+.pl-focus-m { font-size: 12.5px; color: var(--mut); }
+.pl-focus-a { display: flex; gap: 8px; flex-shrink: 0; }
