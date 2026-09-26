@@ -1,1 +1,14 @@
-/* p-ask.css — rebuild layer for the Ask page (loaded after app.css). */
+/* p-ask.css — Ask rebuild layer (loaded after app.css). Conversation list. */
+
+.ask-convos { display: flex; flex-direction: column; gap: 2px; padding: 2px 8px 8px; max-height: 210px; overflow: auto; }
+.ask-convo {
+  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+  border: 0; background: transparent; color: var(--mut); font: 500 12px var(--sans);
+  padding: 7px 9px; border-radius: 9px; cursor: pointer; transition: background 130ms var(--ease), color 130ms var(--ease);
+}
+.ask-convo:hover { background: oklch(1 0 0 / 5%); color: var(--ink); }
+.ask-convo.on { background: oklch(0.76 0.12 250 / 14%); color: var(--ink); }
+.ask-convo-t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ask-convo-x { opacity: 0; color: var(--dim); font-size: 11px; padding: 0 3px; border-radius: 4px; transition: opacity 130ms var(--ease); }
+.ask-convo:hover .ask-convo-x { opacity: 0.7; }
+.ask-convo-x:hover { opacity: 1; color: var(--alert); }

@@ -1,1 +1,8 @@
-/* p-plan.css — rebuild layer for the Plan page (loaded after app.css). */
+/* p-plan.css — Plan rebuild layer (loaded after app.css). */
+
+.pl-lane { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); padding: 10px 12px; }
+.pl-lane-h { font: 600 11px var(--sans); text-transform: uppercase; letter-spacing: 0.07em; color: var(--dim); margin-bottom: 8px; }
+.pl-lane-h b { color: var(--mut); }
+.pl-lane.overdue .pl-lane-h { color: var(--alert); }
+.pl-lane-rows { display: flex; flex-wrap: wrap; gap: 8px; }
+.pl-lane-rows .pl-wcard { flex: 0 1 auto; }

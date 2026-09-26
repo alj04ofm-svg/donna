@@ -1,1 +1,16 @@
-/* p-today.css — rebuild layer for the Today page (loaded after app.css). */
+/* p-today.css — Today rebuild layer (loaded after app.css so these win).
+   Adds the "Up next" list that sits under the focus card. */
+
+.t2-upnext { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.t2-up {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 11px;
+  background: var(--panel); cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.t2-up:hover { border-color: var(--dim); background: var(--surface); transform: translateX(1px); }
+.t2-up.cur { border-color: var(--signal); background: oklch(0.76 0.12 250 / 10%); }
+.t2-up-title { flex: 1; min-width: 0; font-size: 13.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t2-up-chips { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.t2-up .check.sm { flex-shrink: 0; }
+.t2-day .t2-link { margin-top: 10px; }

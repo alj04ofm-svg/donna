@@ -16,6 +16,9 @@ const os = require("os");
 const path = require("path");
 
 function resolveBase() {
+  // Tests / scripts can point Donna at a throwaway data dir, keeping the real
+  // user store untouched.
+  if (process.env.DONNA_DATA_DIR) return process.env.DONNA_DATA_DIR;
   try {
     // Prefer Electron's userData (matches the app name set in main.js).
     const { app } = require("electron");

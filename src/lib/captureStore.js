@@ -10,6 +10,7 @@ function createCaptureStore(filePath) {
     },
     list(filter) { const items = read(); return filter ? items.filter((i) => i.kind === filter) : items; },
     complete(id) { const items = read(); const it = items.find((i) => i.id === id); if (it) it.done = true; write(items); return it; },
+    remove(id) { write(read().filter((i) => i.id !== id)); return true; },
   };
 }
 module.exports = { createCaptureStore };

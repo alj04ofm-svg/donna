@@ -9,6 +9,7 @@
      priority   p1 p2 p3 · urgent/high/low
      estimate   =45m · =2h
      project    #project
+     tag        +label  (repeatable)
      area       @work @money @health @relationships
      deadline   !friday · !tomorrow  (the drop-dead date — HARD by definition)
      bucket     tonight/this evening · someday · anytime
@@ -48,6 +49,7 @@ const NL_RULES = [
   { kind: "time", re: /\bat\s+(\d{1,2}):(\d{2})\b/gi },
   { kind: "bucket", re: /\b(tonight|this evening|someday|anytime)\b/gi },
   { kind: "goal", re: />>\s*([a-z0-9][a-z0-9_-]*(?:\s+[a-z0-9_-]+)*)/gi },
+  { kind: "tag", re: /\+([a-z0-9][a-z0-9_-]*)/gi },
   { kind: "priority", re: /\b(p[123]|urgent|high|low)\b/gi },
   { kind: "project", re: /#([a-z0-9_-]+)/gi },
   { kind: "area", re: /@(work|money|health|relationships|rel)\b/gi },
@@ -81,7 +83,7 @@ function nlTokenize(input) {
   const parsed = {
     title: "", dueAt: null, dueTime: null, deadline: null, deadlineHard: false,
     priority: 2, estimatedMinutes: null, bucket: null, area: null,
-    project_id: null, waitingOn: null,
+    project_id: null, waitingOn: null, tags: [],
     objectiveId: null, objectiveNeedle: null, // `>>needle` → resolved to a goal id by tasks.add
   };
   const labels = [];
@@ -111,6 +113,10 @@ function nlTokenize(input) {
     } else if (t.kind === "project") {
       parsed.project_id = t.m[1].toLowerCase();
       labels.push({ kind: t.kind, label: `#${parsed.project_id}` });
+    } else if (t.kind === "tag") {
+      const tag = t.m[1].toLowerCase();
+      if (!parsed.tags.includes(tag)) parsed.tags.push(tag);
+      labels.push({ kind: t.kind, label: `+${tag}` });
     } else if (t.kind === "goal") {
       parsed.objectiveNeedle = t.m[1].trim().toLowerCase();
       labels.push({ kind: t.kind, label: `→ ${parsed.objectiveNeedle}` });

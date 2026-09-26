@@ -17,7 +17,6 @@ const SECTIONS = [
   { id: "page.rhythm",     label: "Tracker",       group: "nav", desc: "What you actually did today: focus, deep work, screenshots, Pulse", default: true },
   { id: "page.library",    label: "Notes",         group: "nav", desc: "Notes, ideas and quick captures", default: true },
   { id: "page.goals",      label: "Goals",         group: "nav", desc: "OKR + 12-Week Year objectives, key results, milestones, lead measure", default: true },
-  { id: "page.tables",     label: "Tables",        group: "nav", desc: "Local tables — import from CSV / Excel / Airtable", default: true },
   { id: "page.settings",   label: "Settings",      group: "nav", desc: "Configure Donna", default: true },
 
   /* AI Coach — contextual ✦ button on every page. Lives in its own group so

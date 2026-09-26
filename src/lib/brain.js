@@ -17,7 +17,6 @@ function systemPrompt(userName) {
 function createBrain({ config, captureStore, clients }) {
   const cfg = config || {};
   const SYSTEM = systemPrompt(cfg.userName);
-  const provider = cfg.provider || "anthropic";
 
   async function ask(text, { onToken, onState } = {}) {
     const cap = parseCapture(text);
@@ -35,7 +34,9 @@ function createBrain({ config, captureStore, clients }) {
       mem = require("./memory").promptBlock();
     } catch {}
     const prompt = `CONTEXT:\n${context}\n\n${mem ? mem + "\n\n" : ""}---\n\nUser: ${clean}`;
-    const fn = clients[provider] || clients.anthropic || Object.values(clients)[0];
+    // read the provider live so changing it in Settings takes effect at once
+    const provider = cfg.provider || "opencode";
+    const fn = clients[provider] || clients.opencode || clients.anthropic || Object.values(clients)[0];
     let answer = "";
     try {
       answer = await fn(prompt, SYSTEM);

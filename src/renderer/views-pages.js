@@ -5,7 +5,7 @@ const SETTINGS_TABS = [["general", "General"], ["focus", "Focus"], ["tracker", "
 async function vSettings() {
   const toggle = (key, on) => `<button class="switch ${on ? "on" : ""}" data-toggle="${key}"><span class="knob"></span></button>`;
   const roots = (cfg.contextRoots || []).map((r) => String(r).replace(/^\/Users\/[^/]+/, "~").replace(/^\/home\/[^/]+/, "~"));
-  __tcfg = await window.donna.trackerConfigGet();
+  try { __tcfg = await window.donna.trackerConfigGet(); } catch { __tcfg = { shotsEnabled: false, shotIntervalMin: 5, keepDays: 14, saveDir: "" }; }
   const dirLabel = __tcfg.saveDir ? "…/" + __tcfg.saveDir.split("/").slice(-2).join("/") : "default (app data)";
   const pane = (key, html) => `<div class="set-pane" data-pane="${key}"${settingsTab === key ? "" : " hidden"}>${html}</div>`;
   main.innerHTML = `<div class="view">
@@ -24,16 +24,18 @@ async function vSettings() {
     <div class="set-group">
       <div class="set-row"><div><div class="set-label">Provider</div><div class="set-hint">Bring your own key — stored locally on this Mac</div></div>
         <select id="set-provider" class="set-input">
-          <option value="opencode"${cfg.provider === "opencode" ? " selected" : ""}>OpenCode gateway (recommended)</option>
+          <option value="opencode"${cfg.provider === "opencode" ? " selected" : ""}>OpenCode Go (recommended)</option>
           <option value="anthropic"${cfg.provider === "anthropic" ? " selected" : ""}>Anthropic (Claude)</option>
           <option value="openai"${cfg.provider === "openai" ? " selected" : ""}>OpenAI</option>
           <option value="minimax"${cfg.provider === "minimax" ? " selected" : ""}>MiniMax</option>
           <option value="gemini"${cfg.provider === "gemini" ? " selected" : ""}>Google Gemini</option>
           <option value="claude-cli"${cfg.provider === "claude-cli" ? " selected" : ""}>Claude CLI (local)</option>
         </select></div>
-      <div class="set-row"><div><div class="set-label">API key</div><div class="set-hint">Or set it in your environment</div></div><input id="set-key" class="set-input" type="password" value="${esc(cfg.apiKey || "")}" placeholder="sk-…"></div>
-      <div class="set-row"><div><div class="set-label">Gateway URL</div><div class="set-hint">For OpenAI-compatible gateways (OpenCode / your own)</div></div><input id="set-baseurl" class="set-input" value="${esc(cfg.baseUrl || "")}" placeholder="https://…/v1"></div>
-      <div class="set-row"><div><div class="set-label">Model</div><div class="set-hint">Optional model id</div></div><input id="set-model" class="set-input" value="${esc(cfg.model || "")}" placeholder="e.g. vast-qwen/qwen3.8-27b"></div>
+      <div class="set-row"><div><div class="set-label">API key</div><div class="set-hint">For OpenCode Go, paste your OpenCode key — or leave blank to use the OpenCode app's saved login</div></div><input id="set-key" class="set-input" type="password" value="${esc(cfg.apiKey || "")}" placeholder="sk-…"></div>
+      <div class="set-row"><div><div class="set-label">Gateway URL</div><div class="set-hint">OpenAI-compatible base URL</div></div><input id="set-baseurl" class="set-input" value="${esc(cfg.baseUrl || "")}" placeholder="https://opencode.ai/zen/go/v1"></div>
+      <div class="set-row"><div><div class="set-label">Model</div><div class="set-hint">Model id for the chosen provider</div></div><input id="set-model" class="set-input" value="${esc(cfg.model || "")}" placeholder="deepseek-v4.1-flash"></div>
+      <div class="set-row"><div><div class="set-label">OpenCode Go</div><div class="set-hint">One-click preset using your OpenCode subscription</div></div><button class="wind-btn" id="set-opencode-preset" style="width:auto;margin:0;padding:8px 14px">Use OpenCode Go</button></div>
+      <div class="set-row"><div><div class="set-label">Connection</div><div class="set-hint" id="set-test-result">Check the AI actually answers with the current settings</div></div><button class="wind-btn" id="set-test-ai" style="width:auto;margin:0;padding:8px 14px">Test AI</button></div>
       <div class="set-row"><div></div><button class="wind-btn" id="set-ai-save" style="width:auto;margin:0;padding:8px 14px">Save AI settings</button></div>
     </div>
 
@@ -47,7 +49,6 @@ async function vSettings() {
 
     <div class="sec">Connections</div>
     <div class="set-group">
-      <div class="set-row"><div><div class="set-label">NocoDB URL</div><div class="set-hint">Your self-hosted NocoDB — Donna links to it from Tables</div></div><input id="set-nocodb" class="set-input" value="${esc(cfg.nocodbUrl || "")}" placeholder="http://localhost:8080"></div>
       <div class="set-row"><div><div class="set-label">Apple Calendar</div><div class="set-hint">Read by Plan for meetings (grant access when prompted)</div></div><button class="wind-btn" id="btn-cal-perm" style="width:auto;margin:0;padding:8px 14px">Grant access</button></div>
     </div>
     <div class="set-group">
@@ -69,7 +70,9 @@ async function vSettings() {
       <div class="set-row"><div><div class="set-label">Daily capacity</div><div class="set-hint">Hours of focus before the meter warns you're over-planned</div></div>
         <div class="stepper"><button data-cap="-">−</button><span id="cap-val">${cfg.capacityHours || 6}h</span><button data-cap="+">+</button></div></div>
       <div class="set-row"><div><div class="set-label">Working hours</div><div class="set-hint">The window Plan schedules your day into</div></div>
-        <div class="stepper"><button data-wh="s-">−</button><span id="wh-s">${cfg.dayStartHour || 9}</span><span class="stepper-arrow">→</span><span id="wh-e">${cfg.dayEndHour || 19}</span><button data-wh="e+">+</button></div></div>
+        <div class="stepper"><button data-wh="s-">−</button><span id="wh-s">${cfg.dayStartHour || 9}</span><button data-wh="s+">+</button><span class="stepper-arrow">→</span><button data-wh="e-">−</button><span id="wh-e">${cfg.dayEndHour || 19}</span><button data-wh="e+">+</button></div></div>
+      <div class="set-row"><div><div class="set-label">Daily deep-work target</div><div class="set-hint">Intentional focus minutes per day — shown against Tracker</div></div>
+        <div class="stepper"><button data-deep="-">−</button><span id="deep-val">${Math.round((cfg.deepTargetMin || 180) / 6) / 10}h</span><button data-deep="+">+</button></div></div>
     </div>`)}
 
     ${pane("tracker", `
@@ -99,6 +102,10 @@ async function vSettings() {
         <button class="wind-btn" id="btn-demo" style="width:auto;margin:0;padding:8px 14px">Load demo</button></div>
       <div class="set-row"><div><div class="set-label">Export a backup</div><div class="set-hint">Everything (tasks, notes, people, goals, tracker…) to a JSON on your Desktop</div></div>
         <button class="wind-btn" id="btn-export" style="width:auto;margin:0;padding:8px 14px">Export</button></div>
+      <div class="set-row"><div><div class="set-label">Clear tracker history</div><div class="set-hint">Delete tracked activity + screenshots. Keeps tasks, notes and goals</div></div>
+        <button class="wind-btn" id="btn-cleartracker" style="width:auto;margin:0;padding:8px 14px">Clear</button></div>
+      <div class="set-row"><div><div class="set-label" style="color:var(--alert)">Erase all data</div><div class="set-hint">Deletes every task, note, goal, person and tracker day. Cannot be undone</div></div>
+        <button class="wind-btn" id="btn-resetall" style="width:auto;margin:0;padding:8px 14px;color:var(--alert);border-color:oklch(0.68 0.19 25 / 35%)">Erase…</button></div>
     </div>
     <div class="set-group">
       <div class="set-row"><div><div class="set-label">Updates</div><div class="set-hint">Check for a newer version of Donna</div></div>
@@ -137,17 +144,21 @@ async function vSettings() {
       <div class="set-row"><div><div class="set-label">AI</div><div class="set-hint">The contextual ✦ coach that floats on every page.</div></div></div>
       <div class="sec-toggles" id="sec-toggles-ai">${window.sections.all("ai").map((s) => sectionRowHtml(s)).join("")}</div>
     </div>
-    <p class="hint" style="margin-top:14px">All on by default. Toggle off what you don't use. Settings are saved instantly to this Mac only.</p>
+    <p class="hint" style="margin-top:14px">Everything is toggleable. Some strips ship hidden to keep pages calm — turn on what you use. Saved instantly, on this Mac only.</p>
     <div class="set-row" style="margin-top:14px"><div><div class="set-label">Reset to defaults</div><div class="set-hint">Turn every section back on. Useful if you hid too much.</div></div>
       <button class="wind-btn" id="sec-reset-all" style="width:auto;margin:0;padding:8px 14px">Reset all</button></div>
     `)}
 
     ${pane("shortcuts", `
+    <div class="set-group">
+      <div class="set-row"><div><div class="set-label">Summon Donna</div><div class="set-hint">Global hotkey to show / hide the window</div></div><input id="set-hotkey" class="set-input" value="${esc(cfg.hotkey || "CommandOrControl+Shift+Space")}" placeholder="CommandOrControl+Shift+Space"></div>
+      <div class="set-row"><div><div class="set-label">Quick capture</div><div class="set-hint">Global hotkey for the top-of-screen capture bar</div></div><input id="set-capkey" class="set-input" value="${esc(cfg.captureHotkey || "Alt+Space")}" placeholder="Alt+Space"></div>
+      <div class="set-row"><div></div><button class="wind-btn" id="set-hotkey-save" style="width:auto;margin:0;padding:8px 14px">Save hotkeys</button></div>
+    </div>
     <div class="set-group set-static">
-      <div class="set-row"><span class="set-label">Summon Donna</span><kbd>⌘⇧Space</kbd></div>
-      <div class="set-row"><span class="set-label">Quick capture anywhere</span><kbd>⌥Space</kbd></div>
+      <div class="set-row"><span class="set-label">Toggle window (alt)</span><kbd>⌘⌥D</kbd></div>
       <div class="set-row"><span class="set-label">Command palette</span><kbd>⌘K</kbd></div>
-      <div class="set-row"><span class="set-label">Switch views</span><kbd>⌘1–9</kbd></div>
+      <div class="set-row"><span class="set-label">Switch views</span><kbd>⌘1–8</kbd></div>
       <div class="set-row"><span class="set-label">Quick add</span><kbd>⌘N</kbd></div>
       <div class="set-row"><span class="set-label">In a list</span><span class="set-hint">J/K move · Space done · D focus · S snooze · W waiting · V evening · O someday · X won't do · 1/2/3 priority</span></div>
     </div>`)}
@@ -173,12 +184,30 @@ async function vSettings() {
   main.querySelectorAll("[data-wh]").forEach((el) => (el.onclick = async () => {
     let s = cfg.dayStartHour || 9, e = cfg.dayEndHour || 19;
     if (el.dataset.wh === "s-") s = Math.max(4, s - 1);
+    if (el.dataset.wh === "s+") s = Math.min(e - 4, s + 1);
+    if (el.dataset.wh === "e-") e = Math.max(s + 4, e - 1);
     if (el.dataset.wh === "e+") e = Math.min(23, e + 1);
     if (e - s < 4) return;
     cfg = await window.donna.setConfig({ dayStartHour: s, dayEndHour: e });
     $("#wh-s").textContent = s; $("#wh-e").textContent = e;
   }));
+  main.querySelectorAll("[data-deep]").forEach((el) => (el.onclick = async () => {
+    let m = cfg.deepTargetMin || 180; m = Math.max(30, Math.min(720, m + (el.dataset.deep === "+" ? 30 : -30)));
+    cfg = await window.donna.setConfig({ deepTargetMin: m });
+    $("#deep-val").textContent = `${Math.round(m / 6) / 10}h`;
+  }));
   const ex = $("#btn-export"); if (ex) ex.onclick = async () => { await window.donna.exportData(); toast("Backup saved to Desktop"); };
+  const ct = $("#btn-cleartracker"); if (ct) ct.onclick = async () => {
+    if (!confirm("Delete all tracked activity and screenshots? Tasks, notes and goals are kept.")) return;
+    const r = await window.donna.clearTracker(); toast(`Cleared ${r && r.days ? r.days + " day(s)" : "tracker history"}`);
+  };
+  const ra = $("#btn-resetall"); if (ra) ra.onclick = async () => {
+    if (!confirm("This permanently deletes ALL your data (tasks, notes, goals, people, tracker). Continue?")) return;
+    const typed = prompt('Type DELETE to confirm erasing everything:');
+    if (typed !== "DELETE") { toast("Cancelled"); return; }
+    await window.donna.resetAll();
+    toast("All data erased — restarting"); setTimeout(() => location.reload(), 900);
+  };
   const up = $("#btn-update");
   if (up) up.onclick = async () => {
     up.disabled = true; up.textContent = "Checking…";
@@ -208,19 +237,41 @@ async function vSettings() {
     }
   };
   const re = $("#btn-reonboard"); if (re) re.onclick = async () => { cfg = await window.donna.setConfig({ onboarded: false }); toast("Tour will replay next launch"); };
-  const nc = $("#set-nocodb"); if (nc) nc.onchange = async () => { cfg = await window.donna.setConfig({ nocodbUrl: nc.value.trim() }); toast("Saved"); };
   const cp = $("#btn-cal-perm"); if (cp) cp.onclick = async () => { await window.donna.requestPerm("calendar"); };
+  const hkSave = $("#set-hotkey-save");
+  if (hkSave) hkSave.onclick = async () => {
+    const hotkey = ($("#set-hotkey") || {}).value?.trim() || "CommandOrControl+Shift+Space";
+    const captureHotkey = ($("#set-capkey") || {}).value?.trim() || "Alt+Space";
+    cfg = await window.donna.setConfig({ hotkey, captureHotkey });
+    toast("Hotkeys updated");
+  };
   const aiSave = $("#set-ai-save");
+  const gatherAI = () => ({
+    userName: ($("#set-name") && $("#set-name").value.trim()) || "",
+    provider: ($("#set-provider") && $("#set-provider").value) || "opencode",
+    apiKey: ($("#set-key") && $("#set-key").value.trim()) || "",
+    baseUrl: ($("#set-baseurl") && $("#set-baseurl").value.trim()) || "",
+    model: ($("#set-model") && $("#set-model").value.trim()) || "",
+  });
   if (aiSave) aiSave.onclick = async () => {
-    cfg = await window.donna.setConfig({
-      userName: ($("#set-name") && $("#set-name").value.trim()) || "",
-      provider: ($("#set-provider") && $("#set-provider").value) || "anthropic",
-      apiKey: ($("#set-key") && $("#set-key").value.trim()) || "",
-      baseUrl: ($("#set-baseurl") && $("#set-baseurl").value.trim()) || "",
-      model: ($("#set-model") && $("#set-model").value.trim()) || "",
-      onboarded: true,
-    });
+    cfg = await window.donna.setConfig({ ...gatherAI(), onboarded: true });
     toast("Saved — restart Donna to apply");
+  };
+  const opPreset = $("#set-opencode-preset");
+  if (opPreset) opPreset.onclick = async () => {
+    cfg = await window.donna.setConfig({ provider: "opencode", baseUrl: "https://opencode.ai/zen/go/v1", model: "deepseek-v4.1-flash" });
+    toast("OpenCode Go preset applied");
+    vSettings();
+  };
+  const testBtn = $("#set-test-ai");
+  if (testBtn) testBtn.onclick = async () => {
+    const res = $("#set-test-result");
+    if (res) res.textContent = "Testing…";
+    try { cfg = await window.donna.setConfig(gatherAI()); } catch {}
+    const r = await window.donna.testAI();
+    if (res) res.innerHTML = r.ok
+      ? `<span style="color:oklch(0.8 0.13 160)">✓ AI working</span> — ${esc(r.provider)}${r.model ? " · " + esc(r.model) : ""}`
+      : `<span style="color:var(--alert)">✗ ${esc(String(r.sample || "failed").slice(0, 140))}</span>`;
   };
   const br = $("#btn-brief"); if (br) br.onclick = () => { try { openBriefingModal(); } catch (e) { toast("Could not open briefing"); } };
   const dm = $("#btn-demo"); if (dm) dm.onclick = async () => { try { const n = await window.donna.demoLoad(); toast(`Demo loaded — ${n} items added`); } catch (e) { toast("Demo failed: " + e.message); } };
@@ -260,7 +311,8 @@ async function vSettings() {
      sidebar + every view instantly. */
   const re2 = $("#sec-reset-all"); if (re2) re2.onclick = () => {
     try { localStorage.removeItem("donna.sections"); } catch {}
-    try { window.donna.sections.SECTIONS.forEach((s) => window.sonna?.setOn?.(s.id, true) || window.sections.setOn(s.id, true)); } catch {}
+    try { window.sections.SECTIONS.forEach((s) => window.sections.setOn(s.id, true)); } catch {}
+    try { applySections(); } catch {}
     toast("All sections back on");
     vSettings();
   };
@@ -345,6 +397,7 @@ async function vRhythm() {
   const showShots = !!(__tcfg && __tcfg.shotsEnabled);
   const tabs = TK_TABS.filter(([k]) => k !== "shots" || showShots);
   if (!showShots && tkTab === "shots") { tkTab = "overview"; localStorage.setItem("donna.tkTab", tkTab); }
+  const deepTarget = (cfg && cfg.deepTargetMin) || 180;
   stagger = 0;
   const fmtT = (s) => new Date(s * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   /* timeline geometry: from first activity (or 7am) to now, as % of span */
@@ -375,6 +428,7 @@ async function vRhythm() {
         <div class="tk-cell-l">Pulse<span>time-weighted focus score</span></div></div>
       <div class="tk-cell"><b>${fmtMin(tk.activeMin)}</b><span>active</span></div>
       <div class="tk-cell"><b>${fmtMin(tk.deepMin)}</b><span>deep work</span></div>
+      <div class="tk-cell ${tk.deepMin >= deepTarget ? "hit" : ""}"><b>${deepTarget ? Math.min(999, Math.round((tk.deepMin / deepTarget) * 100)) + "%" : "—"}</b><span>of ${Math.round(deepTarget / 6) / 10}h goal</span></div>
       <div class="tk-cell"><b>${tk.longestMin ? fmtMin(tk.longestMin) : "—"}</b><span>longest block</span></div>
       <div class="tk-cell"><b>${tk.switchesPerHr}</b><span>switches/hr</span></div>
       <div class="tk-cell"><b>${tk.voiceToday || 0}</b><span>voice notes</span></div>
@@ -383,12 +437,23 @@ async function vRhythm() {
     <div class="tk-strip" id="tk-strip">
       ${hourMarks.map((s) => `<span class="tk-hmark" style="left:${pct(s)}%"><i>${new Date(s * 1000).getHours()}</i></span>`).join("")}
       ${tk.timeline.map((e, i) => `<button class="tk-blk" data-blk="${i}" style="left:${pct(e.s)}%;width:${Math.max(0.35, ((e.d) / span) * 100)}%;--h:${e.hue}" title="${esc(e.app)}"></button>`).join("")}
+      ${tk.tracking ? `<div class="tk-now" style="left:100%"></div>` : ""}
     </div>
     <div class="tk-drawer" id="tk-drawer" hidden></div>
     <div class="tk-spark">${hist.map((h, i) => `<div class="tk-spark-col ${i === hist.length - 1 ? "today" : ""}" title="${h.date} · pulse ${h.pulse} · ${fmtMin(h.activeMin)}"><div style="height:${Math.max(3, (h.activeMin / histMax) * 100)}%;opacity:${0.35 + (h.pulse / 100) * 0.65}"></div></div>`).join("")}<span class="tk-spark-l">14 days</span></div>
     `)}
 
     ${pane("breakdown", `
+    ${(() => {
+      if (!tk.cats.length) return "";
+      const sum = (f) => tk.cats.filter(f).reduce((n, c) => n + c.min, 0);
+      const prod = sum((c) => c.level > 0), dist = sum((c) => c.level < 0), neu = sum((c) => c.level === 0);
+      return `<div class="tk-levels">
+        <div class="tk-level prod"><b>${fmtMin(prod)}</b><span>productive</span></div>
+        <div class="tk-level neu"><b>${fmtMin(neu)}</b><span>neutral</span></div>
+        <div class="tk-level dist"><b>${fmtMin(dist)}</b><span>distracting</span></div>
+      </div>`;
+    })()}
     ${tk.cats.length ? `<div class="sec">Where the time went</div>
       <div class="tk-cats">${tk.cats.map((c) => `<div class="tk-cat"${si()}>
         <span class="tk-cat-dot" style="--h:${c.hue}"></span>
@@ -427,7 +492,7 @@ async function vRhythm() {
     b.classList.add("sel");
     const near = tk.shots.filter((s) => Math.abs(s.t - e.s) < 12 * 60).slice(-1)[0];
     drawer.hidden = false;
-    drawer.innerHTML = `<div class="tkd-body">
+    drawer.innerHTML = `<button class="tkd-x" id="tkd-x" title="Close">×</button><div class="tkd-body">
       <div class="tkd-main">
         <div class="tkd-head"><span class="tk-cat-dot" style="--h:${e.hue}"></span><b>${esc(e.app)}</b><span class="tkd-time">${fmtT(e.s)}–${fmtT(e.s + e.d)} · ${fmtMin(Math.max(1, Math.round(e.d / 60)))}</span><span class="chip">${esc(e.cat)}</span></div>
         ${e.title ? `<div class="tkd-title">${esc(e.title)}</div>` : `<div class="tkd-title dim">no window title — app-only mode</div>`}
@@ -435,6 +500,7 @@ async function vRhythm() {
       </div>
       <div class="tkd-shot" id="tkd-shot"></div>
     </div>`;
+    const tkdx = $("#tkd-x"); if (tkdx) tkdx.onclick = () => { drawer.hidden = true; main.querySelectorAll(".tk-blk.sel").forEach((x) => x.classList.remove("sel")); };
     if (near) {
       const td = await window.donna.shotThumb(near.thumb);
       const slot = $("#tkd-shot");
@@ -447,7 +513,8 @@ async function vRhythm() {
     if (td) b.insertAdjacentHTML("afterbegin", `<img src="${td}">`);
     b.onclick = () => window.donna.openShot(b.dataset.full);
   });
-  if (tk.tracking) { clearTimeout(window.__tkTimer); window.__tkTimer = setTimeout(() => { if (view === "rhythm" && !$("#tk-drawer:not([hidden])")) vRhythm(); }, 30000); }
+  clearTimeout(window.__tkTimer);
+  if (tk.tracking) { window.__tkTimer = setTimeout(() => { if (view === "rhythm" && !$("#tk-drawer:not([hidden])")) vRhythm(); }, 30000); }
   openCoachButton("activity", { page: "rhythm", pulse: tk.pulse, activeMin: tk.activeMin, deepMin: tk.deepMin, tracking: tk.tracking, tab: tkTab });
 
   /* patterns: hour-of-day heatmap + day-of-week + interruption counter */
@@ -560,6 +627,8 @@ async function vPlan() {
     <div class="pl-board"${si()}>
       <div class="pl-cell"><b>${p.planned}</b><span>block${p.planned !== 1 ? "s" : ""} today</span></div>
       <div class="pl-cell"><b>${plannedHrs ? (Math.round(plannedHrs * 10) / 10) + "h" : "0h"}</b><span>planned</span></div>
+      <div class="pl-cell"><b>${p.free != null ? p.free + "h" : "—"}</b><span>free</span></div>
+      ${p.blocked ? `<div class="pl-cell warn"><b>${p.blocked}</b><span>blocked</span></div>` : ""}
       <div class="pl-cell ${p.overflow ? "warn" : ""}"><b>${p.overflow || 0}</b><span>didn't fit</span></div>
     </div>
 
@@ -585,7 +654,7 @@ async function vPlan() {
     await refresh(); if (view === "plan") vPlan(); renderCompactBody();
     toast(t?.status === "doing" ? "Paused" : "On it — focus started");
   }));
-  openCoachButton("plan", { layout: "timeline", planned: p.planned, blocks: p.blocks.length, overflow: p.overflow || 0, fitted: plannedHrs ? Math.round(plannedHrs * 10) / 10 : 0, busyEvents: p.busy.length, calOk: p.calOk });
+  openCoachButton("plan", { layout: "timeline", planned: p.planned, blocks: p.blocks.length, overflow: p.overflow || 0, blocked: p.blocked || 0, free: p.free, fitted: plannedHrs ? Math.round(plannedHrs * 10) / 10 : 0, busyEvents: p.busy.length, calOk: p.calOk });
 }
 
 /* Plan — Week view: the 7-day agenda, so a glance answers "what's coming" —
@@ -598,9 +667,12 @@ async function vPlanWeek() {
   const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(today); d.setDate(d.getDate() + i); return d; });
   const iso = (d) => d.toISOString().slice(0, 10);
   const open = data.open.filter((t) => t.status !== "doing" && t.bucket !== "someday");
+  const overdue = open.filter((t) => t.dueAt && t.dueAt.slice(0, 10) < iso(days[0]));
+  const later = open.filter((t) => t.dueAt && t.dueAt.slice(0, 10) > iso(days[6]));
   const byDay = days.map((d) => open.filter((t) => t.dueAt && t.dueAt.slice(0, 10) === iso(d)));
-  const scheduledIds = new Set(byDay.flat().map((t) => t.id));
+  const scheduledIds = new Set([...byDay.flat(), ...overdue, ...later].map((t) => t.id));
   const unscheduled = open.filter((t) => !scheduledIds.has(t.id) && !t.dueAt);
+  const card = (t, n = 50) => `<div class="pl-wcard p${t.priority}" data-wtask="${t.id}">${esc(trunc(t.title, n))}</div>`;
   const dName = (d, i) => i === 0 ? "Today" : i === 1 ? "Tomorrow" : d.toLocaleDateString(undefined, { weekday: "long" });
   main.innerHTML = `<div class="view wide">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
@@ -614,20 +686,22 @@ async function vPlanWeek() {
         </div>
       </div>
     </div>
+    ${overdue.length ? `<div class="pl-lane overdue"><div class="pl-lane-h">⚠ Overdue <b>${overdue.length}</b></div><div class="pl-lane-rows">${overdue.map((t) => card(t)).join("")}</div></div>` : ""}
     <div class="pl-week">
       ${days.map((d, i) => `<div class="pl-wcol ${i === 0 ? "wtoday" : ""}"${si()}>
         <div class="pl-whead"><span>${dName(d, i)}</span><b>${d.getDate()}</b></div>
         <div class="pl-wbody">
-          ${byDay[i].map((t) => `<div class="pl-wcard p${t.priority}" data-wtask="${t.id}">${esc(trunc(t.title, 50))}</div>`).join("")}
+          ${byDay[i].map((t) => card(t)).join("")}
           <button class="pl-wadd" data-wadd="${iso(d)}" title="Add a task on this day">＋ add</button>
         </div>
       </div>`).join("")}
     </div>
+    ${later.length ? `<div class="pl-lane later"><div class="pl-lane-h">Later <b>${later.length}</b></div><div class="pl-lane-rows">${later.map((t) => card(t)).join("")}</div></div>` : ""}
     ${unscheduled.length ? `<div class="sec" style="margin-top:18px">Unscheduled <b>${unscheduled.length}</b></div>
-      <div class="pl-unsched">${unscheduled.map((t) => `<div class="pl-wcard p${t.priority}" data-wtask="${t.id}">${esc(trunc(t.title, 60))}</div>`).join("")}</div>` : ""}
+      <div class="pl-unsched">${unscheduled.map((t) => card(t, 60)).join("")}</div>` : ""}
   </div>`;
   main.querySelectorAll("[data-planlay]").forEach((b) => (b.onclick = () => { planLayout = b.dataset.planlay; localStorage.setItem("donna.planLayout", planLayout); vPlan(); }));
-  main.querySelectorAll("[data-wtask]").forEach((el) => (el.onclick = () => gotoView("tasks")));
+  main.querySelectorAll("[data-wtask]").forEach((el) => (el.onclick = () => { if (typeof openTaskDetail === "function") openTaskDetail(el.dataset.wtask); else gotoView("tasks"); }));
   main.querySelectorAll("[data-wadd]").forEach((b) => (b.onclick = () => {
     const day = b.dataset.wadd;
     const inp = document.createElement("input");
@@ -641,12 +715,11 @@ async function vPlanWeek() {
       const v = inp.value.trim();
       if (save && v) {
         try {
-          const t = await window.donna.addTask(v);
-          const id = t && (t.id || (t.task && t.task.id));
+          const id = await window.donna.addTask(v);
           if (id) await window.donna.setDue(id, day);
         } catch {}
       }
-      await vPlanWeek();
+      await refresh(); await vPlanWeek();
     };
     inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); finish(true); } else if (e.key === "Escape") finish(false); };
     inp.onblur = () => finish(true);
@@ -921,6 +994,7 @@ async function vPeople() {
             <button class="ppl-touch" data-touch="${p.id}">✓ talked</button>
             <button class="ppl-cad" data-cad="${p.id}" title="contact cadence — click to cycle">every ${p.cadenceDays}d</button>
             ${p.lastContactAt ? `<span class="ppl-last">last · ${new Date(p.lastContactAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</span>` : `<span class="ppl-last">no contact logged</span>`}
+            <button class="ppl-del" data-pdel="${p.id}" title="Remove this person">✕</button>
           </div>
         </div>
         ${warmthRing(p)}
@@ -944,6 +1018,13 @@ async function vPeople() {
     const next = steps[(steps.indexOf(p.cadenceDays) + 1) % steps.length];
     await window.donna.peopleUpdate(p.id, { cadenceDays: next });
     vPeople();
+  }));
+  main.querySelectorAll("[data-pdel]").forEach((b) => (b.onclick = async (e) => {
+    e.stopPropagation();
+    const p = people.find((x) => x.id === b.dataset.pdel);
+    if (!p || !confirm(`Remove ${p.name}?`)) return;
+    await window.donna.peopleRemove(p.id);
+    vPeople(); toast("Removed");
   }));
   wirePeopleTabs();
   openCoachButton("people", {
@@ -1074,7 +1155,7 @@ function goalCard(g, linkedTasks = 0) {
       <div class="goal2-ring" style="--pct:${g.pct};--h:${dm.hue}"><span>${g.pct}<b>%</b></span></div>
       <div class="goal2-hd">
         <div class="goal2-obj">${esc(g.objective)}</div>
-        <div class="goal2-meta"><span class="domain-badge" style="--h:${dm.hue}">${esc(dm.label)}</span><span class="goal2-horizon">${g.horizon === "12wk" ? "12-week" : esc(g.horizon)}</span><span class="goal2-cycle">W${g.cycleWeek || 1}/12 · ${g.cycleDaysLeft != null ? g.cycleDaysLeft : 84}d left</span>${g.oneThing ? `<span class="goal2-lead" title="Lead this week">◷ lead set</span>` : ""}${linkedTasks ? `<span class="goal2-tasks" title="Open tasks linked to this goal">${linkedTasks} task${linkedTasks === 1 ? "" : "s"}</span>` : ""}${wk.committed ? `<span class="goal2-wk-mini ${wkPct >= 100 ? "hit" : ""}">${wk.done}/${wk.committed} this wk</span>` : ""}</div>
+        <div class="goal2-meta"><span class="domain-badge" style="--h:${dm.hue}">${esc(dm.label)}</span><span class="goal2-horizon">${g.horizon === "12wk" ? "12-week" : esc(g.horizon)}</span><span class="goal2-cycle">W${g.cycleWeek || 1}/12 · ${g.cycleDaysLeft != null ? g.cycleDaysLeft : 84}d left</span>${g.oneThing ? `<span class="goal2-lead" title="Lead this week">◷ lead set</span>` : ""}${linkedTasks ? `<span class="goal2-tasks" title="Open tasks linked to this goal">${linkedTasks} task${linkedTasks === 1 ? "" : "s"}</span>` : ""}${wk.committed ? `<span class="goal2-wk-mini ${wkPct >= 100 ? "hit" : ""}">${wk.done}/${wk.committed} this wk</span>` : ""}${(() => { const expected = Math.round(((g.cycleWeek || 1) / 12) * 100); const h = g.pct + 5 >= expected ? ["on", "on track"] : g.pct >= expected - 15 ? ["watch", "watch"] : ["risk", "at risk"]; return `<span class="goal2-health ${h[0]}" title="Progress vs where week ${g.cycleWeek || 1} expects (${expected}%)">${h[1]}</span>`; })()}</div>
         ${next ? `<div class="goal2-next">${esc(next)}</div>` : g.why ? `<div class="goal2-next dim">${esc(trunc(g.why, 60))}</div>` : ""}
       </div>
       <svg class="goal2-caret" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></svg>
@@ -1085,7 +1166,7 @@ function goalCard(g, linkedTasks = 0) {
 
       <div class="goal2-sec">Key results <span>measurable outcomes</span></div>
       ${(g.keyResults || []).length ? (g.keyResults || []).map((k) => `<div class="kr">
-        <div class="kr-top"><span class="kr-text">${esc(k.text)}</span><span class="kr-num">${k.current || 0}/${k.target}${k.unit ? " " + esc(k.unit) : ""}</span></div>
+        <div class="kr-top"><span class="kr-text">${esc(k.text)}</span><span class="kr-num" data-krset="${g.id}|${k.id}" title="Click to set an exact value">${k.current || 0}/${k.target}${k.unit ? " " + esc(k.unit) : ""}</span></div>
         <div class="kr-bar"><div class="kr-fill" style="width:${krPct(k)}%"></div></div>
         <div class="kr-acts"><button class="kr-step" data-krdec="${g.id}|${k.id}">−</button><button class="kr-step" data-krinc="${g.id}|${k.id}">+</button><button class="kr-del" data-krdel="${g.id}|${k.id}">remove</button></div>
       </div>`).join("") : `<p class="goal2-emptyhint">A number that proves the objective is actually done — not a restatement of it. E.g. objective "Run a 10k" → key result "runs =10".</p>`}
@@ -1250,6 +1331,7 @@ async function vGoals() {
   main.querySelectorAll("[data-krinc]").forEach((b) => (b.onclick = async () => { const [id, kr] = sp(b.dataset.krinc); const k = goals.find((x) => x.id === id).keyResults.find((y) => y.id === kr); await window.donna.goalsUpdateKR(id, kr, { current: (k.current || 0) + 1 }); reopenGoals(id); }));
   main.querySelectorAll("[data-krdec]").forEach((b) => (b.onclick = async () => { const [id, kr] = sp(b.dataset.krdec); const k = goals.find((x) => x.id === id).keyResults.find((y) => y.id === kr); await window.donna.goalsUpdateKR(id, kr, { current: Math.max(0, (k.current || 0) - 1) }); reopenGoals(id); }));
   main.querySelectorAll("[data-krdel]").forEach((b) => (b.onclick = async () => { const [id, kr] = sp(b.dataset.krdel); await window.donna.goalsRemoveKR(id, kr); reopenGoals(id); }));
+  main.querySelectorAll("[data-krset]").forEach((el) => (el.onclick = async () => { const [id, kr] = sp(el.dataset.krset); const k = goals.find((x) => x.id === id)?.keyResults.find((y) => y.id === kr); if (!k) return; const v = prompt(`Set current value for:\n${k.text}`, String(k.current || 0)); if (v === null) return; const n = Number(v); if (!Number.isFinite(n)) return; await window.donna.goalsUpdateKR(id, kr, { current: n }); reopenGoals(id); }));
   main.querySelectorAll("[data-addkr]").forEach((el) => (el.onkeydown = async (e) => { if (e.key === "Enter" && el.value.trim()) { const m = el.value.match(/=\s*(\d+)\s*([a-z]*)\s*$/i); await window.donna.goalsAddKR(el.dataset.addkr, el.value.replace(/=\s*\d+\s*[a-z]*\s*$/i, "").trim(), m ? m[1] : 0, m ? m[2] : ""); reopenGoals(el.dataset.addkr); } }));
   main.querySelectorAll("[data-mstog]").forEach((b) => (b.onclick = async () => { const [id, m] = sp(b.dataset.mstog); await window.donna.goalsToggleMilestone(id, m); reopenGoals(id); }));
   main.querySelectorAll("[data-msdel]").forEach((b) => (b.onclick = async () => { const [id, m] = sp(b.dataset.msdel); await window.donna.goalsRemoveMilestone(id, m); reopenGoals(id); }));

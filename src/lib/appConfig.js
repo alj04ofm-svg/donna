@@ -30,20 +30,22 @@ const DEFAULTS = {
   capacityHours: 8,
   dayStartHour: 9,
   dayEndHour: 19,
+  deepTargetMin: 180,
 
   // The assistant's knowledge: files or folders the user chooses to let it read.
   contextRoots: [],
 
   // AI provider — bring your own key.
-  provider: "anthropic", // anthropic | openai | minimax | gemini | opencode | claude-cli
-  model: "",
-  baseUrl: "",
+  provider: "opencode", // opencode | anthropic | openai | minimax | gemini | claude-cli
+  model: "deepseek-v4.1-flash",
+  baseUrl: "https://opencode.ai/zen/go/v1",
   apiKey: "",
-  nocodbUrl: "",
 
   // Desktop orb position (null = default bottom-right)
   orbX: null,
   orbY: null,
+  orbVisible: true,
+  captureContext: false,
 };
 
 function load() {

@@ -10,6 +10,18 @@ function readJson(p, fallback) {
   try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return fallback; }
 }
 
+/* Collision-proof task id. Date.now() alone repeats when tasks are created in
+   the same millisecond (fast capture, template fan-out, tests), so we fall
+   back to a short counter suffix while keeping the historical shape. */
+function newId(existingTasks) {
+  const base = `task_${Date.now()}_donna`;
+  const ids = new Set((existingTasks || []).map((t) => t.id));
+  if (!ids.has(base)) return base;
+  let n = 0, id;
+  do { id = `task_${Date.now()}_${(++n).toString(36)}_donna`; } while (ids.has(id));
+  return id;
+}
+
 function normalize(t) {
   return {
     id: t.id, title: t.title || "(untitled)", detail: t.detail || "",
@@ -27,7 +39,10 @@ function normalize(t) {
     assignee: t.assignee || null,      // who owns it (you, or a teammate/person)
     subtasks: Array.isArray(t.subtasks) ? t.subtasks : [], // lightweight checklist
     waitingOn: t.waitingOn || null,    // Donna-only field: who it is blocked on.
+    tags: Array.isArray(t.tags) ? t.tags : [],             // freeform labels, colour-hashed in the UI
+    dependsOn: Array.isArray(t.dependsOn) ? t.dependsOn : [], // ids of tasks that must finish first (blocked-by)
     startedAt: t.startedAt || null,    // set when moved to doing — powers the Now timer
+    createdAt: t.createdAt || null,    // stable creation time — powers "Newest" sort + templates
     updatedAt: t.updatedAt || null,
     project_id: t.project_id || null,  // groups tasks into tracks (WC / gossip / …)
     recurrence: t.recurrence || null,  // { freq: "daily"|"weekly"|"weekdays", dow?: number[] } — Donna regenerates next instance when this is completed
@@ -85,7 +100,7 @@ function complete(id) {
        instance so the schedule stays populated automatically. */
     try {
       if (t.recurrence && t.recurrence.freq) {
-        const next = nextInstance(t);
+        const next = nextInstance(t, data.tasks);
         if (next) { data.tasks.push(next); }
       }
     } catch {}
@@ -96,7 +111,7 @@ function complete(id) {
 
 /* compute the next instance of a recurring task after it was completed.
    Supported: daily (every 1d), weekdays (Mon-Fri), weekly (same dow). */
-function nextInstance(t) {
+function nextInstance(t, existingTasks) {
   const r = t.recurrence || {};
   const lastDue = t.dueAt || t.completedAt || new Date().toISOString();
   const last = new Date(lastDue);
@@ -107,15 +122,18 @@ function nextInstance(t) {
     do { next.setDate(next.getDate() + 1); } while (next.getDay() === 0 || next.getDay() === 6);
   } else if (r.freq === "weekly") next.setDate(last.getDate() + 7);
   else return null;
-  const newId = `task_${Date.now()}_donna`;
+  const newId_ = newId(existingTasks);
   return {
-    id: newId, assigneeUserId: "me", title: t.title, detail: t.detail || "",
+    id: newId_, assigneeUserId: "me", title: t.title, detail: t.detail || "",
     link: null, status: "todo", board: null, project_id: t.project_id || null,
     dueAt: next.toISOString().slice(0, 10), dueTime: t.dueTime || null,
     deadline: t.deadline || null, deadlineHard: t.deadlineHard || false,
     priority: t.priority || 3, estimatedMinutes: t.estimatedMinutes || null,
     bucket: t.bucket || null, area: t.area || null, waitingOn: t.waitingOn || null,
     assignee: t.assignee || null,
+    tags: Array.isArray(t.tags) ? t.tags.slice() : [],
+    /* dependsOn is intentionally NOT carried: a new cycle is free to start. */
+    dependsOn: [],
     subtasks: (Array.isArray(t.subtasks) ? t.subtasks : []).map((s) => ({ ...s, done: false })),
     createdAt: new Date().toISOString(), createdBy: "donna", updatedAt: new Date().toISOString(),
     updatedBy: "donna", completedAt: null,
@@ -145,12 +163,18 @@ function setStatus(id, status) {
   const t = (data.tasks || []).find((x) => x.id === id);
   if (t) {
     const now = new Date().toISOString();
+    const wasDone = t.status === "done";
     if (status !== "doing") logSessionIfDoing(t, now); // leaving a focus session → log it
     t.status = status;
     t.updatedAt = now;
     t.completedAt = status === "done" ? now : null;
     if (status === "doing") { t.startedAt = now; t.waitingOn = null; }
     if (status === "todo") t.startedAt = null;
+    /* completing via drag-to-Done (or any status change) must regenerate a
+       recurring task's next instance, exactly like the checkbox path. */
+    if (status === "done" && !wasDone && t.recurrence && t.recurrence.freq) {
+      try { const next = nextInstance(t, data.tasks); if (next) data.tasks.push(next); } catch {}
+    }
   }
   fs.writeFileSync(TASKS_FILE, JSON.stringify(data, null, 2));
   return !!t;
@@ -158,7 +182,7 @@ function setStatus(id, status) {
 
 /* Donna-only field setters — all passthrough fields the dashboard ignores.
    One guarded generic instead of five copies of the same read-find-write. */
-const DONNA_FIELDS = ["title", "detail", "project_id", "assignee", "subtasks", "recurrence", "bucket", "area", "estimatedMinutes", "deadline", "deadlineHard", "objectiveId"];
+const DONNA_FIELDS = ["title", "detail", "project_id", "assignee", "subtasks", "recurrence", "bucket", "area", "estimatedMinutes", "deadline", "deadlineHard", "objectiveId", "waitingOn", "tags", "dependsOn", "dueTime"];
 function setField(id, field, value) {
   if (!DONNA_FIELDS.includes(field)) return false;
   const data = readJson(TASKS_FILE, { version: 1, tasks: [] });
@@ -232,13 +256,15 @@ function add(input, priority, detail) {
   }
   const data = readJson(TASKS_FILE, { version: 1, tasks: [] });
   const now = new Date().toISOString();
-  const id = `task_${Date.now()}_donna`;
+  const id = newId(data.tasks);
   data.tasks = data.tasks || [];
   data.tasks.push({
     id, assigneeUserId: "me", title: parsed.title || "(untitled)", detail: (detail || "").slice(0, 500), link: null, status: "todo",
     source: "donna", board: null, project_id: parsed.project_id, dueAt: parsed.dueAt, dueTime: parsed.dueTime,
     deadline: parsed.deadline, deadlineHard: parsed.deadlineHard, priority: parsed.priority,
     estimatedMinutes: parsed.estimatedMinutes, bucket: parsed.bucket, area: parsed.area, waitingOn: parsed.waitingOn,
+    tags: Array.isArray(parsed.tags) ? parsed.tags : [], // parsed from +tag tokens
+    dependsOn: [],
     objectiveId: parsed.objectiveId || null, // auto-linked from >>needle
     createdAt: now, createdBy: "donna", updatedAt: now, updatedBy: "donna", completedAt: null,
   });
@@ -247,4 +273,4 @@ function add(input, priority, detail) {
   return id;
 }
 
-module.exports = { summary, complete, setStatus, setWaiting, setDue, setPriority, add, setField, setWontDo, addActual, remove, TASKS_FILE };
+module.exports = { summary, complete, setStatus, setWaiting, setDue, setPriority, add, setField, setWontDo, addActual, remove, newId, TASKS_FILE };

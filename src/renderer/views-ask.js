@@ -69,6 +69,7 @@ function vAsk() {
   main.innerHTML = `<div class="view ask-hub" style="max-width:none">
     <aside class="ask-rail">
       <button class="ask-new" id="ask-new"><span class="orb"></span> New chat</button>
+      ${convoStore.length ? `<div class="ask-convos" id="ask-convos">${convoStore.slice(0, 10).map((c) => `<button class="ask-convo ${c.id === convoId ? "on" : ""}" data-convo="${esc(c.id)}" title="${esc(convoTitle(c))}"><span class="ask-convo-t">${esc(convoTitle(c))}</span><span class="ask-convo-x" data-convo-del="${esc(c.id)}">✕</span></button>`).join("")}</div>` : ""}
       <div class="ask-rail-sec">Jump-starts</div>
       <div class="ask-jumps">
         ${g.map((grp) => `<div class="ask-jgroup"><div class="ask-jlabel">${grp.icon} ${grp.label}</div>${grp.chips.map((c) => `<button class="ask-jump" data-q="${esc(c)}">${esc(trunc(c.replace(/^(best|think|quick):\s*/, ""), 40))}</button>`).join("")}</div>`).join("")}
@@ -97,16 +98,25 @@ function vAsk() {
       e.preventDefault();
     }
   });
-  main.querySelectorAll(".ask-jump").forEach((b) => (b.onclick = () => sendAsk(b.dataset.q)));
+  main.querySelectorAll(".ask-jump").forEach((b) => (b.onclick = () => sendAsk(withMode(b.dataset.q))));
   main.querySelectorAll(".ask-mode").forEach((b) => (b.onclick = () => { askMode = askMode === b.dataset.mode ? null : b.dataset.mode; vAsk(); }));
-  $("#ask-new").onclick = () => { thread.length = 0; vAsk(); };
+  $("#ask-new").onclick = () => { if (thread.length) newConvo(); else { thread.length = 0; saveConvos(); } vAsk(); };
+  main.querySelectorAll("[data-convo]").forEach((el) => (el.onclick = (e) => {
+    if (e.target.closest("[data-convo-del]")) return;
+    openConvo(el.dataset.convo); vAsk();
+  }));
+  main.querySelectorAll("[data-convo-del]").forEach((b) => (b.onclick = (e) => {
+    e.stopPropagation();
+    deleteConvo(b.dataset.convoDel);
+    vAsk();
+  }));
   const teach = $("#ask-teach");
   teach.onkeydown = async (e) => { if (e.key === "Enter" && teach.value.trim()) { await window.donna.memoryAdd(teach.value.trim(), "fact"); teach.value = ""; try { snd.pop(); } catch {} loadAskAbout(); toast("Donna will remember that"); } };
   loadAskAbout();
   requestAnimationFrame(() => inp.focus());
   const th = $("#thread"); if (th) th.scrollTop = 1e6;
   const car = $("#ask-carousel");
-  if (car) { paintCarousel(); startCarousel(); car.onclick = () => sendAsk(car.dataset.q); }
+  if (car) { paintCarousel(); startCarousel(); car.onclick = () => sendAsk(withMode(car.dataset.q)); }
   else clearInterval(askCarouselT);
   const aura = $("#ask-aura");
   if (aura) main.querySelector(".ask-main").onmousemove = (e) => {
@@ -141,15 +151,59 @@ async function loadAskAbout() {
   el.querySelectorAll("[data-forget]").forEach((b) => (b.onclick = async () => { await window.donna.memoryRemove(b.dataset.forget); loadAskAbout(); }));
 }
 
+/* a small, safe markdown renderer for answers — escapes first, then applies
+   bold/inline-code/code-fences/lists/headings/links. Never injects raw HTML. */
+function mdHtml(text) {
+  const lines = String(text || "").split(/\r?\n/);
+  const inline = (s) => esc(s)
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  let out = "", inCode = false, inUl = false, codeBuf = [];
+  for (const ln of lines) {
+    if (/^```/.test(ln)) {
+      if (inCode) { out += `<pre class="md-code">${esc(codeBuf.join("\n"))}</pre>`; codeBuf = []; inCode = false; }
+      else inCode = true;
+      continue;
+    }
+    if (inCode) { codeBuf.push(ln); continue; }
+    const li = ln.match(/^\s*[-*]\s+(.+)/);
+    if (li) { if (!inUl) { out += "<ul>"; inUl = true; } out += `<li>${inline(li[1])}</li>`; continue; }
+    if (inUl) { out += "</ul>"; inUl = false; }
+    const h = ln.match(/^#{1,3}\s+(.+)/);
+    if (h) { out += `<div class="md-h">${inline(h[1])}</div>`; continue; }
+    if (!ln.trim()) { out += "<p></p>"; continue; }
+    out += `<p>${inline(ln)}</p>`;
+  }
+  if (inUl) out += "</ul>";
+  if (inCode && codeBuf.length) out += `<pre class="md-code">${esc(codeBuf.join("\n"))}</pre>`;
+  return out;
+}
+
 function msgHtml(m, i) {
   if (m.role === "you") return `<div class="msg you msg-in"><span class="msg-body">${esc(m.text)}</span></div>`;
   const body = m.streaming
     ? `<div class="thinking-line"><i></i><i></i><i></i></div>`
-    : `${esc(m.text)}`;
+    : mdHtml(m.text);
+  const actions = (!m.streaming && m.text) ? `<div class="msg-acts"><button data-copy="${i}">Copy</button><button data-regen="${i}">Regenerate</button><button data-totask="${i}">→ Task</button><button data-tonote="${i}">→ Note</button></div>` : "";
   return `<div class="msg donna msg-in" data-i="${i}"><div class="msg-head"><span class="orb"></span><span class="msg-name">Donna</span>
     ${(m.provider || m.tier) && m.tier !== "capture" ? `<span class="chip tier">${provLabel(m.provider || m.tier)}</span>` : ""}</div>
     <div class="msg-body">${body}</div>
-    ${!m.streaming && m.text ? `<div class="msg-acts"><button data-copy="${i}">Copy</button><button data-regen="${i}">Regenerate</button></div>` : ""}</div>`;
+    ${actions}</div>`;
+}
+
+/* Persist the active conversation (with a derived title); never store the
+   transient streaming placeholder. */
+function persistThread() {
+  try {
+    const c = activeConvo();
+    if (!c.title || c.title === "New chat") {
+      const first = thread.find((m) => m.role === "you");
+      if (first) c.title = first.text.replace(/^(best|think|quick):\s*/i, "").slice(0, 42) || "New chat";
+    }
+    c.messages = thread.filter((m) => !m.streaming).slice(-60);
+    saveConvos();
+  } catch {}
 }
 
 function paintThread() {
@@ -160,8 +214,24 @@ function paintThread() {
   t.querySelectorAll("[data-regen]").forEach((b) => (b.onclick = () => {
     const i = Number(b.dataset.regen);
     const prevUser = [...thread.slice(0, i)].reverse().find((m) => m.role === "you");
-    if (prevUser) sendAsk(prevUser.text);
+    if (!prevUser || streaming) return;
+    // replace in place: drop the old answer (and the question) and re-ask cleanly
+    const ui = thread.lastIndexOf(prevUser);
+    thread.splice(ui, thread.length - ui);
+    paintThread();
+    sendAsk(prevUser.text.replace(/^(best|think|quick):\s*/i, ""));
   }));
+  t.querySelectorAll("[data-totask]").forEach((b) => (b.onclick = async () => {
+    const text = thread[b.dataset.totask].text.split("\n").map((l) => l.trim()).find(Boolean) || "Follow-up from Ask";
+    await window.donna.addTask(text.slice(0, 140));
+    await refresh(); toast("Saved as task");
+  }));
+  t.querySelectorAll("[data-tonote]").forEach((b) => (b.onclick = async () => {
+    const text = thread[b.dataset.tonote].text;
+    await window.donna.notesAdd(text.split("\n")[0].slice(0, 60) || "From Ask", text);
+    toast("Saved as note");
+  }));
+  persistThread();
 }
 
 /* typewriter reveal — the answer arrives whole; stream it in at reading speed */
@@ -186,22 +256,25 @@ async function sendAsk(q) {
   const reply = { role: "donna", text: "", tier: null, streaming: true };
   thread.push(reply);
   if (view === "ask") paintThread();
-  const res = await window.donna.ask(q);
-  reply.tier = res.tier;
-  reply.provider = res.provider;
+  let res;
+  try { res = await window.donna.ask(q); }
+  catch (e) { res = { answer: "Couldn't reach the brain — try again.", tier: "error", provider: null }; }
+  reply.tier = res && res.tier;
+  reply.provider = res && res.provider;
+  const answer = (res && res.answer) || "(no answer)";
   if (view === "ask") {
     const el = document.querySelector(".msg.donna:last-of-type .msg-body");
     if (el) {
-      typewrite(el, res.answer, () => {
-        reply.text = res.answer; reply.streaming = false; streaming = false;
+      typewrite(el, answer, () => {
+        reply.text = answer; reply.streaming = false; streaming = false;
         paintThread();
-        // suggested follow-ups — one cheap minimax call to read the conversation
-        // and offer 2-3 natural next moves. Falls back silently if the brain's down.
-        if (res.answer && res.tier !== "capture") suggestFollowups();
+        // suggested follow-ups — one cheap call to read the conversation
+        if (answer && res.tier !== "capture") suggestFollowups();
       });
-    } else { reply.text = res.answer; reply.streaming = false; streaming = false; }
-  } else { reply.text = res.answer; reply.streaming = false; streaming = false; }
-  if (res.tier === "capture") { await refresh(); renderCompactBody(); }
+    } else { reply.text = answer; reply.streaming = false; streaming = false; }
+  } else { reply.text = answer; reply.streaming = false; streaming = false; }
+  if (res && res.tier === "capture") { await refresh(); try { renderCompactBody(); } catch {} }
+  persistThread();
 }
 
 /* Cheap AI follow-up — minimax reads the last 2 turns and suggests 2-3 natural
@@ -232,7 +305,9 @@ async function vCapture(root = main, bare = false) {
     <div class="cap-hero"><input id="cap-in" placeholder="Capture anything… ↵ to log it" autofocus></div>
     <div class="sec">Recent${caps.length ? `<span class="rh-avg">${caps.length}</span>` : ""}</div>
     ${caps.length ? `<div class="cap-stream">${caps.slice().reverse().map((c, i) => `
-      <div class="cap-row"${si()} style="opacity:${Math.max(0.55, 1 - i * 0.03)}"><span class="cap-kind ${c.kind}">${esc(c.kind)}</span><span class="cap-text">${esc(c.text)}</span>
+      <div class="cap-row ${c.done ? "done" : ""}"${si()} style="opacity:${Math.max(0.55, 1 - i * 0.03)}"><span class="cap-kind ${c.kind}">${esc(c.kind)}</span><span class="cap-text">${esc(c.text)}</span>
+      <button class="cap-act" data-capdone="${esc(c.id)}" title="Mark done"${c.done ? " disabled" : ""}>✓</button>
+      <button class="cap-act danger" data-capdel="${esc(c.id)}" title="Delete">✕</button>
       <span class="cap-time">${rel(c.created_at)}</span></div>`).join("")}</div>`
       : `<div class="rows"><div class="empty">Everything you capture shows up here. Just start typing above.</div></div>`}
   ${bare ? "" : "</div>"}`;
@@ -248,5 +323,7 @@ async function vCapture(root = main, bare = false) {
       vCapture(root, bare); toast("Captured");
     }
   });
+  root.querySelectorAll("[data-capdone]").forEach((b) => (b.onclick = async (e) => { e.stopPropagation(); await window.donna.captureComplete(b.dataset.capdone); vCapture(root, bare); }));
+  root.querySelectorAll("[data-capdel]").forEach((b) => (b.onclick = async (e) => { e.stopPropagation(); await window.donna.captureRemove(b.dataset.capdel); vCapture(root, bare); toast("Deleted"); }));
   if (!bare) openCoachButton("capture", { total: caps.length, recent: caps.slice(0, 3).map((c) => c.text.slice(0, 40)) });
 }

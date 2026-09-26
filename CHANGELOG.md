@@ -3,6 +3,37 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.21.0] — 2026-09-26
+
+Focus: make each of the eight core pages beat the tool people use it
+*instead of*. Tables removed.
+
+- **Tasks (rebuilt).** Freeform **tags** (`+tag` in NL capture), **blocked-by
+  dependencies** with cycle protection, **bulk multi-select** edits, **saved
+  views**, **templates**, duplicate, and a redesigned composer. Blocked tasks
+  refuse to start; tags/blocked show on rows, board cards and Today.
+- **Today.** "Up next" list, tag/dependency chips on the focus card, the AI
+  coach, and a working **"since you were here"** reopen digest.
+- **Plan.** The auto-scheduler is now **dependency-aware** (blocked work isn't
+  time-blocked), reports **free hours** and **blocked** counts, and the
+  week-view inline add now actually applies the chosen day.
+- **Notes.** Tags + tag filter, in/out **wiki-link backlinks**, **daily note**,
+  duplicate, copy-as-Markdown, and a live word count.
+- **Goals.** **On-track / watch / at-risk** health vs. cycle week, and a
+  click-to-set exact **key-result value**.
+- **Ask.** Conversations now **persist across restarts**, and any answer can be
+  saved straight to a **task** or **note**.
+- **Tracker.** Daily **deep-work target** ring (configurable in Settings).
+- **Settings.** Daily deep-work target; provider default aligned with the UI.
+- **Cleanup & fixes.** Removed the Tables feature end-to-end; vendored Quill 2
+  locally (Notes was broken in a clean checkout under the CSP); fixed
+  collision-prone `Date.now()` task/note/view/template ids; restored the
+  `onShow` digest wiring; fixed export/journal writing to the app bundle
+  instead of user data; fixed memory fact-mining calling a non-existent client;
+  made `DONNA_DATA_DIR` overridable for hermetic tests.
+- **Tests:** 29 passing (`tasks-ext`, `notes`, `schedule`, plus the existing
+  suite).
+
 ## [1.20.0] — 2026-09-22
 
 - Fixed a CSS class collision that rendered Goals domain-coverage rows as giant

@@ -1,5 +1,5 @@
 
-const VIEWS = { today: vToday2, tasks: vTasks, plan: vPlan, ask: vAsk, rhythm: vRhythm, library: vLibrary, goals: vGoals, tables: vTables, people: vPeople, habits: vHabits, settings: vSettings,
+const VIEWS = { today: vToday2, tasks: vTasks, plan: vPlan, ask: vAsk, rhythm: vRhythm, library: vLibrary, goals: vGoals, people: vPeople, habits: vHabits, settings: vSettings,
   // still callable (embedded elsewhere / tabs), not in the sidebar:
   waiting: vWaiting, capture: vCapture, notes: vNotes, ideas: vIdeas, memory: vMemory };
 function render() {
@@ -15,6 +15,8 @@ function render() {
     cur = -1; VIEWS[view](); applySections();
   }
 }
+/* the DOM row for a task id — Tasks uses .row, Today's up-next uses .t2-up */
+function rowElFor(id) { return document.querySelector(`.row[data-id="${id}"], .t2-up[data-up="${id}"]`); }
 
 /* ════════ COMPACT ════════
    Cards: lead · now · pipeline · priorities · ask. Each card checks
@@ -182,14 +184,14 @@ function buildActions(q) {
   }
   const nav = [
     ["today", "Go to Today", "⌘1"], ["plan", "Go to Plan", "⌘2"], ["tasks", "Go to Tasks", "⌘3"],
-    ["goals", "Go to Goals", "⌘4"], ["tables", "Go to Tables", "⌘5"], ["library", "Go to Notes", ""], ["rhythm", "Go to Tracker", "⌘6"],
+    ["goals", "Go to Goals", "⌘4"], ["library", "Go to Notes", "⌘5"], ["rhythm", "Go to Tracker", "⌘6"],
     ["ask", "Go to Ask", "⌘7"], ["settings", "Go to Settings", "⌘8"],
   ];
   for (const [v, label, hint] of nav)
     acts.push({ sec: "Navigate", icon: ICONS.view, label, hint, score: fuzzy(q, label), run: () => gotoView(v) });
   // actions that DO things (Raycast/Linear model)
   acts.push(
-    { sec: "Do", icon: ICONS.add, label: "New note", hint: "", score: fuzzy(q, "new note write"), run: () => { gotoView("notes"); setTimeout(() => $("#note-add") && $("#note-add").focus(), 90); } },
+    { sec: "Do", icon: ICONS.add, label: "New note", hint: "", score: fuzzy(q, "new note write"), run: () => { try { libTab = "notes"; localStorage.setItem("donna.libTab", "notes"); } catch {} gotoView("library"); setTimeout(() => { const b = $("#nd-new"); if (b) b.click(); }, 140); } },
     { sec: "Do", icon: ICONS.task, label: "Triage inbox", hint: "cards", score: fuzzy(q, "triage inbox process overdue"), run: () => { const u = data ? data.open.filter(isUntriaged) : []; const overdue = data ? data.open.filter((t) => t.dueAt && t.dueAt < new Date().toISOString().slice(0, 10) && t.status !== "doing") : []; const q2 = [...new Set([...u, ...overdue])]; q2.length ? openTriage(q2) : toast("Nothing to triage — clean"); } },
     { sec: "Do", icon: ICONS.mode, label: "Plan the day", hint: "ritual", score: fuzzy(q, "plan the day morning ritual"), run: openMorningPlan },
     { sec: "Do", icon: ICONS.mode, label: "Wind down the day", hint: "", score: fuzzy(q, "wind down shutdown end day"), run: openShutdown },
@@ -268,7 +270,7 @@ window.addEventListener("keydown", (e) => {
   }
   if (mod && e.key.toLowerCase() === "n") {
     e.preventDefault();
-    const inp = $("#today-add") || $("#task-in") || $("#c-add-in");
+    const inp = $("#today-add") || $("#t2-input") || $("#task-in") || $("#c-add-in");
     if (inp) inp.focus(); else { gotoView("tasks"); setTimeout(() => $("#task-in")?.focus(), 80); }
     return;
   }
@@ -290,7 +292,7 @@ window.addEventListener("keydown", (e) => {
   else if ((k === " " || e.key === "Enter") && cur >= 0) {
     e.preventDefault();
     const t = curList[cur];
-    const row = document.querySelector(`.row[data-id="${t.id}"]`);
+    const row = rowElFor(t.id);
     if (k === " ") completeWithAnim(t.id, row);
     else row?.classList.toggle("open");
   }
@@ -300,7 +302,7 @@ window.addEventListener("keydown", (e) => {
   }
   else if (k === "s" && cur >= 0) {
     e.preventDefault();
-    const row = document.querySelector(`.row[data-id="${curList[cur].id}"]`);
+    const row = rowElFor(curList[cur].id);
     if (row) openSnooze(curList[cur].id, row.getBoundingClientRect());
   }
   else if (k === "d" && cur >= 0) { // start / stop — the Now state
@@ -311,7 +313,7 @@ window.addEventListener("keydown", (e) => {
   }
   else if (k === "w" && cur >= 0) { // waiting-on popover
     e.preventDefault();
-    const row = document.querySelector(`.row[data-id="${curList[cur].id}"]`);
+    const row = rowElFor(curList[cur].id);
     if (row) openWaitPop(curList[cur].id, row.getBoundingClientRect());
   }
   else if (k === "v" && cur >= 0) { // this evening ⇄ back (Things)
@@ -336,7 +338,7 @@ window.addEventListener("keydown", (e) => {
       await refresh(); render(); renderCompactBody(); toast("Let go.");
     });
   }
-  else if (k === "c") { e.preventDefault(); ($("#today-add") || $("#task-in"))?.focus(); }
+  else if (k === "c") { e.preventDefault(); ($("#today-add") || $("#t2-input") || $("#task-in"))?.focus(); }
 });
 
 /* ════════ mode plumbing ════════ */
@@ -391,7 +393,7 @@ window.donna.onRemembered?.((n) => {
 /* "Since you were here" — track last-seen, on every show compute the
    digest (activity since last seen). If >4h, jump to Today + show digest.
    Same logic runs on every window-open after the first. */
-let lastSeenAt = null;
+let lastSeenAt = (() => { const v = Number(localStorage.getItem("donna.lastSeenAt")); return v > 0 ? v : null; })();
 let sinceDigest = null;
 
 function showSinceLeft() {
@@ -450,10 +452,8 @@ window.donna.onHide?.(() => {
   remindersCache = init.reminders || [];
   replacementsCache = init.replacements || [];
   window.donna.searchIndex().then((s) => (searchCache = s || []));
-  /* load last-seen from previous session */
-  try { lastSeenAt = Number(localStorage.getItem("donna.lastSeenAt")) || null; } catch {}
-  /* immediately compute digest for the splash on open */
-  if (lastSeenAt) { computeSinceLeft().catch(() => {}); }
+  /* immediate digest for the splash on open — after the shell has painted */
+  if (lastSeenAt) { setTimeout(() => computeSinceLeft().catch(() => {}), 140); }
   paintChrome();
   setBodyMode(init.mode || "full");
   render();

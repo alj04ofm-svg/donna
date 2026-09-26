@@ -37,12 +37,14 @@ function touch(id) {
 }
 const TYPES = ["Work", "Client", "Partner", "Friend", "Family"];
 
+function newId(a) { const ids = new Set(a.map((p) => p.id)); let id; do { id = `p_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`; } while (ids.has(id)); return id; }
 function add(name, role, type) {
   const a = read();
-  const p = { id: `p_${Date.now()}`, name: name || "New person", role: role || "", type: type || "", notes: "" };
+  const p = { id: newId(a), name: name || "New person", role: role || "", type: type || "", notes: "" };
   a.push(p); write(a);
   try { require("./activity").log("person_added", p.name + (p.role ? ` · ${p.role}` : ""), { domain: "relationships", ref: { type: "person", id: p.id } }); } catch {}
   return p;
 }
+function remove(id) { write(read().filter((p) => p.id !== id)); return true; }
 
-module.exports = { list, update, touch, add };
+module.exports = { list, update, touch, add, remove };

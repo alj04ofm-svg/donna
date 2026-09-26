@@ -11,6 +11,9 @@ app.setName("Donna");
 // existing window, never spawn a second. Second launch -> showWindow.
 if (!app.requestSingleInstanceLock()) { app.quit(); }
 app.on("second-instance", () => { try { showWindow(); } catch {} });
+/* Cmd+Q / Dock→Quit must actually quit: the window close handler intercepts
+   unless isQuitting is set, so set it here for every quit path. */
+app.on("before-quit", () => { app.isQuitting = true; });
 
 const { createBrain } = require("./lib/brain");
 const { createCaptureStore } = require("./lib/captureStore");
@@ -23,21 +26,40 @@ const appConfig = require("./lib/appConfig");
 const tasks = require("./lib/tasks");
 const production = require("./lib/production");
 const { createWatchers } = require("./lib/watchers");
-const { dataPath } = require("./lib/paths");
+const { dataPath, DATA } = require("./lib/paths");
 
 const config = appConfig.load();
 
+/* Read the OpenCode CLI's own auth so Donna can use the same OpenCode Go
+   subscription without the user pasting the key again. */
+function opencodeCliKey() {
+  try {
+    const p = path.join(process.env.HOME || "", ".local/share/opencode/auth.json");
+    const a = JSON.parse(fs.readFileSync(p, "utf8"));
+    return (a["opencode-go"] && a["opencode-go"].key) || (a.opencode && a.opencode.key) || null;
+  } catch { return null; }
+}
+
 /* Make the key entered in Settings actually usable: expose it to the selected
-   provider client via the environment (real env vars always win). */
+   provider client via the environment (an explicit Settings key always wins). */
 function applyProviderEnv(cfg) {
   if (!cfg) return;
-  const provider = cfg.provider || "anthropic";
-  // OpenAI-compatible gateways (OpenAI, or your own OpenCode gateway).
+  const provider = cfg.provider || "opencode";
+  // OpenAI-compatible gateways: OpenCode Zen/Go, OpenAI, or your own gateway.
   if (provider === "opencode" || provider === "openai") {
-    const key = cfg.apiKey || process.env.OPENCODE_API_KEY || process.env.OPENAI_API_KEY;
-    if (key && !process.env.OPENAI_API_KEY) process.env.OPENAI_API_KEY = key;
-    if (cfg.baseUrl) process.env.OPENAI_BASE_URL = cfg.baseUrl;
-    if (cfg.model) process.env.DONNA_MODEL = cfg.model;
+    if (cfg.apiKey) process.env.OPENAI_API_KEY = cfg.apiKey;
+    else if (!process.env.OPENAI_API_KEY && provider === "opencode") {
+      const discovered = process.env.OPENCODE_API_KEY || opencodeCliKey();
+      if (discovered) process.env.OPENAI_API_KEY = discovered;
+    }
+    if (provider === "opencode") {
+      process.env.OPENAI_BASE_URL = cfg.baseUrl || "https://opencode.ai/zen/go/v1";
+      process.env.DONNA_MODEL = cfg.model || "deepseek-v4.1-flash";
+    } else {
+      process.env.OPENAI_BASE_URL = cfg.baseUrl || "https://api.openai.com/v1";
+      if (cfg.model) process.env.DONNA_MODEL = cfg.model; else delete process.env.DONNA_MODEL;
+    }
+    if (!process.env.OPENCODE_SESSION) { try { process.env.OPENCODE_SESSION = require("node:crypto").randomUUID(); } catch {} }
     return;
   }
   if (!cfg.apiKey) return;
@@ -119,7 +141,7 @@ function clampToWork(b) {
 }
 
 async function applyMode(next) {
-  if (!win || animating || next === mode) { if (win && next !== mode) {} else return; }
+  if (!win || animating || next === mode) return;
   if (mode === "full") fullBounds = win.getBounds();
   const prev = mode;
   mode = next;
@@ -207,6 +229,17 @@ async function hideWindow() {
   await fadeTo(0); win.hide(); win.setOpacity(1);
 }
 function toggleWindow() { if (win && win.isVisible() && win.isFocused()) hideWindow(); else showWindow(); }
+/* (re)bind the global hotkeys from config — safe to call after any config
+   change. Returns which ones failed so Settings could warn on a conflict. */
+function registerShortcuts() {
+  try { globalShortcut.unregisterAll(); } catch {}
+  const results = {};
+  const bind = (acc, fn) => { if (!acc) return; try { results[acc] = globalShortcut.register(acc, fn); } catch { results[acc] = false; } };
+  bind(config.hotkey || "CommandOrControl+Shift+Space", toggleWindow);
+  bind("CommandOrControl+Alt+D", toggleWindow);
+  bind(config.captureHotkey || "Alt+Space", openQuickCapture);
+  return results;
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -238,14 +271,33 @@ function createWindow() {
 const ORB_SMALL = { w: 56, h: 56 };
 const ORB_BIG = { w: 300, h: 380 };
 let orbWin = null;
+let orbAnchor = null;   // collapsed top-left — the source of truth we persist
+let orbProg = false;    // ignore 'moved' while we set bounds programmatically
 function defaultOrbPos() {
   const wa = screen.getPrimaryDisplay().workArea;
   return { x: wa.x + wa.width - ORB_SMALL.w - 24, y: wa.y + wa.height - ORB_SMALL.h - 100 };
 }
+/* keep the orb fully on the display it overlaps, so changing monitors or
+   unplugging one never strands it off-screen */
+function clampOrb(x, y, w, h) {
+  const wa = screen.getDisplayNearestPoint({ x: x + Math.round(w / 2), y: y + Math.round(h / 2) }).workArea;
+  return {
+    x: Math.max(wa.x + 4, Math.min(wa.x + wa.width - w - 4, x)),
+    y: Math.max(wa.y + 4, Math.min(wa.y + wa.height - h - 4, y)),
+  };
+}
+function saveOrbPos(x, y) {
+  orbAnchor = { x, y };
+  Object.assign(config, { orbX: x, orbY: y });
+  try { appConfig.save(config); } catch {}
+}
 function createOrbWindow() {
-  const pos = (config.orbX != null && config.orbY != null) ? { x: config.orbX, y: config.orbY } : defaultOrbPos();
+  const saved = (config.orbX != null && config.orbY != null)
+    ? clampOrb(config.orbX, config.orbY, ORB_SMALL.w, ORB_SMALL.h)
+    : defaultOrbPos();
+  orbAnchor = { ...saved };
   orbWin = new BrowserWindow({
-    x: pos.x, y: pos.y, width: ORB_SMALL.w, height: ORB_SMALL.h,
+    x: saved.x, y: saved.y, width: ORB_SMALL.w, height: ORB_SMALL.h,
     frame: false, transparent: true, backgroundColor: "#00000000", resizable: false,
     alwaysOnTop: true, skipTaskbar: true, hasShadow: false, show: false,
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true },
@@ -254,28 +306,45 @@ function createOrbWindow() {
   orbWin.loadFile(path.join(__dirname, "renderer/orb.html"));
   orbWin.webContents.on("console-message", (_e, level, msg, line, src) => { if (level >= 2) console.log(`[orb] ${msg} (${src}:${line})`); });
   orbWin.on("moved", () => {
-    if (!orbWin) return;
+    if (!orbWin || orbProg) return;
     const b = orbWin.getBounds();
-    Object.assign(config, { orbX: b.x, orbY: b.y });
-    try { appConfig.save(config); } catch {}
+    const c = clampOrb(b.x, b.y, b.width, b.height);
+    saveOrbPos(c.x, c.y);
+  });
+  /* right-click the orb for what it can do without expanding first */
+  orbWin.webContents.on("context-menu", () => {
+    Menu.buildFromTemplate([
+      { label: "Open Donna", click: () => showWindow() },
+      { label: "New task…", click: () => openToTasks() },
+      { label: "Quick capture", click: () => openQuickCapture() },
+      { type: "separator" },
+      { label: "Reset position", click: () => resetOrb() },
+      { label: "Hide orb", click: () => hideOrb() },
+    ]).popup({ window: orbWin });
   });
   orbWin.on("closed", () => { orbWin = null; });
 }
-function showOrb() { if (!orbWin) createOrbWindow(); orbWin.show(); }
-function hideOrb() { if (orbWin) orbWin.hide(); }
+function openToTasks() { showWindow(); applyMode("full"); if (win) setTimeout(() => win.webContents.send("donna:goto", "tasks"), 160); }
+function showOrb() { if (!orbWin) createOrbWindow(); orbWin.show(); Object.assign(config, { orbVisible: true }); try { appConfig.save(config); } catch {} }
+function hideOrb() { if (orbWin) orbWin.hide(); Object.assign(config, { orbVisible: false }); try { appConfig.save(config); } catch {} }
 function toggleOrb() { if (orbWin && orbWin.isVisible()) hideOrb(); else showOrb(); }
+function resetOrb() {
+  const p = defaultOrbPos();
+  if (orbWin) { orbProg = true; orbWin.setBounds({ x: p.x, y: p.y, width: ORB_SMALL.w, height: ORB_SMALL.h }); setTimeout(() => { orbProg = false; }, 220); }
+  saveOrbPos(p.x, p.y);
+}
 function setOrbExpanded(on) {
   if (!orbWin) return;
+  orbProg = true;
   const to = on ? ORB_BIG : ORB_SMALL;
-  const b = orbWin.getBounds();
-  // grow/shrink anchored to the orb's own corner, not the screen's — it
-  // should feel like it's blooming in place, not teleporting.
-  const wa = screen.getDisplayNearestPoint({ x: b.x, y: b.y }).workArea;
-  const x = Math.max(wa.x, Math.min(wa.x + wa.width - to.w, b.x + b.width - to.w));
-  const y = Math.max(wa.y, Math.min(wa.y + wa.height - to.h, b.y + b.height - to.h));
+  const base = orbAnchor || (() => { const b = orbWin.getBounds(); return { x: b.x, y: b.y }; })();
+  // bloom from the orb's own bottom-right corner so it stays visually put
+  const pos = clampOrb(base.x + ORB_SMALL.w - to.w, base.y + ORB_SMALL.h - to.h, to.w, to.h);
   orbWin.setResizable(true);
-  orbWin.setBounds({ x, y, width: to.w, height: to.h });
+  orbWin.setBounds({ x: pos.x, y: pos.y, width: to.w, height: to.h });
   orbWin.setResizable(false);
+  if (!on) saveOrbPos(pos.x, pos.y);
+  setTimeout(() => { orbProg = false; }, 260);
 }
 
 /* ── global quick capture — a tiny top-of-screen bar summoned from anywhere.
@@ -369,6 +438,7 @@ app.whenReady().then(() => {
   createWindow();
   try { if (app.dock) app.dock.show(); } catch {}
   showWindow(); // open visibly on launch (Dock click / login item / hotkey still work)
+  if (config.orbVisible !== false) setTimeout(() => { try { showOrb(); } catch {} }, 450);
 
   const icon = nativeImage.createFromPath(path.join(__dirname, "../assets/tray.png"));
   icon.setTemplateImage(true); // native menu-bar behavior (auto light/dark)
@@ -384,23 +454,23 @@ app.whenReady().then(() => {
   };
   // click the menu-bar icon → a little menu of what you want to do
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: "Open Donna", accelerator: "Cmd+Shift+Space", click: () => openTo("today") },
-    { label: "Open Donna (alt)", accelerator: "Cmd+Alt+D", click: () => openTo("today") },
+    { label: "Open Donna", click: () => openTo("today") },
     { label: "Ask Donna…", click: () => openTo("ask") },
-    { label: "Today's focus", click: () => openTo("today") },
+    { label: "New task…", click: () => openToTasks() },
+    { label: "Quick capture", click: () => openQuickCapture() },
     { type: "separator" },
     { label: "Dock to corner", click: () => { clearAttention(); showWindow(); applyMode("compact"); } },
     { label: "Collapse to pill", click: () => { clearAttention(); showWindow(); applyMode("pill"); } },
+    { label: "Full window", click: () => { clearAttention(); showWindow(); applyMode("full"); } },
+    { type: "separator" },
+    { label: "Show/Hide orb", click: () => toggleOrb() },
+    { label: "Settings", click: () => openTo("settings") },
     { type: "separator" },
     { label: "Quit Donna", click: () => { app.isQuitting = true; app.quit(); } },
   ]));
-  // ⌘⇧Space = toggle window (Spotlight may steal this on some macOS versions;
-  // if it does, ⌃⌥D is the secondary binding, registered below)
-  globalShortcut.register("CommandOrControl+Shift+Space", toggleWindow);
-  // ⌃⌥D = alternate "open Donna" binding (Spotlight doesn't own this)
-  globalShortcut.register("CommandOrControl+Alt+D", toggleWindow);
-  // ⌥Space = quick capture from ANYWHERE — grabs where you were (Things Autofill)
-  globalShortcut.register(config.captureHotkey || "Alt+Space", openQuickCapture);
+  // register from config so the Settings hotkeys actually take effect; re-run
+  // whenever config changes. ⌃⌥D stays as an always-available alternate.
+  registerShortcuts();
 
   // Your menu bar is full so macOS hides the tray item — keep a proper Dock icon
   // as the reliable, always-visible way to open Donna (click it → she opens).
@@ -447,6 +517,7 @@ app.whenReady().then(() => {
     applyProviderEnv(config);
     notifyEnabled = config.notifications !== false;
     if (patch && "launchAtLogin" in patch) syncLoginItem();
+    if (patch && ("hotkey" in patch || "captureHotkey" in patch)) { try { registerShortcuts(); } catch {} }
     try { appConfig.save(config); } catch {}
     return config;
   });
@@ -530,6 +601,8 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("donna:setMode", (_e, m) => { if (MODES[m]) applyMode(m); return mode; });
   ipcMain.handle("donna:orbToggle", () => { toggleOrb(); return orbWin ? orbWin.isVisible() : false; });
+  ipcMain.handle("donna:orbReset", () => { resetOrb(); return true; });
+  ipcMain.handle("donna:showMain", () => { showWindow(); return true; });
   ipcMain.handle("donna:orbStatus", () => ({ visible: !!(orbWin && orbWin.isVisible()) }));
   ipcMain.handle("donna:orbSetExpanded", (_e, on) => setOrbExpanded(on));
   ipcMain.handle("donna:tasks", () => tasks.summary());
@@ -551,6 +624,22 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("donna:captureHide", () => { if (capWin) capWin.hide(); return true; });
   ipcMain.handle("donna:captures", () => captureStore.list());
+  ipcMain.handle("donna:captureComplete", (_e, id) => captureStore.complete(id));
+  ipcMain.handle("donna:captureRemove", (_e, id) => captureStore.remove(id));
+  ipcMain.handle("donna:clearTracker", () => {
+    const { TRACKER, SHOTS } = require("./lib/paths");
+    let days = 0;
+    try { for (const f of fs.readdirSync(TRACKER)) if (f.endsWith(".json")) { try { fs.unlinkSync(path.join(TRACKER, f)); days++; } catch {} } } catch {}
+    try { for (const f of fs.readdirSync(SHOTS)) { try { fs.unlinkSync(path.join(SHOTS, f)); } catch {} } } catch {}
+    return { ok: true, days };
+  });
+  ipcMain.handle("donna:resetAll", () => {
+    const { DATA, TRACKER } = require("./lib/paths");
+    let files = 0;
+    const wipe = (dir, lim = 500) => { try { for (const f of fs.readdirSync(dir).slice(0, lim)) { const p = path.join(dir, f); try { if (fs.statSync(p).isFile() && f.endsWith(".json")) { fs.unlinkSync(p); files++; } } catch {} } } catch {} };
+    wipe(DATA); wipe(TRACKER);
+    return { ok: true, files };
+  });
   ipcMain.handle("donna:rhythm", () => require("./lib/sessions").stats());
   ipcMain.handle("donna:trackerToday", () => require("./lib/tracker").today());
   ipcMain.handle("donna:trackerDay", (_e, dateStr) => require("./lib/tracker").computeDay(dateStr));
@@ -574,31 +663,6 @@ app.whenReady().then(() => {
     const r = await dialog.showOpenDialog(win, { properties: ["openDirectory", "createDirectory"] });
     if (r.canceled || !r.filePaths[0]) return require("./lib/tracker").getTrackerConfig();
     return require("./lib/tracker").setTrackerConfig({ saveDir: r.filePaths[0] });
-  });
-  /* ── Tables (local Airtable/Sheets stand-in) ── */
-  ipcMain.handle("donna:tablesList", () => require("./lib/tables").list());
-  ipcMain.handle("donna:tablesGet", (_e, id) => require("./lib/tables").get(id));
-  ipcMain.handle("donna:tablesCreate", (_e, { name } = {}) => require("./lib/tables").create(name, [{ key: "name", name: "Name", type: "text" }], []));
-  ipcMain.handle("donna:tablesRemove", (_e, id) => require("./lib/tables").remove(id));
-  ipcMain.handle("donna:tablesRename", (_e, { id, name }) => require("./lib/tables").rename(id, name));
-  ipcMain.handle("donna:tablesSetCell", (_e, { id, rowIndex, key, value }) => require("./lib/tables").setCell(id, rowIndex, key, value));
-  ipcMain.handle("donna:tablesAddRow", (_e, { id, row } = {}) => require("./lib/tables").addRow(id, row));
-  ipcMain.handle("donna:tablesRemoveRow", (_e, { id, rowIndex }) => require("./lib/tables").removeRow(id, rowIndex));
-  ipcMain.handle("donna:tablesAddColumn", (_e, { id, name }) => require("./lib/tables").addColumn(id, name));
-  ipcMain.handle("donna:tablesImport", (_e, { name, matrix }) => require("./lib/tables").importRows(name, matrix));
-  ipcMain.handle("donna:importSheet", async () => {
-    const { dialog } = require("electron");
-    const r = await dialog.showOpenDialog(win, {
-      title: "Import a sheet",
-      properties: ["openFile", "multiSelections"],
-      filters: [{ name: "Sheets", extensions: ["csv", "tsv", "xlsx", "xls", "xlsm", "ods"] }],
-    });
-    if (r.canceled) return [];
-    const out = [];
-    for (const f of r.filePaths) {
-      try { out.push({ name: path.basename(f), base64: fs.readFileSync(f).toString("base64") }); } catch {}
-    }
-    return out;
   });
   ipcMain.handle("donna:importNotes", async () => {
     const { dialog } = require("electron");
@@ -652,7 +716,6 @@ app.whenReady().then(() => {
   ipcMain.handle("donna:sleepAverage", () => require("./lib/sleep").average());
   ipcMain.handle("donna:diagnostic", async () => {
     let permStatus = null;
-    try { permStatus = await Promise.race([ipcMain.emit ? null : null, Promise.resolve(null)]); } catch {}
     try {
       const out = { screen: "unknown" };
       try { out.screen = require("electron").systemPreferences.getMediaAccessStatus("screen"); } catch {}
@@ -671,6 +734,7 @@ app.whenReady().then(() => {
   ipcMain.handle("donna:peopleUpdate", (_e, { id, patch }) => require("./lib/people").update(id, patch));
   ipcMain.handle("donna:peopleTouch", (_e, id) => require("./lib/people").touch(id));
   ipcMain.handle("donna:peopleAdd", (_e, { name, role }) => require("./lib/people").add(name, role));
+  ipcMain.handle("donna:peopleRemove", (_e, id) => require("./lib/people").remove(id));
   ipcMain.handle("donna:memoryList", () => require("./lib/memory").list());
   ipcMain.handle("donna:memoryAdd", (_e, { fact, kind }) => require("./lib/memory").add(fact, kind, "manual"));
   ipcMain.handle("donna:memoryUpdate", (_e, { id, patch }) => require("./lib/memory").update(id, patch));
@@ -738,11 +802,6 @@ app.whenReady().then(() => {
   ipcMain.handle("donna:replacementsUpdate", (_e, { id, patch }) => require("./lib/replacements").update(id, patch));
   ipcMain.handle("donna:replacementsRemove", (_e, id) => require("./lib/replacements").remove(id));
   ipcMain.handle("donna:replacementsToggle", (_e, id) => require("./lib/replacements").toggle(id));
-  ipcMain.handle("donna:canvasGet", () => require("./lib/canvas").get());
-  ipcMain.handle("donna:canvasAddBoard", (_e, name) => require("./lib/canvas").addBoard(name));
-  ipcMain.handle("donna:canvasRenameBoard", (_e, { id, name }) => require("./lib/canvas").renameBoard(id, name));
-  ipcMain.handle("donna:canvasRemoveBoard", (_e, id) => require("./lib/canvas").removeBoard(id));
-  ipcMain.handle("donna:canvasSaveBoard", (_e, board) => require("./lib/canvas").saveBoard(board));
   ipcMain.handle("donna:visionGet", () => require("./lib/vision").get());
   ipcMain.handle("donna:visionSet", (_e, { h, a, text }) => require("./lib/vision").setVision(h, a, text));
   ipcMain.handle("donna:visionAddStep", (_e, { h, a, text }) => require("./lib/vision").addStep(h, a, text));
@@ -772,7 +831,7 @@ app.whenReady().then(() => {
     } catch {}
   }, 30000);
   ipcMain.handle("donna:export", () => {
-    const dir = path.join(__dirname, "../data");
+    const dir = DATA;
     const out = { app: "Donna", exportedAt: new Date().toISOString() };
     try { for (const f of fs.readdirSync(dir)) if (f.endsWith(".json")) { try { out[f.replace(/\.json$/, "")] = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); } catch {} } } catch {}
     const dest = path.join(process.env.HOME, "Desktop", `donna-backup-${new Date().toISOString().slice(0, 10)}.json`);
@@ -791,7 +850,7 @@ app.whenReady().then(() => {
     return fn();
   });
   ipcMain.handle("donna:reflect", (_e, text) => {
-    const f = path.join(__dirname, "../data/journal.json");
+    const f = dataPath("journal.json");
     let j = []; try { j = JSON.parse(fs.readFileSync(f, "utf8")); } catch {}
     j.push({ at: new Date().toISOString(), text: String(text || "").slice(0, 500) });
     try { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify(j)); } catch {}
@@ -818,6 +877,18 @@ app.whenReady().then(() => {
     setThinking(false);
     return res;
   });
+  /* one-shot connectivity check for Settings → AI: does the configured
+     provider actually answer? */
+  ipcMain.handle("donna:testAI", async () => {
+    const fn = clients[config.provider] || clients.opencode || clients.anthropic || Object.values(clients)[0];
+    try {
+      const out = await fn("Reply with exactly: OK", "You are a connection test. Reply with a single word.");
+      const ok = !!out && !/^\(/.test(out);
+      return { ok, sample: String(out || "").slice(0, 160), provider: config.provider, model: process.env.DONNA_MODEL || config.model || "" };
+    } catch (e) {
+      return { ok: false, sample: e.message, provider: config.provider, model: config.model || "" };
+    }
+  });
   /* generic extension bridge — lets a page module add backend capability in
      its own src/lib/<name>-ext.js without editing this file. Module names are
      restricted to a safe charset and resolved under ./lib only. */
@@ -838,7 +909,8 @@ app.whenReady().then(() => {
     const memory = require("./lib/memory");
     const q = `Extract lasting personal facts about the user from this message they wrote — preferences, people in his life, dates that matter, health, ongoing projects. Verbatim-grounded only, no inference. Reply with ONLY a JSON array like [{"fact":"…","kind":"preference"}] (kinds: person|preference|date|project|health|fact). Empty array if none.\n\nMessage: "${t.slice(0, 600)}"`;
     try {
-      const raw = await clients.m3(q, "You extract facts. JSON only, no prose.");
+      const quick = clients[config.provider] || clients.anthropic || Object.values(clients)[0];
+      const raw = await quick(q, "You extract facts. JSON only, no prose.");
       const m = raw.match(/\[[\s\S]*\]/);
       if (!m) return;
       const facts = JSON.parse(m[0]).slice(0, 3);

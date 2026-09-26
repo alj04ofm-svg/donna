@@ -73,7 +73,7 @@ function list() {
   const today = new Date().toISOString().slice(0, 10);
   const log = readLog();
   return readHabits().filter(dueToday).map((h) => {
-    const s = h.keystone ? streakFor(h.id) : null;
+    const s = streakFor(h.id);
     return {
       ...h, doneToday: !!(log[today] && log[today][h.id]),
       streak: s ? s.n : undefined, frozen: s ? s.frozen : undefined,

@@ -13,7 +13,39 @@ let habitsCache = []; // today's routines
 let replacementsCache = []; // habit-replacement loops (Power of Habit)
 let searchCache = []; // flat index of everything, for ⌘K global search
 let remindersCache = []; // pending reminders, surfaced on Today
-const thread = [];
+
+/* ── Ask conversations — several chats, each with a title, kept locally so a
+   thread survives restarts. `thread` always points at the active chat's array. ── */
+let convoStore = (() => {
+  try { const c = JSON.parse(localStorage.getItem("donna.convos") || "[]"); return Array.isArray(c) ? c.filter((x) => x && Array.isArray(x.messages)) : []; } catch { return []; }
+})();
+if (!convoStore.length) {
+  let legacy = []; try { legacy = JSON.parse(localStorage.getItem("donna.thread") || "[]"); } catch {}
+  convoStore = [{ id: `c_${Date.now()}`, title: "New chat", at: Date.now(), messages: Array.isArray(legacy) ? legacy.filter((m) => m && !m.streaming) : [] }];
+}
+let convoId = localStorage.getItem("donna.convoActive") || convoStore[0].id;
+if (!convoStore.some((c) => c.id === convoId)) convoId = convoStore[0].id;
+let thread = (convoStore.find((c) => c.id === convoId) || convoStore[0]).messages;
+
+function activeConvo() { return convoStore.find((c) => c.id === convoId) || convoStore[0]; }
+function convoTitle(c) { return c && c.title && c.title !== "New chat" ? c.title : (c && c.title) || "New chat"; }
+function saveConvos() {
+  try {
+    const c = activeConvo();
+    c.at = Date.now();
+    localStorage.setItem("donna.convos", JSON.stringify(convoStore.slice(0, 30)));
+    localStorage.setItem("donna.convoActive", convoId);
+  } catch {}
+}
+function newConvo() { const c = { id: `c_${Date.now()}`, title: "New chat", at: Date.now(), messages: [] }; convoStore.unshift(c); convoId = c.id; thread = c.messages; saveConvos(); return c; }
+function openConvo(id) { const c = convoStore.find((x) => x.id === id); if (!c) return; convoId = id; thread = c.messages; saveConvos(); }
+function deleteConvo(id) {
+  convoStore = convoStore.filter((c) => c.id !== id);
+  if (!convoStore.length) newConvo();
+  else if (convoId === id) { convoId = convoStore[0].id; thread = convoStore[0].messages; saveConvos(); }
+  else saveConvos();
+}
+
 let streaming = false;
 let cur = -1;       // keyboard cursor index into curList
 let curList = [];   // ordered visible open tasks (list contexts)
@@ -45,18 +77,49 @@ const projMeta = (id) => PROJECTS[id] || (id ? { label: id.replace(/^proj_/, "")
 function projChip(t) { const p = projMeta(t.project_id); return p ? `<span class="proj-chip" style="--h:${p.hue}">${esc(p.label)}</span>` : ""; }
 function estChip(t) { return t.estimatedMinutes ? `<span class="chip est">${t.estimatedMinutes >= 60 ? (t.estimatedMinutes / 60).toFixed(t.estimatedMinutes % 60 ? 1 : 0) + "h" : t.estimatedMinutes + "m"}</span>` : ""; }
 function recurChip(t) { return t.recurrence ? `<span class="chip recur" title="Repeats ${t.recurrence.freq}">↻ ${t.recurrence.freq === "weekdays" ? "weekdays" : t.recurrence.freq}</span>` : ""; }
+/* tags — deterministic hue per label so the same tag is the same colour everywhere */
+function tagHue(tag) { let h = 0; for (const c of String(tag)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+function tagChip(tag) { return `<span class="chip tag" style="--h:${tagHue(tag)}">${esc(tag)}</span>`; }
+function tagChips(t, max = 3) {
+  const tags = Array.isArray(t.tags) ? t.tags : [];
+  if (!tags.length) return "";
+  const shown = tags.slice(0, max).map(tagChip).join("");
+  const more = tags.length > max ? `<span class="chip tag more" title="${esc(tags.slice(max).join(", "))}">+${tags.length - max}</span>` : "";
+  return shown + more;
+}
+/* blocked-by count — only counts deps that are still open; done deps don't block */
+function openDepIds(t) {
+  if (!t.dependsOn || !t.dependsOn.length) return [];
+  const openIds = new Set((data && data.open || []).map((x) => x.id));
+  return t.dependsOn.filter((id) => openIds.has(id));
+}
+function depChip(t) {
+  const b = openDepIds(t);
+  return b.length ? `<span class="chip blocked" title="Blocked by ${b.length} unfinished task${b.length === 1 ? "" : "s"}">⛓ ${b.length}</span>` : "";
+}
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
 const CHECK_SVG = '<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-6.5"/></svg>';
 const MOON_SVG = '<svg viewBox="0 0 16 16"><path d="M13.5 9.5A6 6 0 0 1 6.5 2.5a6 6 0 1 0 7 7z"/></svg>';
 let stagger = 0;
-const si = () => ` style="--i:${stagger++}"`;
+const si = () => ` style="--i:${Math.min(stagger++, 20)}"`;
 const pGlyph = (p) => `<span class="pglyph g${p}" title="P${p}"><i></i><i></i><i></i></span>`;
+
+/* whole-day difference between a YYYY-MM-DD and today, in LOCAL time — avoids
+   the UTC-midnight parse that made due-today tasks read "overdue" after 5pm. */
+function daysUntil(dateOnly) {
+  if (!dateOnly) return null;
+  const s = String(dateOnly).slice(0, 10);
+  const a = new Date(s + "T00:00:00");
+  const n = new Date();
+  const b = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  return Math.round((a - b) / 86400000);
+}
 
 function dueChip(d) {
   if (!d) return "";
-  const days = Math.ceil((new Date(d) - new Date()) / 86400000);
+  const days = daysUntil(d);
   const cls = days < 0 ? "soon" : days <= 1 ? "soon" : "";
-  const txt = days < 0 ? "overdue" : days === 0 ? "today" : days === 1 ? "tomorrow" : d.slice(5);
+  const txt = days < 0 ? "overdue" : days === 0 ? "today" : days === 1 ? "tomorrow" : String(d).slice(5, 10);
   return `<span class="chip due ${cls}">${txt}</span>`;
 }
 /* chip budget = max ONE status chip per row (+ the priority glyph). precedence:
@@ -65,7 +128,7 @@ function statusChip(t) {
   if (t.status === "doing") return `<span class="chip now-chip" data-started="${t.startedAt}" data-prefix="◷ ">◷ ${elapsed(t.startedAt)}</span>`;
   const dl = deadlineChip(t);
   if (dl) return dl;
-  if (t.dueAt) { const days = Math.ceil((new Date(t.dueAt) - new Date()) / 86400000); if (days <= 1) return dueChip(t.dueAt); }
+  if (t.dueAt) { const days = daysUntil(t.dueAt); if (days <= 1) return dueChip(t.dueAt); }
   if (t.waitingOn) return `<span class="chip wait">${esc(t.waitingOn)}</span>`;
   return "";
 }
@@ -74,7 +137,7 @@ function statusChip(t) {
    when-date. Counts down, goes hot inside 2 days, screams when missed. */
 function deadlineChip(t) {
   if (!t.deadline) return "";
-  const days = Math.ceil((new Date(t.deadline) - new Date()) / 86400000);
+  const days = daysUntil(t.deadline);
   const cls = days < 0 ? "missed" : days <= 2 ? "hot" : "";
   const txt = days < 0 ? "past deadline" : days === 0 ? "deadline today" : `⚑ ${days}d`;
   return `<span class="chip deadline ${cls}" title="deadline ${t.deadline}${t.deadlineHard ? " · hard" : ""}">${txt}</span>`;
@@ -114,21 +177,24 @@ function tickTimers() {
   if (pt) { const d = data && data.open.find((t) => t.status === "doing"); if (d) pt.textContent = `▸ ${d.title}  ·  ${elapsed(d.startedAt)}`; }
 }
 
-function rowHtml(t, { compact = false, idx = -1 } = {}) {
+function rowHtml(t, { compact = false, idx = -1, selectable = false, selected = false } = {}) {
   const doing = t.status === "doing";
   if (compact) {
     return `<div class="c-row ${doing ? "now" : ""}" data-id="${t.id}">
       <button class="check" data-done="${t.id}">${CHECK_SVG}</button>
       <span class="c-row-title">${esc(t.title)}</span>${doing ? `<span class="chip now-chip">now</span>` : pGlyph(t.priority)}</div>`;
   }
-  return `<div class="row ${idx === cur ? "cur" : ""} ${doing ? "now" : ""} ${t.detail ? "has-detail" : ""}" data-id="${t.id}" data-idx="${idx}"${si()}>
-    <button class="check" data-done="${t.id}" aria-label="Mark done">${CHECK_SVG}</button>
+  const lead = selectable
+    ? `<button class="check sel ${selected ? "on" : ""}" data-sel="${t.id}" aria-label="Select task">${selected ? CHECK_SVG : ""}</button>`
+    : `<button class="check" data-done="${t.id}" aria-label="Mark done">${CHECK_SVG}</button>`;
+  return `<div class="row ${idx === cur ? "cur" : ""} ${doing ? "now" : ""} ${selected ? "sel" : ""} ${t.detail ? "has-detail" : ""}" data-id="${t.id}" data-idx="${idx}"${si()}>
+    ${lead}
     <div class="row-body">
       <div class="row-title" data-expand>${esc(t.title)}${t.detail ? '<svg class="row-caret" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></svg>' : ""}</div>
       ${t.detail ? `<div class="row-detail">${esc(t.detail)}</div>` : ""}
     </div>
     <div class="row-meta">
-      ${t.assignee && t.assignee !== "me" ? `<span class="chip who">@${esc(t.assignee)}</span>` : ""}${projChip(t)}${estChip(t)}${recurChip(t)}${t.subtasks && t.subtasks.length ? `<span class="chip sub">${t.subtasks.filter((s) => s.done).length}/${t.subtasks.length}</span>` : ""}
+      ${tagChips(t)}${depChip(t)}${t.assignee && t.assignee !== "me" ? `<span class="chip who">@${esc(t.assignee)}</span>` : ""}${projChip(t)}${estChip(t)}${recurChip(t)}${t.subtasks && t.subtasks.length ? `<span class="chip sub">${t.subtasks.filter((s) => s.done).length}/${t.subtasks.length}</span>` : ""}
       <div class="row-acts">
         <button class="icon-btn" data-start="${t.id}" title="${doing ? "Stop (D)" : "Start now (D)"}">
           ${doing ? '<svg viewBox="0 0 16 16"><rect x="4.5" y="4.5" width="7" height="7" rx="1.5"/></svg>'
@@ -171,6 +237,10 @@ function wireRows(scope) {
     e.stopPropagation();
     completeWithAnim(el.dataset.done, el.closest(".row, .c-row"));
   }));
+  scope.querySelectorAll("[data-sel]").forEach((el) => (el.onclick = (e) => {
+    e.stopPropagation();
+    if (typeof window.__onTaskSelect === "function") window.__onTaskSelect(el.dataset.sel, e);
+  }));
   scope.querySelectorAll("[data-expand]").forEach((el) => (el.onclick = () => el.closest(".row").classList.toggle("open")));
   scope.querySelectorAll("[data-snooze]").forEach((el) => (el.onclick = (e) => {
     e.stopPropagation();
@@ -179,9 +249,14 @@ function wireRows(scope) {
   scope.querySelectorAll("[data-start]").forEach((el) => (el.onclick = async (e) => {
     e.stopPropagation();
     const t = (data.open || []).find((x) => x.id === el.dataset.start);
-    await window.donna.setStatus(el.dataset.start, t?.status === "doing" ? "todo" : "doing");
+    const starting = t?.status !== "doing";
+    if (starting) {
+      const b = openDepIds(t || {});
+      if (b.length) { toast(`Blocked by ${b.length} unfinished task${b.length === 1 ? "" : "s"} — clear those first`); return; }
+    }
+    await window.donna.setStatus(el.dataset.start, starting ? "doing" : "todo");
     await refresh(); render(); renderCompactBody();
-    toast(t?.status === "doing" ? "Paused" : "On it");
+    toast(starting ? "On it" : "Paused");
   }));
   scope.querySelectorAll("[data-edit]").forEach((el) => (el.onclick = (e) => {
     e.stopPropagation();
@@ -198,8 +273,8 @@ function wireRows(scope) {
 }
 
 function paintCursor() {
-  document.querySelectorAll(".row[data-idx]").forEach((el) => el.classList.toggle("cur", Number(el.dataset.idx) === cur));
-  const el = document.querySelector(`.row[data-idx="${cur}"]`);
+  document.querySelectorAll(".row[data-idx], .t2-up[data-idx]").forEach((el) => el.classList.toggle("cur", Number(el.dataset.idx) === cur));
+  const el = document.querySelector(`.row[data-idx="${cur}"]`) || document.querySelector(`.t2-up[data-idx="${cur}"]`);
   if (el) el.scrollIntoView({ block: "nearest" });
 }
 
@@ -244,14 +319,16 @@ function openSnooze(id, anchor) {
   }), 0);
 }
 
-function openWaitPop(id, anchor) {
+async function openWaitPop(id, anchor) {
   closePop();
   const t = (data.open || []).find((x) => x.id === id);
-  const people = ["sam", "maya", "p1"];
+  let people = [];
+  try { people = (await window.donna.peopleList()).map((p) => p.name).filter(Boolean).slice(0, 6); } catch {}
+  if (!people.length) people = ["someone"];
   popEl = document.createElement("div");
   popEl.className = "pop";
-  popEl.innerHTML = (t?.waitingOn ? `<button data-who="">Clear waiting<span>${esc(t.waitingOn)}</span></button>` : "")
-    + people.map((p) => `<button data-who="${p}">Waiting on ${p}</button>`).join("");
+  popEl.innerHTML = (t && t.waitingOn ? `<button data-who="">Clear waiting<span>${esc(t.waitingOn)}</span></button>` : "")
+    + people.map((p) => `<button data-who="${esc(p)}">Waiting on ${esc(p)}</button>`).join("");
   document.body.appendChild(popEl);
   const r = popEl.getBoundingClientRect();
   popEl.style.left = Math.min(anchor.left, window.innerWidth - r.width - 12) + "px";

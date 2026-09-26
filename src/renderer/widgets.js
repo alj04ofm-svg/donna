@@ -320,14 +320,14 @@ const OB_STEPS = [
 ];
 
 let _obStep = 0;
-let _obData = { userName: "", provider: "anthropic", apiKey: "", contextRoots: [] };
+let _obData = { userName: "", provider: "opencode", apiKey: "", contextRoots: [] };
 
 function openOnboarding() {
   if ($("#onboard")) return;
   _obStep = 0;
   _obData = {
     userName: (cfg && cfg.userName) || "",
-    provider: (cfg && cfg.provider) || "anthropic",
+    provider: (cfg && cfg.provider) || "opencode",
     apiKey: (cfg && cfg.apiKey) || "",
     contextRoots: (cfg && cfg.contextRoots) || [],
   };
@@ -338,7 +338,7 @@ function _obRenderBody(step) {
   if (step.kind === "name") return `<input id="ob-in" class="sd-input" placeholder="Your name" autofocus>`;
   if (step.kind === "ai") return `
     <select id="ob-provider" class="sd-input">
-      <option value="opencode">OpenCode gateway (recommended)</option>
+      <option value="opencode">OpenCode Go (recommended)</option>
       <option value="anthropic">Anthropic (Claude)</option>
       <option value="openai">OpenAI</option>
       <option value="minimax">MiniMax</option>
@@ -412,7 +412,7 @@ function _renderObStep() {
     const cur = OB_STEPS[_obStep];
     if (cur.kind === "name") _obData.userName = (el.querySelector("#ob-in")?.value || "").trim();
     if (cur.kind === "ai") {
-      _obData.provider = el.querySelector("#ob-provider")?.value || "anthropic";
+      _obData.provider = el.querySelector("#ob-provider")?.value || "opencode";
       _obData.apiKey = (el.querySelector("#ob-key")?.value || "").trim();
     }
     _obStep++;
@@ -424,15 +424,16 @@ function _renderObStep() {
 }
 
 async function _obFinish(el) {
-  try {
-    cfg = await window.donna.setConfig({
-      userName: _obData.userName || "",
-      provider: _obData.provider || "anthropic",
-      apiKey: _obData.apiKey || "",
-      contextRoots: _obData.contextRoots || [],
-      onboarded: true,
-    });
-  } catch (e) { console.warn("[onboard]", e); }
+  const prov = _obData.provider || "opencode";
+  const patch = {
+    userName: _obData.userName || "",
+    provider: prov,
+    apiKey: _obData.apiKey || "",
+    contextRoots: _obData.contextRoots || [],
+    onboarded: true,
+  };
+  if (prov === "opencode") { patch.baseUrl = "https://opencode.ai/zen/go/v1"; patch.model = "deepseek-v4.1-flash"; }
+  try { cfg = await window.donna.setConfig(patch); } catch (e) { console.warn("[onboard]", e); }
   el.classList.remove("show");
   setTimeout(() => el.remove(), 200);
   try { gotoView("today"); } catch {}
@@ -659,40 +660,43 @@ async function openBriefingModal() {
   </div>`;
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add("show"));
+  const close = () => { el.classList.remove("show"); setTimeout(() => el.remove(), 200); };
+
+  const paint = (result) => {
+    const d = result.data;
+    el.querySelector(".sd-panel").innerHTML = `
+      <div class="sd-h">Friday briefing — ${esc(d.weekStart)} → ${esc(d.weekEnd)}</div>
+      <div class="brief-grid">
+        <div class="brief-stat"><b>${d.tasksDoneThisWeek}</b><span>shipped</span></div>
+        <div class="brief-stat ${d.waitingAlert ? "alert" : ""}"><b>${d.waitingAlert}</b><span>alerts</span></div>
+        <div class="brief-stat"><b>${d.p1Open}</b><span>P1 open</span></div>
+        <div class="brief-stat"><b>${d.avgSleepHours7d || "—"}h</b><span>sleep avg</span></div>
+      </div>
+      <div class="brief-goals">
+        ${d.goals.slice(0, 4).map((g) => `<div class="brief-goal">
+          <div class="brief-goal-t">${esc(g.objective)}</div>
+          <div class="brief-goal-m"><div class="brief-bar"><div class="brief-bar-fill" style="width:${g.pct}%"></div></div><span>${g.pct}%</span><span class="brief-goal-w">W${g.cycleWeek}/12</span></div>
+        </div>`).join("")}
+      </div>
+      <div class="brief-body">${esc(result.body)}</div>
+      <p class="brief-saved">Saved as a Note: <b>${esc(result.title)}</b></p>
+      <div class="sd-acts">
+        <button class="hero-btn" id="brief-rerun">Regenerate</button>
+        <button class="hero-btn go" id="brief-close" style="flex:1;justify-content:center">Done</button>
+      </div>`;
+    el.querySelector("#brief-close").onclick = close;
+    el.querySelector("#brief-rerun").onclick = async () => {
+      el.querySelector(".sd-panel").innerHTML = `<div class="sd-h">Friday briefing</div><div class="brief-loading"><div class="thinking-line"><i></i><i></i><i></i></div><div class="brief-load-t">Regenerating…</div></div>`;
+      let r2; try { r2 = await window.donna.briefing({ tier: "best" }); } catch {}
+      if (r2 && r2.data) paint(r2); else paint(result);
+    };
+  };
+
   let result;
   try { result = await window.donna.briefing({ tier: "think" }); } catch (e) {
     el.querySelector(".sd-panel").innerHTML = `<div class="sd-h">Friday briefing</div><div class="brief-err">Couldn't reach the brain: ${esc(e.message || "unknown")}</div><div class="sd-acts"><button class="hero-btn" id="brief-close">Close</button></div>`;
-    el.querySelector("#brief-close").onclick = () => { el.classList.remove("show"); setTimeout(() => el.remove(), 200); };
+    el.querySelector("#brief-close").onclick = close;
     return;
   }
-  const d = result.data;
-  el.querySelector(".sd-panel").innerHTML = `
-    <div class="sd-h">Friday briefing — ${esc(d.weekStart)} → ${esc(d.weekEnd)}</div>
-    <div class="brief-grid">
-      <div class="brief-stat"><b>${d.tasksDoneThisWeek}</b><span>shipped</span></div>
-      <div class="brief-stat ${d.waitingAlert ? "alert" : ""}"><b>${d.waitingAlert}</b><span>alerts</span></div>
-      <div class="brief-stat"><b>${d.p1Open}</b><span>P1 open</span></div>
-      <div class="brief-stat"><b>${d.avgSleepHours7d || "—"}h</b><span>sleep avg</span></div>
-    </div>
-    <div class="brief-goals">
-      ${d.goals.slice(0, 4).map((g) => `<div class="brief-goal">
-        <div class="brief-goal-t">${esc(g.objective)}</div>
-        <div class="brief-goal-m"><div class="brief-bar"><div class="brief-bar-fill" style="width:${g.pct}%"></div></div><span>${g.pct}%</span><span class="brief-goal-w">W${g.cycleWeek}/12</span></div>
-      </div>`).join("")}
-    </div>
-    <div class="brief-body">${esc(result.body)}</div>
-    <p class="brief-saved">Saved as a Note: <b>${esc(result.title)}</b></p>
-    <div class="sd-acts">
-      <button class="hero-btn" id="brief-rerun">Regenerate</button>
-      <button class="hero-btn go" id="brief-close" style="flex:1;justify-content:center">Done</button>
-    </div>`;
-  el.querySelector("#brief-close").onclick = () => { el.classList.remove("show"); setTimeout(() => el.remove(), 200); };
-  el.querySelector("#brief-rerun").onclick = async () => {
-    el.querySelector(".sd-panel").innerHTML = `<div class="sd-h">Friday briefing</div><div class="brief-loading"><div class="thinking-line"><i></i><i></i><i></i></div><div class="brief-load-t">Regenerating…</div></div>`;
-    let r2; try { r2 = await window.donna.briefing({ tier: "best" }); } catch {}
-    if (r2) { const e2 = el.querySelector(".sd-panel"); e2.innerHTML = el.querySelector(".sd-panel").innerHTML; openBriefingModal.__last = r2; }
-    /* simpler: close and re-open */
-    el.classList.remove("show"); setTimeout(() => el.remove(), 200);
-    openBriefingModal();
-  };
+  paint(result);
 }

@@ -1,0 +1,134 @@
+/* polish.css — final cohesion + motion layer. Loaded after every page layer so
+   the whole app can be tuned from one place. Everything here respects
+   prefers-reduced-motion (killed at the bottom of this file). */
+
+/* ── unified page + element entrances ─────────────────────────────────── */
+@keyframes view-in { from { opacity: 0; transform: translateY(7px) scale(0.996); } to { opacity: 1; transform: none; } }
+@keyframes card-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes reveal-x { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.975); } to { opacity: 1; transform: none; } }
+
+/* ── chrome: focus ring, selection, scrollbars ────────────────────────── */
+:focus-visible { outline: 2px solid oklch(0.76 0.12 250 / 78%); outline-offset: 2px; border-radius: 8px; }
+:focus:not(:focus-visible) { outline: none; }
+::selection { background: oklch(0.76 0.12 250 / 34%); color: var(--ink); }
+* { scrollbar-width: thin; scrollbar-color: oklch(1 0 0 / 12%) transparent; }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: oklch(1 0 0 / 9%); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: oklch(1 0 0 / 19%); background-clip: padding-box; }
+
+/* ── staggered entrances for grids, cards, rows, stats ────────────────── */
+.goal-list > .goal2,
+.note-list > .note-card,
+.idea-list > .idea-card,
+.notes-rows > .notes-row,
+.pl-week > .pl-wcol,
+.pl-unsched > .pl-wcard,
+.tk-board > .tk-cell,
+.tt-body > .tt-row,
+.t2-upnext > .t2-up,
+.t2-timeline > .t2-block,
+.board > .col,
+.cyc-cov-row,
+.tk-cats > .tk-cat,
+.cap-stream > .cap-row,
+.set-group,
+.ask-jgroup {
+  animation: card-in 0.42s var(--ease) backwards;
+  animation-delay: calc(var(--i, 0) * 22ms);
+}
+
+/* ── progress bars reveal left → right ────────────────────────────────── */
+.bar-anim { animation: reveal-x 0.7s var(--ease) backwards; animation-delay: calc(var(--i, 0) * 18ms); }
+
+/* ── hover lift for surfaces that don't carry their own transition ────── */
+.goal2, .note-card, .card, .pl-wcol, .tk-cell, .t2-up, .t2-card, .pat-card, .goal-tpl {
+  transition: transform 170ms var(--ease), border-color 170ms var(--ease), box-shadow 170ms var(--ease), background 170ms var(--ease);
+}
+.goal2:hover, .note-card:hover, .pl-wcol:hover, .goal-tpl:hover, .pat-card:hover { border-color: var(--dim); box-shadow: var(--shadow-1); transform: translateY(-1px); }
+
+/* ── chips / tags pop ─────────────────────────────────────────────────── */
+.chip, .proj-chip, .tkc-tag, .nd-tag, .tk-fchip, .nr-tags i, .nd-link {
+  transition: transform 150ms var(--spring-pop), border-color 150ms var(--ease), background 150ms var(--ease);
+}
+.chip:hover, .tkc-tag:hover, .nd-tag:hover, .tk-fchip:hover { transform: translateY(-1px); }
+
+/* ── primary action glow ──────────────────────────────────────────────── */
+.hero-btn.go, .tk-btn.primary, .triage-btn.primary, .ask-mode.on, .t2-btn.primary, .nd-new {
+  box-shadow: 0 8px 22px -10px oklch(0.76 0.12 250 / 85%);
+}
+.hero-btn.go:hover, .tk-btn.primary:hover, .triage-btn.primary:hover, .t2-btn.primary:hover { filter: brightness(1.07); }
+
+/* ── popovers / menus ─────────────────────────────────────────────────── */
+.pop, .ipop, .coach-pop, .tk-pop { animation: pop-in 170ms var(--spring-pop) backwards; }
+
+/* ── gentle ambient pulse on live status dots ─────────────────────────── */
+.tk-dot, .t2-dot { animation: breathe 2.6s ease-in-out infinite; }
+
+/* ── segmented controls feel physical ─────────────────────────────────── */
+.seg button { transition: color 160ms var(--ease), background 160ms var(--ease), transform 160ms var(--spring-pop); }
+.seg button:active { transform: scale(0.955); }
+.seg button.on { box-shadow: inset 0 1px 0 oklch(1 0 0 / 8%), 0 4px 14px -10px oklch(0.76 0.12 250 / 80%); }
+
+/* ── design tokens that were referenced but never defined ─────────────── */
+:root { --line-hi: oklch(1 0 0 / 16%); --primary-bg: linear-gradient(135deg, #7c86ff, #5b63e8); }
+
+/* ── modal overlays that had no shell of their own ────────────────────── */
+#wkc-modal, #brief-modal {
+  position: fixed; inset: 0; z-index: 220; display: flex; align-items: center; justify-content: center;
+  padding: 6vh 16px; background: rgba(3, 4, 10, 0.66); backdrop-filter: blur(8px);
+  opacity: 0; transition: opacity 180ms var(--ease);
+}
+#wkc-modal.show, #brief-modal.show { opacity: 1; }
+#wkc-modal .sd-panel, #brief-modal .sd-panel { transform: translateY(10px) scale(0.98); transition: transform 200ms var(--ease); }
+#wkc-modal.show .sd-panel, #brief-modal.show .sd-panel { transform: none; }
+
+/* ── tracker: live now marker on the day strip ────────────────────────── */
+.tk-now { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--signal);
+  box-shadow: 0 0 8px oklch(0.76 0.12 250 / 70%); animation: breathe 2.4s ease-in-out infinite; }
+.tk-drawer { position: relative; }
+.tkd-x {
+  position: absolute; top: 8px; right: 10px; z-index: 2; border: none; background: oklch(1 0 0 / 6%);
+  color: var(--mut); width: 24px; height: 24px; border-radius: 7px; cursor: pointer; font-size: 14px;
+}
+.tkd-x:hover { color: var(--ink); background: oklch(1 0 0 / 12%); }
+
+/* ── unified primary button paint ─────────────────────────────────────── */
+.hero-btn.go, .t2-btn.primary, .nd-new { background: var(--primary-bg); }
+
+/* ── markdown answers in Ask ──────────────────────────────────────────── */
+.msg.donna .msg-body p { margin: 0 0 6px; }
+.msg.donna .msg-body p:last-child { margin-bottom: 0; }
+.msg.donna .msg-body ul { margin: 0 0 6px; padding-left: 18px; }
+.msg.donna .msg-body li { margin: 2px 0; }
+.msg.donna .msg-body .md-h { font-weight: 700; color: var(--ink); margin: 8px 0 4px; }
+.msg.donna .msg-body pre.md-code { background: oklch(0 0 0 / 35%); border: 1px solid var(--line); padding: 9px 11px; border-radius: 9px; overflow: auto; font: 12px var(--mono); white-space: pre; margin: 0 0 6px; }
+.msg.donna .msg-body code { background: oklch(0 0 0 / 30%); padding: 1px 4px; border-radius: 4px; font: 12px var(--mono); }
+.msg.donna .msg-body a { color: var(--signal); }
+
+/* ── tracker: productive / neutral / distracting summary ──────────────── */
+.tk-levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+.tk-level { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); padding: 12px 14px; }
+.tk-level b { display: block; font: 700 20px var(--sans); letter-spacing: -0.02em; }
+.tk-level span { font: 600 10.5px var(--sans); text-transform: uppercase; letter-spacing: 0.07em; color: var(--dim); }
+.tk-level.prod b { color: oklch(0.82 0.13 160); }
+.tk-level.dist b { color: oklch(0.78 0.16 25); }
+.tk-level.neu b { color: var(--mut); }
+
+/* ── capture row actions ──────────────────────────────────────────────── */
+.cap-act { background: none; border: 1px solid var(--line); color: var(--dim); cursor: pointer; width: 22px; height: 22px; border-radius: 7px; font-size: 11px; transition: all 130ms var(--ease); }
+.cap-act:hover { color: var(--ok); border-color: var(--ok); }
+.cap-act.danger:hover { color: var(--alert); border-color: oklch(0.68 0.19 25 / 45%); }
+.cap-act:disabled { opacity: 0.35; cursor: default; }
+.cap-row.done .cap-text { color: var(--dim); text-decoration: line-through; }
+
+/* ── reduced motion: everything off ───────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

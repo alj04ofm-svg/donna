@@ -265,7 +265,7 @@ function wireHome(scope) {
 /* Inline due-date popover. Quick presets: today, tomorrow, +3d, next
    Monday, clear. Anchored to the chip. */
 function openDuePopover(anchor, taskId) {
-  closePop();
+  closeHomePop();
   const r = anchor.getBoundingClientRect();
   const pop = document.createElement("div");
   pop.className = "ipop";
@@ -284,19 +284,19 @@ function openDuePopover(anchor, taskId) {
       <button class="ipop-btn" data-due-set="">Clear</button>
     </div>`;
   document.body.appendChild(pop);
-  curPop = pop;
+  homePop = pop;
   pop.querySelectorAll("[data-due-set]").forEach((b) => (b.onclick = async () => {
     const v = b.dataset.dueSet || null;
     await window.donna.setDue(taskId, v);
     await refresh(); render(); renderCompactBody();
-    closePop();
+    closeHomePop();
     toast(v ? `Due → ${v.slice(5)}` : "Due cleared");
   }));
-  setTimeout(() => { document.addEventListener("click", closePop, { once: true, capture: true }); }, 50);
+  setTimeout(() => { document.addEventListener("click", closeHomePop, { once: true, capture: true }); }, 50);
 }
 
 function openMorePopover(anchor, taskId) {
-  closePop();
+  closeHomePop();
   const r = anchor.getBoundingClientRect();
   const pop = document.createElement("div");
   pop.className = "ipop";
@@ -314,12 +314,12 @@ function openMorePopover(anchor, taskId) {
       <button class="ipop-btn ipop-danger" data-more-act="wontdo">Won't do…</button>
     </div>`;
   document.body.appendChild(pop);
-  curPop = pop;
+  homePop = pop;
   pop.querySelectorAll("[data-more-act]").forEach((b) => (b.onclick = async () => {
     const act = b.dataset.moreAct;
-    closePop();
+    closeHomePop();
     if (act === "wontdo") {
-      const reason = await openWontDoModal("park", taskId);
+      const reason = await openWontDoModal(trunc((data.open.find((x) => x.id === taskId) || {}).title || "this task", 56), taskId);
       if (reason == null || !reason.trim()) return;
       await window.donna.setWontDo(taskId, reason.trim());
       await refresh(); render(); renderCompactBody();
@@ -356,15 +356,15 @@ function openMorePopover(anchor, taskId) {
       toast(`Now waiting on ${who.trim()}`);
     }
   }));
-  setTimeout(() => { document.addEventListener("click", closePop, { once: true, capture: true }); }, 50);
+  setTimeout(() => { document.addEventListener("click", closeHomePop, { once: true, capture: true }); }, 50);
 }
 
-let curPop = null;
-function closePop() { if (curPop) { curPop.remove(); curPop = null; } }
+let homePop = null;
+function closeHomePop() { if (homePop) { homePop.remove(); homePop = null; } }
 
 /* sleep popover — quick presets + custom hours input */
 function openSleepPopover() {
-  closePop();
+  closeHomePop();
   const anchor = document.querySelector("[data-sleep-set]");
   if (!anchor) return;
   const r = anchor.getBoundingClientRect();
@@ -385,25 +385,25 @@ function openSleepPopover() {
       <button class="ipop-btn" data-sleep-custom>Save</button>
     </div>`;
   document.body.appendChild(pop);
-  curPop = pop;
+  homePop = pop;
   pop.querySelectorAll("[data-sleep-h]").forEach((b) => (b.onclick = async () => {
     await window.donna.sleepSet({ hours: Number(b.dataset.sleepH) });
-    closePop();
+    closeHomePop();
     await refresh();
-    paint();
+    render();
     toast(`Logged ${b.dataset.sleepH}h sleep`);
   }));
   pop.querySelector("[data-sleep-custom]").onclick = async () => {
     const v = pop.querySelector("#sleep-custom").value;
     if (!v || Number(v) < 0) return;
     await window.donna.sleepSet({ hours: Number(v) });
-    closePop();
+    closeHomePop();
     await refresh();
-    paint();
+    render();
     toast(`Logged ${v}h sleep`);
   };
   setTimeout(() => pop.querySelector("#sleep-custom")?.focus(), 60);
-  setTimeout(() => { document.addEventListener("click", closePop, { once: true, capture: true }); }, 50);
+  setTimeout(() => { document.addEventListener("click", closeHomePop, { once: true, capture: true }); }, 50);
 }
 
 /* morning brief — one AI sentence on how to start the day, generated once/day (M3) */
@@ -520,6 +520,7 @@ async function vToday2() {
   const doing = open.find((t) => t.status === "doing");
   const hero = doing || open[0] || null;
   const rest = open.filter((t) => t && t.id !== (hero && hero.id)).slice(0, 5);
+  curList = [hero, ...rest].filter((t) => t && t.status !== "done");
   const p1 = data.counts.p1 || 0;
   const overdue = open.filter((t) => t.dueAt && String(t.dueAt).slice(0, 10) < new Date().toISOString().slice(0, 10) && t.status !== "doing").length;
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
@@ -563,6 +564,8 @@ async function vToday2() {
       </div>
     </header>
 
+    <div id="since-slot"></div>
+
     <section class="t2-shape">
       <div class="t2-sec-head"><span>Today's shape</span><em>${_t2fmtMin(ds)} – ${_t2fmtMin(de)}</em></div>
       ${shape}
@@ -578,6 +581,7 @@ async function vToday2() {
           </div>
           <h2 class="t2-focus-title">${esc(hero.title)}</h2>
           <div class="t2-focus-meta">
+            ${depChip(hero)}${tagChips(hero, 3)}
             ${hero.dueAt ? `<span class="t2-meta-chip">📅 ${esc(String(hero.dueAt).slice(0, 10))}</span>` : ""}
             ${hero.estimatedMinutes ? `<span class="t2-meta-chip">⏱ ${hero.estimatedMinutes}m</span>` : ""}
             ${hero.project_id ? `<span class="t2-meta-chip">◈ ${esc(hero.project_id)}</span>` : ""}
@@ -596,6 +600,17 @@ async function vToday2() {
           <h2 class="t2-focus-title">Nothing on your plate.</h2>
           <div class="t2-focus-meta"><span>Capture something below and make it the first thing.</span></div>
         </section>`}
+
+        <section class="t2-day">
+          <div class="t2-sec-head"><span>Up next</span><em>${rest.length ? `${rest.length} queued` : "clear"}</em></div>
+          ${rest.length ? `<div class="t2-upnext">${rest.map((t, i) => `
+            <div class="t2-up" data-up="${t.id}" data-idx="${i + 1}">
+              <button class="check sm" data-done3="${t.id}" aria-label="Complete">${CHECK_SVG}</button>
+              <span class="t2-up-title">${esc(t.title)}</span>
+              <span class="t2-up-chips">${depChip(t)}${tagChips(t, 2)}${statusChip(t)}</span>
+            </div>`).join("")}</div>` : `<div class="t2-empty">Nothing else queued. Nice.</div>`}
+          ${data.counts.open > rest.length + (hero ? 1 : 0) ? `<button class="t2-link" data-goto="tasks">all ${data.counts.open} in Tasks →</button>` : ""}
+        </section>
 
         <section class="t2-day">
           <div class="t2-sec-head"><span>Your day</span><em>${planBlocks.length ? `${planBlocks.length} block${planBlocks.length === 1 ? "" : "s"}${plan && plan.overflow ? ` · ${plan.overflow} didn't fit` : ""}` : "nothing scheduled"}</em></div>
@@ -640,6 +655,11 @@ async function vToday2() {
         </section>
 
         <section class="t2-card">
+          <div class="t2-sec-head"><span>Reminders</span></div>
+          ${(typeof remindersStrip === "function" ? remindersStrip() : "") || '<div class="t2-empty slim">Nothing scheduled.</div>'}
+        </section>
+
+        <section class="t2-card">
           <div class="t2-sec-head"><span>Tomorrow</span></div>
           ${(function () {
             const tom = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
@@ -660,7 +680,7 @@ async function vToday2() {
   // ── wiring ────────────────────────────────────────────────────────────────
   const inp = main.querySelector("#t2-input");
   wireAdd(inp);
-  main.querySelector("#t2-capture").onclick = () => { try { openCapture(); } catch {} inp && inp.focus(); };
+  main.querySelector("#t2-capture").onclick = () => { if (inp) { inp.focus(); inp.scrollIntoView({ block: "nearest", behavior: "smooth" }); } toast("Type here — or press ⌥Space anywhere for quick capture"); };
   const planBtn = main.querySelector("#t2-plan"); if (planBtn) planBtn.onclick = () => { try { openMorningPlan(); } catch { gotoView("plan"); } };
   main.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = async (e) => {
     e.stopPropagation();
@@ -671,12 +691,16 @@ async function vToday2() {
     e.stopPropagation();
     completeWithAnim(b.dataset.done, b.closest(".t2-row"));
   }));
+  main.querySelectorAll("[data-done3]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); completeWithAnim(b.dataset.done3, b.closest(".t2-up")); }));
+  main.querySelectorAll("[data-up]").forEach((r) => (r.onclick = (e) => { if (!e.target.closest("button")) openTaskDetail(r.dataset.up); }));
   main.querySelectorAll("[data-open]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); openTaskDetail(b.dataset.open); }));
   main.querySelectorAll(".t2-row").forEach((r) => (r.onclick = () => openTaskDetail(r.dataset.id)));
   main.querySelectorAll("[data-start2]").forEach((b) => (b.onclick = async (e) => {
     e.stopPropagation();
     const t = open.find((x) => x.id === b.dataset.start2);
-    await window.donna.setStatus(b.dataset.start2, t && t.status === "doing" ? "todo" : "doing");
+    const starting = !(t && t.status === "doing");
+    if (starting && openDepIds(t || {}).length) { toast("Blocked — clear its dependencies first"); return; }
+    await window.donna.setStatus(b.dataset.start2, starting ? "doing" : "todo");
     await refresh(); vToday2();
   }));
   main.querySelectorAll("[data-done2]").forEach((b) => (b.onclick = (e) => { e.stopPropagation(); completeWithAnim(b.dataset.done2, b.closest(".t2-block")); }));
@@ -689,7 +713,9 @@ async function vToday2() {
     main.querySelector("#t2-start").onclick = async (e) => {
       e.stopPropagation();
       const t = open.find((x) => x.id === id);
-      await window.donna.setStatus(id, t && t.status === "doing" ? "todo" : "doing");
+      const starting = !(t && t.status === "doing");
+      if (starting && openDepIds(t || {}).length) { toast("Blocked — clear its dependencies first"); return; }
+      await window.donna.setStatus(id, starting ? "doing" : "todo");
       await refresh(); vToday2();
     };
     main.querySelector("#t2-done").onclick = (e) => { e.stopPropagation(); completeWithAnim(id, main.querySelector("#t2-focus")); };
@@ -705,4 +731,9 @@ async function vToday2() {
     }, 1000);
   }
   try { applySections && applySections(); } catch {}
+  openCoachButton("today", {
+    open: data.counts.open, p1, overdue, doing: !!doing,
+    hero: hero ? hero.title : null, routines: `${habitsDone}/${habits.length}`,
+    blocked: open.filter((t) => openDepIds(t).length).length,
+  });
 }

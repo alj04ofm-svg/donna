@@ -48,16 +48,19 @@ so it runs on Apple Silicon.
 
 | | |
 |---|---|
-| **Today** | A calm start: your focus task, today's list, habits, and a short brief. |
-| **Plan** | Time-block your day around your calendar. |
-| **Tasks** | Horizons + a 3-column board, priorities, due dates, estimates, focus timers. |
-| **Goals** | Objectives, key results, milestones, weekly commitment. |
-| **Habits** | Flexible daily/weekly habits with streaks. |
-| **Notes / Library** | Durable notes, highlights and captures. |
-| **Ask Donna** | Chat grounded in the files/folders you point her at. |
-| **Tracker** | Optional, fully local time tracking and focus sessions. |
+| **Today** | Mission control: focus card, today's shape, up-next, routines, the AI brief. |
+| **Plan** | Dependency-aware time-blocking around your calendar + Week / Month / Forecast. |
+| **Tasks** | Tags, blocked-by dependencies, bulk edits, saved views, templates, subtasks. |
+| **Goals** | Objectives, key results, milestones, at-risk health, weekly lead measure. |
+| **Notes** | Rich-text knowledge desk: tags, `[[wiki-link]]` backlinks, daily notes. |
+| **Ask Donna** | Persistent chat grounded in your files, with save-answer → task / note. |
+| **Tracker** | Optional, fully local time tracking, focus sessions and a deep-work goal. |
 | **Capture** | A global quick-capture bar (`⌥Space`). |
-| **Settings** | Name, AI provider + key, notifications, permissions, data export, updates. |
+| **Settings** | Identity, AI, behaviour, sections, connections, data export, updates. |
+
+Tasks take natural language: `email sam friday 3pm p1 #work +followup =2h` — dates,
+priority, project, a **tag** (`+…`), an estimate, a goal (`>>book`) and more, all
+parsed live as you type.
 
 Summon with `⌘⇧Space`; quick-capture with `⌥Space`; everything also lives in the
 Dock and menu bar.
@@ -71,9 +74,17 @@ take precedence:
 
 | Provider  | Env var              |
 |-----------|----------------------|
+| OpenCode Go (default) | `OPENCODE_API_KEY` — OpenAI-compatible, `https://opencode.ai/zen/go/v1` |
 | Anthropic | `ANTHROPIC_API_KEY`  |
 | OpenAI    | `OPENAI_API_KEY`     |
+| Gemini    | `GEMINI_API_KEY`     |
 | MiniMax   | `MINIMAX_API_KEY`    |
+
+**OpenCode Go** is the default and works out of the box: if you already use the
+OpenCode app, Donna reuses its saved `~/.local/share/opencode/auth.json` login —
+nothing to paste. Otherwise hit **Settings → AI → Use OpenCode Go**, paste your
+key, and **Test AI** to confirm. Any OpenAI-compatible gateway works by setting
+its base URL + model.
 
 You can also choose **Claude CLI (local, no key)** if you have the `claude`
 command installed.

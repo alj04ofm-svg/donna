@@ -8,12 +8,12 @@
 <!-- per-page rebuild layers — loaded after app.css so page rules win -->
 <link rel="stylesheet" href="p-today.css">
 <link rel="stylesheet" href="p-tasks.css">
-<link rel="stylesheet" href="p-tables.css">
 <link rel="stylesheet" href="p-notes.css">
 <link rel="stylesheet" href="p-plan.css">
 <link rel="stylesheet" href="p-goals.css">
 <link rel="stylesheet" href="p-people.css">
 <link rel="stylesheet" href="p-ask.css">
+<link rel="stylesheet" href="polish.css">
 </head>
 <body data-mode="full">
 
@@ -36,9 +36,6 @@
         <button class="nav-item" data-view="tasks" data-section="page.tasks">
           <svg viewBox="0 0 16 16"><rect x="2.2" y="2.2" width="11.6" height="11.6" rx="3"/><path d="M5.4 8.2l1.8 1.8 3.4-3.8"/></svg>
           Tasks<span class="nav-count" id="count-tasks"></span></button>
-        <button class="nav-item" data-view="tables" data-section="page.tables">
-          <svg viewBox="0 0 16 16"><rect x="2.2" y="3" width="11.6" height="10" rx="1.6"/><path d="M2.2 6.2h11.6M2.2 9.8h11.6M6 3v10"/></svg>
-          Tables</button>
         <button class="nav-item" data-view="goals" data-section="page.goals">
           <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3.2"/><circle cx="8" cy="8" r="0.6" fill="currentColor" stroke="none"/></svg>
           Goals</button>
@@ -119,7 +116,6 @@
 <script src="../lib/nlparse.js"></script>
 <script src="../lib/sections.js"></script>
 <script src="vendor/quill.js"></script>
-<script src="vendor/xlsx.full.min.js"></script>
 <script src="core.js"></script>
 <script src="motion.js"></script>
 <script src="sound.js"></script>
@@ -127,18 +123,11 @@
 <script src="views-today.js"></script>
 <script src="views-tasks.js"></script>
 <script src="views-ask.js"></script>
-<script src="views-tables.js"></script>
 <script src="views-pages.js"></script>
-<script src="views-canvas.js"></script>
-<!-- per-page rebuild layers — loaded after views so later definitions win -->
-<script src="views-today2.js"></script>
-<script src="views-tasks2.js"></script>
-<script src="views-tables2.js"></script>
+<!-- Notes rebuild layer — loaded after views-pages.js so its notesDesk wins -->
 <script src="views-notes2.js"></script>
-<script src="views-plan2.js"></script>
-<script src="views-goals2.js"></script>
-<script src="views-people2.js"></script>
-<script src="views-ask2.js"></script>
+<script src="polish.js"></script>
+<script src="dialog.js"></script>
 <script src="shell.js"></script>
 </body>
 </html>
