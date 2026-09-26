@@ -12,3 +12,7 @@
 .ask-convo-x { opacity: 0; color: var(--dim); font-size: 11px; padding: 0 3px; border-radius: 4px; transition: opacity 130ms var(--ease); }
 .ask-convo:hover .ask-convo-x { opacity: 0.7; }
 .ask-convo-x:hover { opacity: 1; color: var(--alert); }
+
+.ask-model-note { margin-top: auto; padding: 10px 12px 2px; font-size: 10.5px; color: var(--dim); border-top: 1px solid var(--line-soft); }
+.ask-model-test { border: 0; background: none; color: var(--signal); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+.ask-jgroup { display: flex; flex-wrap: wrap; gap: 6px; }

@@ -27,7 +27,8 @@ const DEFAULTS = [
   { id: "h_review", name: "Weekly review", anchor: "anytime", identity: "", keystone: false, freq: "weekly" },
 ];
 
-const readHabits = () => { try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catch { return DEFAULTS; } };
+/* Fresh by default: a new user has no routines until they create them. */
+const readHabits = () => { try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catch { return []; } };
 const readLog = () => { try { return JSON.parse(fs.readFileSync(LOG, "utf8")); } catch { return {}; } };
 const writeLog = (l) => { try { fs.mkdirSync(path.dirname(LOG), { recursive: true }); fs.writeFileSync(LOG, JSON.stringify(l)); } catch {} };
 

@@ -3,6 +3,26 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.23.0] — 2026-09-26
+
+Foundations for a shareable personal OS.
+
+- **Dock & pill are fully yours.** The compact dock and the pill are now both
+  **draggable and resizable** (drag any edge), and each **remembers its own
+  size + position**. Dragging stops cleanly at the screen edge — the window is
+  clamped to the display it's on and can never strand off-screen.
+- **Minimal, collapsible sidebar.** One tap collapses it to a slim icon rail;
+  the choice persists. Much less chrome by default.
+- **Truly fresh per user.** Removed the seeded demo tasks/notes/goals, and
+  routines now start **empty** until you create them — every new user gets a
+  clean system.
+- **Goals are work-focused.** Domains are now **Work + Money** (Health and
+  Relationships removed); goals still auto-track their linked tasks.
+- **Ask is honest.** Removed the fake Fast/Deep/Best model switcher — it uses
+  the one configured model (OpenCode Go · deepseek-v4.1-flash). The left rail
+  is trimmed to a few useful prompts, and there's a one-tap **test** for the
+  connection.
+
 ## [1.22.2] — 2026-09-26
 
 - **Today hero** — gradient-bordered focus card with a soft halo, larger

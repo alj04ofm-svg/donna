@@ -359,6 +359,14 @@ if (orbBtn) {
 $("#btn-full").onclick = () => window.donna.setMode("full");
 $("#btn-pill").onclick = () => window.donna.setMode("pill");
 $("#pill-app").onclick = () => window.donna.setMode("compact");
+/* collapsible sidebar — persist the choice so it opens how they left it */
+const sideToggle = $("#side-collapse");
+function applySidebar() { try { document.getElementById("full-app")?.classList.toggle("sidebar-collapsed", !!cfg.sidebarCollapsed); } catch {} }
+if (sideToggle) sideToggle.onclick = async () => {
+  const collapsed = !(cfg && cfg.sidebarCollapsed);
+  try { cfg = await window.donna.setConfig({ sidebarCollapsed: collapsed }); } catch { cfg.sidebarCollapsed = collapsed; }
+  applySidebar();
+};
 
 $("#nav").addEventListener("click", (e) => {
   const b = e.target.closest(".nav-item");
@@ -455,6 +463,7 @@ window.donna.onHide?.(() => {
   /* immediate digest for the splash on open — after the shell has painted */
   if (lastSeenAt) { setTimeout(() => computeSinceLeft().catch(() => {}), 140); }
   paintChrome();
+  applySidebar();
   setBodyMode(init.mode || "full");
   render();
   if (!cfg.onboarded && (init.mode || "full") === "full") setTimeout(openOnboarding, 700);

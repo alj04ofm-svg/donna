@@ -92,9 +92,9 @@ if (config.voice && config.voiceRef) {
    so all morphs run a manual eased bounds loop in main. */
 
 const MODES = {
-  full: { w: 1200, h: 820 },
-  compact: { w: 384, h: 560 },
-  pill: { w: 268, h: 44 },
+  full: { w: 1200, h: 820, minW: 760, minH: 500 },
+  compact: { w: 384, h: 560, minW: 300, minH: 360 },
+  pill: { w: 268, h: 44, minW: 200, minH: 40 },
 };
 let mode = "full";
 let fullBounds = null;
@@ -139,6 +139,39 @@ function clampToWork(b) {
     width: b.width, height: b.height,
   };
 }
+/* clamp to the display the WINDOW is on (not the cursor's) so a dragged dock
+   stops at the edge of whatever screen it's on, and can never strand off-screen */
+function clampToDisplay(b) {
+  const wa = screen.getDisplayNearestPoint({ x: b.x + Math.round(b.width / 2), y: b.y + Math.round(b.height / 2) }).workArea;
+  return {
+    x: Math.min(Math.max(b.x, wa.x), wa.x + wa.width - b.width),
+    y: Math.min(Math.max(b.y, wa.y), wa.y + wa.height - b.height),
+    width: b.width, height: b.height,
+  };
+}
+/* remember a size/position per mode so the dock and pill reopen exactly how the
+   user left them (and at the size they chose) */
+function savedBoundsFor(m) {
+  const saved = config.modeBounds && config.modeBounds[m];
+  const base = saved && saved.width && saved.height
+    ? { x: saved.x, y: saved.y, width: saved.width, height: saved.height }
+    : bottomRight(MODES[m].w, MODES[m].h, m === "pill" ? 12 : 16);
+  return clampToDisplay(base);
+}
+let persistingBounds = false;
+function persistModeBounds() {
+  if (!win || mode === "full" || persistingBounds) return;
+  const b = win.getBounds();
+  const c = clampToDisplay(b);
+  if (c.x !== b.x || c.y !== b.y) {
+    persistingBounds = true;
+    win.setBounds({ x: c.x, y: c.y, width: b.width, height: b.height });
+    setTimeout(() => { persistingBounds = false; }, 60);
+  }
+  config.modeBounds = config.modeBounds || {};
+  config.modeBounds[mode] = { x: c.x, y: c.y, width: b.width, height: b.height };
+  try { appConfig.save(config); } catch {}
+}
 
 async function applyMode(next) {
   if (!win || animating || next === mode) return;
@@ -152,18 +185,18 @@ async function applyMode(next) {
 
   if (mode === "full") {
     win.setAlwaysOnTop(false);
-    const target = fullBounds ? clampToWork(fullBounds) : (() => { const wa = cursorWorkArea(); return { x: wa.x + Math.round((wa.width - m.w) / 2), y: wa.y + Math.round((wa.height - m.h) / 2), width: m.w, height: m.h }; })();
+    const target = fullBounds ? clampToDisplay(fullBounds) : (() => { const wa = cursorWorkArea(); return { x: wa.x + Math.round((wa.width - m.w) / 2), y: wa.y + Math.round((wa.height - m.h) / 2), width: m.w, height: m.h }; })();
     await animateBounds(win, target);
     win.setResizable(true);
-    win.setMinimumSize(760, 500);
+    win.setMinimumSize(m.minW, m.minH);
     if (win.setWindowButtonVisibility) win.setWindowButtonVisibility(true);
   } else {
     win.setAlwaysOnTop(true, "floating");
     if (win.setWindowButtonVisibility) win.setWindowButtonVisibility(false);
-    // shrink the minimum FIRST, or the 760px floor clamps the compact/pill resize
-    win.setMinimumSize(m.w, m.h);
-    win.setResizable(false);
-    await animateBounds(win, bottomRight(m.w, m.h, mode === "pill" ? 12 : 16));
+    // the dock and pill are resizable too — the user decides how big they are
+    win.setMinimumSize(m.minW, m.minH);
+    win.setResizable(true);
+    await animateBounds(win, savedBoundsFor(mode));
   }
   win.webContents.send("donna:mode", mode);
   if (prev !== mode) win.show();
@@ -262,6 +295,10 @@ function createWindow() {
   win.webContents.on("did-finish-load", () => console.log("[did-finish-load]"));
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }); // companion follows you across Spaces
   win.on("close", (e) => { if (!app.isQuitting) { e.preventDefault(); hideWindow(); } });
+  // dock/pill: remember where and how big the user leaves them, and never let
+  // them slide past a screen edge
+  win.on("move", persistModeBounds);
+  win.on("resize", persistModeBounds);
 }
 
 /* ── the desktop orb — Donna loose on your screen, not locked in a window.
@@ -406,28 +443,10 @@ function syncLoginItem() {
    alive (and demonstrates the system) instead of an empty shell. Runs once. */
 function seedStarter() {
   try {
+    // Fresh start, by design: every new user begins with an empty, clean system
+    // (no demo tasks, notes, goals or routines). They add what's theirs.
     if (config.starterSeeded) return;
     config.starterSeeded = true;
-    if (tasks.summary().open.length === 0) {
-      [
-        "Plan your day — pick the one thing p1 today @work =15m",
-        "Email Sam about the invoice p2 @work =10m",
-        "Book the dentist appointment p3 @life =15m",
-        "Review this quarter's goals p2 @life =30m",
-        "Clear the inbox to zero p3 anytime @work =20m",
-      ].forEach((t) => { try { tasks.add(t); } catch {} });
-    }
-    try {
-      const notes = require("./lib/notes");
-      if (notes.list().length === 0) {
-        notes.add("How I like to work", "Deep work in the morning. Admin after lunch. Nothing heavy after 7pm. One priority a day beats ten quick wins.");
-        notes.add("Weekly review", "1. Clear inbox + task list. 2. Review goals. 3. Pick next week's one big thing. 4. Book time for it.");
-      }
-    } catch {}
-    try {
-      const goals = require("./lib/goals");
-      if (goals.list().length === 0) goals.add("Get consistently organised", "A calm system beats a busy to-do list — build the habit first.", "work");
-    } catch {}
     appConfig.save(config);
   } catch {}
 }

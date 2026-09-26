@@ -47,6 +47,9 @@ const DEFAULTS = {
   orbY: null,
   orbVisible: true,
   captureContext: false,
+  // Per-mode window bounds (dock/pill) the user has dragged/resized to
+  modeBounds: {},
+  sidebarCollapsed: false,
 };
 
 function load() {

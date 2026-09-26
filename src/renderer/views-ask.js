@@ -31,8 +31,8 @@ function suggGroups() {
 /* Ask modes — quick/think/best used to be typed prefixes hidden in a hint
    line; made them real buttons. Clicking one tags the next
    send; the prefix strips back out of what's shown, brain.js still reads it. */
-const ASK_MODES = [["quick", "⚡", "Fast"], ["think", "◐", "Deep"], ["best", "✦", "Best"]];
-let askMode = null;
+/* One model, honestly: the configured provider. No fake "Fast/Deep/Best". */
+function withMode(q) { return q.replace(/^(best|think|quick):\s*/i, ""); }
 
 /* rotating suggestion carousel — one flattened, shuffled-feeling list cycled
    on a timer; click to send straight away. so it feels alive,
@@ -60,7 +60,11 @@ function startCarousel() {
    that quietly learns about you so she can help better. */
 function vAsk() {
   const g = suggGroups();
-  const modeHtml = ASK_MODES.map(([k, ic, hint]) => `<button class="ask-mode ${askMode === k ? "on" : ""}" data-mode="${k}" title="${esc(hint)} mode">${ic} ${esc(hint)}</button>`).join("");
+  const modeHtml = "";
+  const provider = (cfg && cfg.provider) || "opencode";
+  const model = (cfg && cfg.model) || "deepseek-v4.1-flash";
+  const providerName = provider === "opencode" ? "OpenCode Go" : provider === "anthropic" ? "Claude" : provider === "openai" ? "OpenAI" : provider === "gemini" ? "Gemini" : provider === "minimax" ? "MiniMax" : provider;
+  const railChips = ["What should I focus on first?", "Plan my day", "What's slipping?", "Summarise my week", "Break this down", "What am I avoiding?"];
   const empty = `<div class="ask-empty">
     <div class="ask-hero-orb"><span class="orb speaking"></span></div>
     <div class="ask-hi">${greeting()}, ${esc((cfg && cfg.userName) || "there")}.<br><span>What can I help with?</span></div>
@@ -70,19 +74,19 @@ function vAsk() {
     <aside class="ask-rail">
       <button class="ask-new" id="ask-new"><span class="orb"></span> New chat</button>
       ${convoStore.length ? `<div class="ask-convos" id="ask-convos">${convoStore.slice(0, 10).map((c) => `<button class="ask-convo ${c.id === convoId ? "on" : ""}" data-convo="${esc(c.id)}" title="${esc(convoTitle(c))}"><span class="ask-convo-t">${esc(convoTitle(c))}</span><span class="ask-convo-x" data-convo-del="${esc(c.id)}">✕</span></button>`).join("")}</div>` : ""}
-      <div class="ask-rail-sec">Jump-starts</div>
+      <div class="ask-rail-sec">Try</div>
       <div class="ask-jumps">
-        ${g.map((grp) => `<div class="ask-jgroup"><div class="ask-jlabel">${grp.icon} ${grp.label}</div>${grp.chips.map((c) => `<button class="ask-jump" data-q="${esc(c)}">${esc(trunc(c.replace(/^(best|think|quick):\s*/, ""), 40))}</button>`).join("")}</div>`).join("")}
+        <div class="ask-jgroup">${railChips.map((c) => `<button class="ask-jump" data-q="${esc(c)}">${esc(c)}</button>`).join("")}</div>
       </div>
       <div class="ask-rail-sec">What Donna knows about you</div>
       <div class="ask-about" id="ask-about"><div class="ask-about-loading">…</div></div>
       <div class="quick-add ask-teach"><input id="ask-teach" placeholder="Teach her something… ↵"></div>
+      <div class="ask-model-note">${esc(providerName)}${model ? ` · ${esc(model)}` : ""} · <button class="ask-model-test" id="ask-model-test">test</button></div>
     </aside>
     <div class="ask-main">
       <div class="ask-aura" id="ask-aura"><div class="ask-aura-cursor"></div></div>
       <div id="thread">${thread.length ? thread.map(msgHtml).join("") : empty}</div>
       <div id="askbar">
-        <div class="ask-modes">${modeHtml}<span class="ask-mode-hint">↑ last</span></div>
         <div class="field"><span class="orb"></span><input id="ask-in" placeholder="Ask Donna anything…"></div>
       </div>
     </div>
@@ -99,7 +103,8 @@ function vAsk() {
     }
   });
   main.querySelectorAll(".ask-jump").forEach((b) => (b.onclick = () => sendAsk(withMode(b.dataset.q))));
-  main.querySelectorAll(".ask-mode").forEach((b) => (b.onclick = () => { askMode = askMode === b.dataset.mode ? null : b.dataset.mode; vAsk(); }));
+  const mt = $("#ask-model-test");
+  if (mt) mt.onclick = async () => { mt.textContent = "…"; const r = await window.donna.testAI(); mt.textContent = "test"; toast(r && r.ok ? `✓ AI working — ${r.provider}${r.model ? " · " + r.model : ""}` : `✗ ${String((r && r.sample) || "failed").slice(0, 90)}`); };
   $("#ask-new").onclick = () => { if (thread.length) newConvo(); else { thread.length = 0; saveConvos(); } vAsk(); };
   main.querySelectorAll("[data-convo]").forEach((el) => (el.onclick = (e) => {
     if (e.target.closest("[data-convo-del]")) return;
@@ -186,8 +191,7 @@ function msgHtml(m, i) {
     ? `<div class="thinking-line"><i></i><i></i><i></i></div>`
     : mdHtml(m.text);
   const actions = (!m.streaming && m.text) ? `<div class="msg-acts"><button data-copy="${i}">Copy</button><button data-regen="${i}">Regenerate</button><button data-totask="${i}">→ Task</button><button data-tonote="${i}">→ Note</button></div>` : "";
-  return `<div class="msg donna msg-in" data-i="${i}"><div class="msg-head"><span class="orb"></span><span class="msg-name">Donna</span>
-    ${(m.provider || m.tier) && m.tier !== "capture" ? `<span class="chip tier">${provLabel(m.provider || m.tier)}</span>` : ""}</div>
+  return `<div class="msg donna msg-in" data-i="${i}"><div class="msg-head"><span class="orb"></span><span class="msg-name">Donna</span></div>
     <div class="msg-body">${body}</div>
     ${actions}</div>`;
 }

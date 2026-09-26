@@ -1213,7 +1213,7 @@ function cycleHeaderHtml(goals) {
   // Lead-measure semantic: 100%+ on pace, 60–99 behind, <60 stalled
   const leadState = leadPct >= 100 ? "on" : leadPct >= 60 ? "behind" : leadPct > 0 ? "stalled" : "off";
   // Domain coverage: 4 mini-bars tinted by LIFE_META
-  const cov = { work: 0, money: 0, health: 0, relationships: 0 };
+  const cov = { work: 0, money: 0 };
   for (const g of goals) if (!g.done) cov[g.domain] = (cov[g.domain] || 0) + 1;
   const covMax = Math.max(1, ...Object.values(cov));
   return `<div class="cyc">
@@ -1235,7 +1235,7 @@ function cycleHeaderHtml(goals) {
       </div>
       <div class="cyc-cov">
         <div class="cyc-cov-l">Domain coverage</div>
-        <div class="cyc-cov-bars">${["work", "money", "health", "relationships"].map((d) => {
+        <div class="cyc-cov-bars">${["work", "money"].map((d) => {
           const m = LIFE_META[d]; const n = cov[d] || 0;
           const pct = Math.round(n / covMax * 100);
           return `<div class="cyc-cov-row${n === 0 ? " zero" : ""}" style="--h:${m.hue}">
@@ -1278,7 +1278,7 @@ async function vGoals() {
   const [goals, coverage, tasks] = await Promise.all([window.donna.goalsList(), window.donna.goalsDomainCoverage(), window.donna.tasks().catch(() => ({ open: [] }))]);
   stagger = 0;
   const empty = Object.entries(coverage).filter(([, n]) => n === 0).map(([d]) => (LIFE_META[d] || { label: d }).label);
-  const domains = ["work", "money", "health", "relationships"];
+  const domains = ["work", "money"];
   const shown = goalDomFilter === "all" ? goals : goals.filter((g) => g.domain === goalDomFilter);
   const activeCount = (d) => goals.filter((g) => g.domain === d && !g.done).length;
   // Linked-task count per goal — power-user signal: how much of the day's
@@ -1297,7 +1297,7 @@ async function vGoals() {
     <div class="quick-add" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
       <input id="goal-add" style="flex:1;min-width:240px" placeholder="New objective — the ambitious 12-week outcome, then ↵">
       <select id="goal-domain" class="domain-select">
-        <option value="work">Work</option><option value="money">Money</option><option value="health">Health</option><option value="relationships">Relationships</option>
+        <option value="work">Work</option><option value="money">Money</option>
       </select>
       <button class="hero-btn" id="goal-template-btn" title="Start from a template" style="background:transparent;color:var(--mut);border:1px solid var(--line)">✦ From template</button>
     </div>

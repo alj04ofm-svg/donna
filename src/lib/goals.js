@@ -15,7 +15,7 @@ const path = require("node:path");
    scored honestly, not just done/not-done). */
 
 const FILE = dataPath("goals.json");
-const DOMAINS = ["work", "money", "health", "relationships"];
+const DOMAINS = ["work", "money"];
 const read = () => { try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catch { return []; } };
 const write = (a) => { try { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify(a)); } catch {} };
 const uid = (p) => `${p}_${Date.now()}_${Math.floor((read().length || 0))}`;
@@ -179,7 +179,7 @@ const TEMPLATES = {
     label: "Habit stack",
     objective: "Build a daily non-negotiable routine",
     why: "Systems over goals. The routine IS the goal.",
-    domain: "health",
+    domain: "work",
     krs: [
       { text: "Days completed this cycle", target: 84, unit: "d" },
     ],
