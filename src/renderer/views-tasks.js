@@ -107,7 +107,7 @@ async function vTasks() {
   const untriaged = data.open.filter(isUntriaged);
   const anyFilter = f.search || f.priority || f.project || f.tag || f.due;
   const chips = [
-    f.priority ? `<button class="tk-fchip" data-clear="priority">P${f.priority} <b>×</b></button>` : "",
+    f.priority ? `<button class="tk-fchip" data-clear="priority">${prioLabel(Number(f.priority))} <b>×</b></button>` : "",
     f.project ? `<button class="tk-fchip" data-clear="project">#${esc(f.project)} <b>×</b></button>` : "",
     f.tag ? `<button class="tk-fchip" data-clear="tag">+${esc(f.tag)} <b>×</b></button>` : "",
     f.due ? `<button class="tk-fchip" data-clear="due">${esc(f.due === "none" ? "no date" : f.due)} <b>×</b></button>` : "",
@@ -138,16 +138,17 @@ async function vTasks() {
         </div>
       </div>
     </header>
-    <div class="quick-add tasks-add"><input id="task-in" placeholder='New task — "email sam friday 3pm p1 #work +followup =2h" parses live'></div>
+    <div class="quick-add tasks-add"><input id="task-in" placeholder='New task — "email sam friday 3pm urgent #work +followup =2h" parses live'></div>
     <div class="tk-toolbar">
       <input id="tf-search" class="tf-search" placeholder="Search tasks…" value="${esc(f.search)}">
-      <select id="tf-priority" class="tf-select"><option value="">Priority</option>${[1, 2, 3, 4].map((p) => `<option value="${p}"${f.priority === String(p) ? " selected" : ""}>P${p}</option>`).join("")}</select>
+      <select id="tf-priority" class="tf-select"><option value="">Priority</option>${[1, 2, 3, 4].map((p) => `<option value="${p}"${f.priority === String(p) ? " selected" : ""}>${prioLabel(p)}</option>`).join("")}</select>
       <select id="tf-project" class="tf-select"><option value="">Project</option>${projects.map((p) => `<option value="${esc(p)}"${f.project === p ? " selected" : ""}>${esc(p)}</option>`).join("")}</select>
       <select id="tf-tag" class="tf-select"><option value="">Tag</option>${_tagIndex.map((x) => `<option value="${esc(x.tag)}"${f.tag === x.tag ? " selected" : ""}>${esc(x.tag)} · ${x.count}</option>`).join("")}</select>
       <select id="tf-due" class="tf-select"><option value="">Due</option>${[["overdue", "Overdue"], ["today", "Today"], ["week", "Next 7 days"], ["none", "No date"]].map(([v, l]) => `<option value="${v}"${f.due === v ? " selected" : ""}>${l}</option>`).join("")}</select>
       <select id="tf-sort" class="tf-select"><option value="">Sort</option>${[["priority", "Priority"], ["due", "Due date"], ["newest", "Newest"], ["title", "Title"]].map(([v, l]) => `<option value="${v}"${f.sort === v ? " selected" : ""}>${l}</option>`).join("")}</select>
       <span class="spacer"></span>
       ${anyFilter ? chips : ""}
+      ${(() => { const t0 = new Date().toISOString().slice(0, 10); const n = data.open.filter((t) => t.dueAt && String(t.dueAt).slice(0, 10) < t0 && t.status !== "doing" && !t.waitingOn && t.bucket !== "someday").length; return n ? `<button class="tk-mini" id="tk-rollover" title="Move overdue tasks to today">↻ Roll ${n} overdue</button>` : ""; })()}
       <button class="tk-mini ${taskSelMode ? "on" : ""}" id="tk-selectmode" title="Select multiple">☑ Select</button>
     </div>
     <div id="tk-bulk" hidden></div>
@@ -169,6 +170,8 @@ async function vTasks() {
   main.querySelectorAll("[data-clear]").forEach((b) => (b.onclick = () => { setFilter(b.dataset.clear, ""); vTasks(); }));
   const sm = $("#tk-selectmode");
   sm.onclick = () => { taskSelMode = !taskSelMode; if (!taskSelMode) taskSel.clear(); vTasks(); };
+  const ro = $("#tk-rollover");
+  if (ro) ro.onclick = async () => { const r = await window.donna.rollover(); await refresh(); vTasks(); toast(r && r.count ? `Rolled ${r.count} task${r.count === 1 ? "" : "s"} to today` : "Nothing overdue"); };
 
   const tb = $("#btn-triage"); if (tb) tb.onclick = () => openTriage(untriaged);
   const ntb = $("#btn-newtask"); if (ntb) ntb.onclick = () => openTaskDetail(null);
@@ -269,7 +272,7 @@ function paintBulkBar() {
       if (!confirm(`Delete ${n} task${n === 1 ? "" : "s"}? This can't be undone.`)) return;
       await window.donna.ext("tasks-ext", "deleteMany", ids()); taskSel.clear(); await tkRefresh("Deleted"); return;
     }
-    if (k === "prio") { const v = await openMenu(b, [1, 2, 3, 4].map((p) => ({ label: `P${p}`, value: p }))); if (v == null) return; await window.donna.ext("tasks-ext", "bulkUpdate", ids(), { priority: v }); taskSel.clear(); await tkRefresh(`Set P${v}`); return; }
+    if (k === "prio") { const v = await openMenu(b, [1, 2, 3, 4].map((p) => ({ label: prioLabel(p), value: p }))); if (v == null) return; await window.donna.ext("tasks-ext", "bulkUpdate", ids(), { priority: v }); taskSel.clear(); await tkRefresh(`Set to ${prioLabel(v)}`); return; }
     if (k === "due") {
       const iso = (d) => d.toISOString().slice(0, 10);
       const t = new Date(), tom = new Date(Date.now() + 86400000), wk = new Date(Date.now() + 7 * 86400000);
@@ -477,7 +480,7 @@ function paintTable(open) {
     const t = findTask(el.dataset.ttprio); if (!t) return;
     const next = t.priority >= 4 ? 1 : t.priority + 1;
     await window.donna.setPriority(t.id, next);
-    await tkRefresh(`P${next}`);
+    await tkRefresh(prioLabel(next));
   }));
   $("#task-body").querySelectorAll("[data-ttdue]").forEach((el) => (el.onclick = (e) => {
     e.stopPropagation();
@@ -540,7 +543,7 @@ async function openTaskDetail(id) {
           <option value="done"${t.status === "done" ? " selected" : ""}>Done</option>
         </select></label>
       <label class="tk-field"><span>Priority</span>
-        <select id="td-priority" class="tk-input">${[1, 2, 3, 4].map((p) => `<option value="${p}"${t.priority === p ? " selected" : ""}>P${p}</option>`).join("")}</select></label>
+        <select id="td-priority" class="tk-input">${[1, 2, 3, 4].map((p) => `<option value="${p}"${t.priority === p ? " selected" : ""}>${prioLabel(p)}</option>`).join("")}</select></label>
       <label class="tk-field"><span>Due</span><input id="td-due" type="date" class="tk-input" value="${t.dueAt ? String(t.dueAt).slice(0, 10) : ""}"></label>
       <label class="tk-field"><span>Time</span><input id="td-duetime" type="time" class="tk-input" value="${esc(t.dueTime || "")}"></label>
       <label class="tk-field"><span>Deadline</span><input id="td-deadline" type="date" class="tk-input" value="${t.deadline ? String(t.deadline).slice(0, 10) : ""}"></label>

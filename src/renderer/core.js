@@ -97,12 +97,31 @@ function depChip(t) {
   const b = openDepIds(t);
   return b.length ? `<span class="chip blocked" title="Blocked by ${b.length} unfinished task${b.length === 1 ? "" : "s"}">⛓ ${b.length}</span>` : "";
 }
+function riskChip(t) {
+  return atRisk(t) ? `<span class="chip risk" title="You may not finish this before its deadline">⚠ at risk</span>` : "";
+}
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
 const CHECK_SVG = '<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-6.5"/></svg>';
 const MOON_SVG = '<svg viewBox="0 0 16 16"><path d="M13.5 9.5A6 6 0 0 1 6.5 2.5a6 6 0 1 0 7 7z"/></svg>';
 let stagger = 0;
 const si = () => ` style="--i:${Math.min(stagger++, 20)}"`;
-const pGlyph = (p) => `<span class="pglyph g${p}" title="P${p}"><i></i><i></i><i></i></span>`;
+/* plain-language labels — no "P1/T1" codes anywhere the user can see */
+const PRIO_LABELS = ["Urgent", "High", "Normal", "Low"];
+const prioLabel = (p) => PRIO_LABELS[Math.min(3, Math.max(0, (Number(p) || 3) - 1))];
+const pGlyph = (p) => `<span class="pglyph g${p}" title="${prioLabel(p)} priority"><i></i><i></i><i></i></span>`;
+
+/* at-risk: a hard deadline that the remaining estimated work won't fit before,
+   given your daily capacity — Motion's "you won't make this" warning. */
+function atRisk(t) {
+  if (!t || !t.deadline || t.status === "done" || t.wontDo) return false;
+  const days = daysUntil(t.deadline);
+  if (days == null || days < 0) return false;
+  if (days > 5) return false;
+  const cap = ((typeof cfg !== "undefined" && cfg && cfg.capacityHours) || 6) * 60;
+  const remaining = t.estimatedMinutes || (t.priority === 1 ? 60 : t.priority === 2 ? 45 : 30);
+  const window = Math.max(1, days + 1) * cap;
+  return t.deadlineHard ? remaining > window : days <= 1 && remaining > cap;
+}
 
 /* whole-day difference between a YYYY-MM-DD and today, in LOCAL time — avoids
    the UTC-midnight parse that made due-today tasks read "overdue" after 5pm. */
@@ -194,7 +213,7 @@ function rowHtml(t, { compact = false, idx = -1, selectable = false, selected = 
       ${t.detail ? `<div class="row-detail">${esc(t.detail)}</div>` : ""}
     </div>
     <div class="row-meta">
-      ${tagChips(t)}${depChip(t)}${t.assignee && t.assignee !== "me" ? `<span class="chip who">@${esc(t.assignee)}</span>` : ""}${projChip(t)}${estChip(t)}${recurChip(t)}${t.subtasks && t.subtasks.length ? `<span class="chip sub">${t.subtasks.filter((s) => s.done).length}/${t.subtasks.length}</span>` : ""}
+      ${tagChips(t)}${depChip(t)}${riskChip(t)}${t.assignee && t.assignee !== "me" ? `<span class="chip who">@${esc(t.assignee)}</span>` : ""}${projChip(t)}${estChip(t)}${recurChip(t)}${t.subtasks && t.subtasks.length ? `<span class="chip sub">${t.subtasks.filter((s) => s.done).length}/${t.subtasks.length}</span>` : ""}
       <div class="row-acts">
         <button class="icon-btn" data-start="${t.id}" title="${doing ? "Stop (D)" : "Start now (D)"}">
           ${doing ? '<svg viewBox="0 0 16 16"><rect x="4.5" y="4.5" width="7" height="7" rx="1.5"/></svg>'

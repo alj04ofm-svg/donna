@@ -67,7 +67,7 @@ function vToday() {
     <div data-strip="today.routines">${routinesStrip()}${replacementsStrip()}</div>
     <div id="diag-slot" data-strip="today.diagnostic"></div>
     <div id="waiting-slot" data-strip="today.waiting"></div>
-    <div class="quick-add home-add"><input id="today-add" placeholder='Add — "email sam tomorrow p1"'></div>
+    <div class="quick-add home-add"><input id="today-add" placeholder='Add — "email sam tomorrow urgent"'></div>
     ${localStorage.getItem("donna.planned") !== new Date().toISOString().slice(0, 10) && new Date().getHours() < 14 ? `<button class="wind-btn plan-btn" id="mplan-btn">☀ Plan the day — 2 minutes, then it's locked</button>` : ""}
     ${new Date().getHours() >= 18 ? `<button class="wind-btn" id="wind-btn">☾ Wind down the day</button>` : ""}
   </div>`;
@@ -209,7 +209,7 @@ function heroCard(t, focusing) {
     <div class="hero-eyebrow">${focusing ? `◷ Focusing · <span data-started="${t.startedAt}">${elapsed(t.startedAt)}</span>` : "Start here"}</div>
     <div class="hero-title">${esc(t.title)}</div>
     <div class="hero-meta">
-      <button class="hero-chip" data-prio="${t.id}" title="Click to cycle priority">${pGlyph(t.priority)}<span class="hero-chip-l">P${t.priority}</span></button>
+      <button class="hero-chip" data-prio="${t.id}" title="Click to change priority">${pGlyph(t.priority)}<span class="hero-chip-l">${prioLabel(t.priority)}</span></button>
       <button class="hero-chip" data-due="${t.id}" title="Click to set due date">${dueChip(t.dueAt) || `<span class="hero-chip-l dim">no due</span>`}</button>
       <button class="hero-chip hero-more" data-more="${t.id}" title="More">⋯</button>
     </div>
@@ -248,7 +248,7 @@ function wireHome(scope) {
     const next = t.priority === 1 ? 2 : t.priority === 2 ? 3 : 1;
     await window.donna.setPriority(id, next);
     await refresh(); render(); renderCompactBody();
-    toast(`Priority → P${next}`);
+    toast(`Priority → ${prioLabel(next)}`);
   }));
   /* inline due-date — tiny popover with quick presets + custom date */
   scope.querySelectorAll("[data-due]").forEach((el) => (el.onclick = (e) => {
@@ -577,7 +577,7 @@ async function vToday2() {
         <section class="t2-focus" id="t2-focus" data-id="${hero.id}">
           <div class="t2-focus-top">
             <span class="t2-focus-kicker">${doing ? "In focus" : "Start here"}</span>
-            <span class="t2-pri p${hero.priority}">P${hero.priority}</span>
+            <span class="t2-pri p${hero.priority}">${prioLabel(hero.priority)}</span>
           </div>
           <h2 class="t2-focus-title">${esc(hero.title)}</h2>
           <div class="t2-focus-meta">
@@ -672,7 +672,7 @@ async function vToday2() {
 
     <div class="t2-capture">
       <span class="t2-capture-ico">✎</span>
-      <input id="t2-input" placeholder="Capture a task, note or idea — try “call sam friday p1 @work =20m”">
+      <input id="t2-input" placeholder="Capture a task, note or idea — try “call sam friday urgent @work =20m”">
       <kbd>↵</kbd>
     </div>
   </div>`;

@@ -435,6 +435,16 @@ function seedStarter() {
 app.whenReady().then(() => {
   syncLoginItem();
   seedStarter();
+  /* Motion-style self-healing day: once per day, roll overdue tasks forward. */
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    if (config.rolloverOverdue !== false && config.lastRollover !== today) {
+      const n = tasks.rolloverOverdue(today);
+      Object.assign(config, { lastRollover: today });
+      try { appConfig.save(config); } catch {}
+      if (n) console.log(`[rollover] moved ${n} overdue task(s) to today`);
+    }
+  } catch {}
   createWindow();
   try { if (app.dock) app.dock.show(); } catch {}
   showWindow(); // open visibly on launch (Dock click / login item / hotkey still work)
@@ -617,6 +627,7 @@ app.whenReady().then(() => {
   ipcMain.handle("donna:setWontDo", (_e, { id, reason }) => tasks.setWontDo(id, reason));
   ipcMain.handle("donna:addActual", (_e, { id, minutes }) => tasks.addActual(id, minutes));
   ipcMain.handle("donna:addTask", (_e, title) => tasks.add(title));
+  ipcMain.handle("donna:rollover", () => ({ ok: true, count: tasks.rolloverOverdue() }));
   ipcMain.handle("donna:quickAdd", (_e, { text, detail }) => {
     const id = tasks.add(text, null, detail);
     if (win) { win.webContents.send("donna:refresh"); }

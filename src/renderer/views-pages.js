@@ -44,6 +44,7 @@ async function vSettings() {
       <div class="set-row"><div><div class="set-label">Notifications</div><div class="set-hint">Native alerts when things change</div></div>${toggle("notifications", cfg.notifications !== false)}</div>
       <div class="set-row"><div><div class="set-label">Sounds</div><div class="set-hint">Tiny synthesized cues on complete · habit · capture</div></div>${toggle("sounds", cfg.sounds !== false)}</div>
       <div class="set-row"><div><div class="set-label">Auto-track</div><div class="set-hint">Watch app/window activity from boot — all local · restart to apply</div></div>${toggle("autoTrack", cfg.autoTrack !== false)}</div>
+      <div class="set-row"><div><div class="set-label">Roll overdue to today</div><div class="set-hint">Each day, unfinished overdue tasks move to today — the day self-heals</div></div>${toggle("rolloverOverdue", cfg.rolloverOverdue !== false)}</div>
       <div class="set-row"><div><div class="set-label">Launch at login</div><div class="set-hint">Open Donna automatically when you start your Mac</div></div>${toggle("launchAtLogin", !!cfg.launchAtLogin)}</div>
     </div>
 
@@ -172,7 +173,7 @@ async function vSettings() {
     const key = el.dataset.toggle; const now = !el.classList.contains("on");
     el.classList.toggle("on", now);
     cfg = await window.donna.setConfig({ [key]: now });
-    const tt = { notifications: ["Notifications on", "Notifications off"], voice: ["Voice on — restart to apply", "Voice off"], sounds: ["Sounds on", "Sounds off"], autoTrack: ["Auto-track on — restart to apply", "Auto-track off — restart to apply"], launchAtLogin: ["Donna opens at login", "Won't open at login"], wakeWord: ["Wake word on — restart to apply", "Wake word off — restart to apply"] };
+    const tt = { notifications: ["Notifications on", "Notifications off"], voice: ["Voice on — restart to apply", "Voice off"], sounds: ["Sounds on", "Sounds off"], autoTrack: ["Auto-track on — restart to apply", "Auto-track off — restart to apply"], launchAtLogin: ["Donna opens at login", "Won't open at login"], rolloverOverdue: ["Overdue tasks will roll to today", "Overdue tasks stay put"], wakeWord: ["Wake word on — restart to apply", "Wake word off — restart to apply"] };
     toast((tt[key] || ["On", "Off"])[now ? 0 : 1]);
     if (key === "sounds" && now) { try { snd.tick(); } catch {} }
   }));
@@ -425,7 +426,7 @@ async function vRhythm() {
     ${pane("overview", `
     <div class="tk-board"${si()}>
       <div class="tk-cell hero"><div class="tk-ring big" style="--pct:${tk.pulse}"><span>${tk.pulse}</span></div>
-        <div class="tk-cell-l">Pulse<span>time-weighted focus score</span></div></div>
+        <div class="tk-cell-l">Focus score<span>time-weighted, today</span></div></div>
       <div class="tk-cell"><b>${fmtMin(tk.activeMin)}</b><span>active</span></div>
       <div class="tk-cell"><b>${fmtMin(tk.deepMin)}</b><span>deep work</span></div>
       <div class="tk-cell ${tk.deepMin >= deepTarget ? "hit" : ""}"><b>${deepTarget ? Math.min(999, Math.round((tk.deepMin / deepTarget) * 100)) + "%" : "—"}</b><span>of ${Math.round(deepTarget / 6) / 10}h goal</span></div>
@@ -619,7 +620,7 @@ async function vPlan() {
           <button data-planlay="month">Month</button>
           <button data-planlay="forecast">Forecast</button>
         </div>
-        <button class="triage-btn" id="replan-btn">↻ Replan</button>
+        <button class="triage-btn" id="replan-btn">↻ Rebuild my day</button>
       </div>
     </div>
     ${!p.calOk && p.calReason === "permission" ? `<div class="prod-status" style="margin-top:10px"><span class="ps warn">⚠ grant Calendar access to Donna — System Settings › Privacy › Calendars</span></div>` : ""}
@@ -641,11 +642,11 @@ async function vPlan() {
       ${futureEvents.map((b) => `<div class="tl-event" style="top:${top(Math.max(b.s, nowMin))}px;height:${Math.max(18, (b.e - Math.max(b.s, nowMin)) * PXM)}px"><span>${esc(b.title)}</span></div>`).join("")}
       ${p.blocks.map((b) => `<div class="tl-block p${b.priority} ${b.doing ? "doing" : ""}" style="top:${top(b.s)}px;height:${Math.max(30, (b.e - b.s) * PXM)}px" data-start="${b.id}">
         <span class="tl-block-t">${esc(trunc(b.title, 46))}</span><span class="tl-block-time">${fmtT(b.s)}–${fmtT(b.e)}</span></div>`).join("")}
-      ${!p.blocks.length ? `<div class="pl-empty">Nothing scheduled yet — <a data-goto="tasks">add tasks</a> or hit <b>Replan</b>.</div>` : ""}
+      ${!p.blocks.length ? `<div class="pl-empty">Nothing scheduled yet — <a data-goto="tasks">add tasks</a> or hit <b>Rebuild my day</b>.</div>` : ""}
     </div>`}
     <p class="hint" style="margin-top:14px">Auto-blocked by priority around your calendar, from now forward. Tap a block to start focus.</p>
   </div>`;
-  $("#replan-btn").onclick = () => { vPlan(); toast("Replanned around now"); };
+  $("#replan-btn").onclick = () => { vPlan(); toast("Day rebuilt around now"); };
   main.querySelectorAll("[data-goto]").forEach((el) => (el.onclick = () => gotoView(el.dataset.goto)));
   main.querySelectorAll("[data-planlay]").forEach((b) => (b.onclick = () => { planLayout = b.dataset.planlay; localStorage.setItem("donna.planLayout", planLayout); vPlan(); }));
   main.querySelectorAll(".tl-block[data-start]").forEach((el) => (el.onclick = async () => {
@@ -1144,8 +1145,9 @@ function goalNextAction(g) {
   if (!(g.keyResults || []).length) return `→ add a key result — a number that proves it's done`;
   return null;
 }
-function goalCard(g, linkedTasks = 0) {
+function goalCard(g, linked = { total: 0, done: 0 }) {
   const krPct = (k) => (k.target ? Math.min(100, Math.round((k.current || 0) / k.target * 100)) : 0);
+  const linkedTasks = linked.total;
   const wk = g.week || { committed: 0, done: 0 };
   const wkPct = wk.committed ? Math.round(wk.done / wk.committed * 100) : 0;
   const dm = LIFE_META[g.domain] || { label: g.domain || "work", hue: 250 };
@@ -1155,7 +1157,7 @@ function goalCard(g, linkedTasks = 0) {
       <div class="goal2-ring" style="--pct:${g.pct};--h:${dm.hue}"><span>${g.pct}<b>%</b></span></div>
       <div class="goal2-hd">
         <div class="goal2-obj">${esc(g.objective)}</div>
-        <div class="goal2-meta"><span class="domain-badge" style="--h:${dm.hue}">${esc(dm.label)}</span><span class="goal2-horizon">${g.horizon === "12wk" ? "12-week" : esc(g.horizon)}</span><span class="goal2-cycle">W${g.cycleWeek || 1}/12 · ${g.cycleDaysLeft != null ? g.cycleDaysLeft : 84}d left</span>${g.oneThing ? `<span class="goal2-lead" title="Lead this week">◷ lead set</span>` : ""}${linkedTasks ? `<span class="goal2-tasks" title="Open tasks linked to this goal">${linkedTasks} task${linkedTasks === 1 ? "" : "s"}</span>` : ""}${wk.committed ? `<span class="goal2-wk-mini ${wkPct >= 100 ? "hit" : ""}">${wk.done}/${wk.committed} this wk</span>` : ""}${(() => { const expected = Math.round(((g.cycleWeek || 1) / 12) * 100); const h = g.pct + 5 >= expected ? ["on", "on track"] : g.pct >= expected - 15 ? ["watch", "watch"] : ["risk", "at risk"]; return `<span class="goal2-health ${h[0]}" title="Progress vs where week ${g.cycleWeek || 1} expects (${expected}%)">${h[1]}</span>`; })()}</div>
+        <div class="goal2-meta"><span class="domain-badge" style="--h:${dm.hue}">${esc(dm.label)}</span><span class="goal2-horizon">${g.horizon === "12wk" ? "12-week" : esc(g.horizon)}</span><span class="goal2-cycle">Week ${g.cycleWeek || 1} of 12 · ${g.cycleDaysLeft != null ? g.cycleDaysLeft : 84}d left</span>${g.oneThing ? `<span class="goal2-lead" title="The one lever is set">◷ lever set</span>` : ""}${linkedTasks ? `<span class="goal2-tasks" title="Tasks linked to this goal (type >>name when adding a task)">${linked.done}/${linked.total} tasks</span>` : ""}${wk.committed ? `<span class="goal2-wk-mini ${wkPct >= 100 ? "hit" : ""}">${wk.done}/${wk.committed} this week</span>` : ""}${(() => { const expected = Math.round(((g.cycleWeek || 1) / 12) * 100); const h = g.pct + 5 >= expected ? ["on", "on track"] : g.pct >= expected - 15 ? ["watch", "watch"] : ["risk", "at risk"]; return `<span class="goal2-health ${h[0]}" title="Progress vs where week ${g.cycleWeek || 1} expects (${expected}%)">${h[1]}</span>`; })()}</div>
         ${next ? `<div class="goal2-next">${esc(next)}</div>` : g.why ? `<div class="goal2-next dim">${esc(trunc(g.why, 60))}</div>` : ""}
       </div>
       <svg class="goal2-caret" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></svg>
@@ -1163,6 +1165,8 @@ function goalCard(g, linkedTasks = 0) {
     <div class="goal2-body">
       <div class="goal2-field"><span class="goal2-flabel">Why it matters — who this makes you</span><input class="goal2-in" data-why="${g.id}" value="${esc(g.why || "")}" placeholder="so I trust the pipeline runs without me babysitting it"></div>
       <div class="goal2-field"><span class="goal2-flabel">The one thing — the single lever that moves this most</span><input class="goal2-in one" data-one="${g.id}" value="${esc(g.oneThing || "")}" placeholder="do THIS and the rest gets easier or unnecessary"></div>
+
+      ${linked.total ? `<div class="goal2-tasktarget"><div class="goal2-tt-h"><span>Linked tasks — auto-tracked</span><span>${linked.done}/${linked.total} done</span></div><div class="kr-bar"><div class="kr-fill" style="width:${Math.round(linked.done / linked.total * 100)}%"></div></div></div>` : ""}
 
       <div class="goal2-sec">Key results <span>measurable outcomes</span></div>
       ${(g.keyResults || []).length ? (g.keyResults || []).map((k) => `<div class="kr">
@@ -1178,7 +1182,7 @@ function goalCard(g, linkedTasks = 0) {
 
       <div class="goal2-week">
         <div class="goal2-week-ring" style="--pct:${wkPct}"><span>${wkPct}<b>%</b></span></div>
-        <div class="goal2-week-body"><div class="goal2-week-l">This week's execution</div><div class="goal2-week-s">${wk.done}/${wk.committed || "—"} committed actions done — <b>lead measure, the one you control</b></div></div>
+        <div class="goal2-week-body"><div class="goal2-week-l">This week's execution</div><div class="goal2-week-s">${wk.done}/${wk.committed || "—"} committed actions done — <b>the commitment you control</b></div></div>
         <button class="goal2-week-btn" data-week="${g.id}">log</button>
       </div>
       <div class="goal2-foot">${g.done ? `<button class="goal2-reopen" data-greopen="${g.id}">↺ reopen</button>` : `<button class="goal2-reopen" data-gdone="${g.id}">✓ mark reached</button>`}<button class="goal2-del" data-gdel="${g.id}">delete goal</button></div>
@@ -1226,7 +1230,7 @@ function cycleHeaderHtml(goals) {
     <div class="cyc-right">
       <div class="cyc-score ${leadState}">
         <div class="cyc-score-n"><span>${leadPct}</span><b>%</b></div>
-        <div class="cyc-score-l">lead this week</div>
+        <div class="cyc-score-l">weekly commitment</div>
         <div class="cyc-score-s">${done}/${committed || "—"} committed actions done${committed ? "" : " — log one to start tracking"}</div>
       </div>
       <div class="cyc-cov">
@@ -1280,10 +1284,10 @@ async function vGoals() {
   // Linked-task count per goal — power-user signal: how much of the day's
   // queue is pulling toward this objective.
   const linkedByGoal = {};
-  for (const t of (tasks.open || [])) if (t.objectiveId) linkedByGoal[t.objectiveId] = (linkedByGoal[t.objectiveId] || 0) + 1;
+  for (const t of [...(tasks.open || []), ...(tasks.done || [])]) if (t.objectiveId) { const e = linkedByGoal[t.objectiveId] = linkedByGoal[t.objectiveId] || { total: 0, done: 0 }; e.total++; if (t.status === "done") e.done++; }
   main.innerHTML = `<div class="view">
     <div class="lib-head">
-      <div><h1 class="h1">Goals</h1><p class="sub">Objectives → key results → the one lever → weekly execution</p></div>
+      <div><h1 class="h1">Goals</h1><p class="sub">Objectives → key results → milestones → a weekly commitment · 12-week cycles · <button class="goal2-help" id="goals-help">how this works</button></p></div>
       <div class="seg vz-seg goals-seg">
         <button data-dom="all" class="${goalDomFilter === "all" ? "on" : ""}">All<span class="goals-seg-n">${goals.filter((g) => !g.done).length}</span></button>
         ${domains.map((d) => `<button data-dom="${d}" class="${goalDomFilter === d ? "on" : ""}" style="--h:${LIFE_META[d].hue}">${LIFE_META[d].label}<span class="goals-seg-n">${activeCount(d)}</span></button>`).join("")}
@@ -1299,12 +1303,29 @@ async function vGoals() {
     </div>
     <div id="goal-template-row" hidden></div>
     ${empty.length ? `<div class="coverage-banner">⚠ <span><b>${esc(empty.join(", "))}</b> ${empty.length > 1 ? "have" : "has"} no active goals this quarter — the 12 Week Year rule is every domain gets a seat.</span></div>` : ""}
-    ${shown.length ? `<div class="goal-list">${shown.map((g) => goalCard(g, linkedByGoal[g.id] || 0)).join("")}</div>`
+    ${shown.length ? `<div class="goal-list">${shown.map((g) => goalCard(g, linkedByGoal[g.id] || { total: 0, done: 0 })).join("")}</div>`
       : goals.length ? `<div class="rows" style="margin-top:14px"><div class="empty">No goals in this domain yet.</div></div>`
       : `<div class="rows" style="margin-top:14px"><div class="empty">No goals yet. Name an ambitious <b>12-week objective</b> — "Run a 10k", "Read 12 books" — then give it measurable <b>key results</b>, the <b>one lever</b> that moves it, and score your <b>weekly execution</b>. That's OKRs + The 12 Week Year, the way the best operators actually hit goals.</div></div>`}
   </div>`;
   const inp = $("#goal-add");
   const domSel = $("#goal-domain");
+  const gh = $("#goals-help");
+  if (gh) gh.onclick = () => { try {
+    _openModal({
+      title: "How Goals work",
+      body: `<div class="pm-hint" style="text-align:left;line-height:1.7;color:var(--mut)">
+        <p><b style="color:var(--ink)">Objective</b> — the outcome you want in 12 weeks. Pick a domain so every part of life gets a seat.</p>
+        <p><b style="color:var(--ink)">Key results</b> — measurable numbers that prove it (e.g. "runs = 10"). The goal % is the average of key-result progress.</p>
+        <p><b style="color:var(--ink)">One thing</b> — the single lever; it shows on Today as "this week's lead".</p>
+        <p><b style="color:var(--ink)">Milestones</b> — the waypoints along the way.</p>
+        <p><b style="color:var(--ink)">Weekly execution</b> — committed vs done: the commitment you actually control, scored each week.</p>
+        <p><b style="color:var(--ink)">Linked tasks</b> — type <span class="mono">>>name</span> when adding a task to attach it to a goal. Completing it advances the auto-tracked bar.</p>
+        <p><b style="color:var(--ink)">Health</b> — on track / watch / at risk, judged against where the 12-week cycle expects you to be.</p>
+      </div>`,
+      confirmLabel: "Got it", cancelLabel: "Close", value: "",
+      onSubmit: ({ close }) => { try { document.querySelector("#prompt-modal .pm-input")?.remove(); } catch {} },
+    });
+  } catch {} };
   if (goalDomFilter !== "all") domSel.value = goalDomFilter;
   inp.onkeydown = async (e) => { if (e.key === "Enter" && inp.value.trim()) { await window.donna.goalsAdd(inp.value.trim(), "", domSel.value); inp.value = ""; vGoals(); } };
   /* goal templates — one-click 12-week OKR / habit stack / ship-it shells */

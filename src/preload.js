@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("donna", {
   reflect: (text) => ipcRenderer.invoke("donna:reflect", text),
   hide: () => ipcRenderer.invoke("donna:hide"),
   addTask: (title) => ipcRenderer.invoke("donna:addTask", title),
+  rollover: () => ipcRenderer.invoke("donna:rollover"),
   quickAdd: (text, detail) => ipcRenderer.invoke("donna:quickAdd", { text, detail }),
   captureHide: () => ipcRenderer.invoke("donna:captureHide"),
   onCaptureCtx: (cb) => ipcRenderer.on("donna:captureCtx", (_e, c) => cb(c)),

@@ -19,6 +19,15 @@ function createBrain({ config, captureStore, clients }) {
   const SYSTEM = systemPrompt(cfg.userName);
 
   async function ask(text, { onToken, onState } = {}) {
+    // plain-language task commands ("complete the invoice", "roll overdue to
+    // today") run locally and instantly — no model call, fully deterministic.
+    try {
+      const act = require("./nlActions").run(text);
+      if (act && act.handled) {
+        onToken && onToken(act.message);
+        return { answer: act.message, tier: "action", provider: "action" };
+      }
+    } catch {}
     const cap = parseCapture(text);
     if (cap) {
       captureStore.add(cap.kind, cap.text);

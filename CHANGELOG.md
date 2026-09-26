@@ -3,6 +3,28 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.22.0] — 2026-09-26
+
+Plain language everywhere + Motion-style self-healing, plus ClickUp-style goal
+tracking.
+
+- **No more codes.** Priorities read **Urgent / High / Normal / Low** (not
+  P1–P4); Ask modes are **Fast / Deep / Best** (not M3/Opus/Fable); "lead
+  measure" → **weekly commitment**; Tracker "Pulse" → **Focus score**; Plan
+  "Replan" → **Rebuild my day**. Placeholders say "urgent", not "p1".
+- **At-risk warnings.** A task with a hard deadline the remaining work won't
+  fit before is flagged **⚠ at risk** on rows and cards.
+- **Overdue rolls forward.** Each day, unfinished overdue tasks move to today
+  (the day self-heals), with a manual **↻ Roll N overdue** button on Tasks and a
+  Settings toggle.
+- **Plain-language commands in Ask.** "complete the invoice", "move the
+  proposal to tomorrow", "reschedule all urgent to next week", "roll overdue to
+  today" — executed instantly, offline, no model call.
+- **Goals: linked tasks auto-track** (ClickUp Task Targets) — type `>>name`
+  when adding a task and completing it advances the goal's bar; plus a
+  **"how this works"** explainer built into the page.
+- Tests: 41 passing.
+
 ## [1.21.0] — 2026-09-26
 
 Focus: make each of the eight core pages beat the tool people use it

@@ -31,6 +31,7 @@ const DEFAULTS = {
   dayStartHour: 9,
   dayEndHour: 19,
   deepTargetMin: 180,
+  rolloverOverdue: true,
 
   // The assistant's knowledge: files or folders the user chooses to let it read.
   contextRoots: [],

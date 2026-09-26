@@ -6,6 +6,8 @@ const input = document.getElementById("ex-in");
 const nowEl = document.getElementById("ex-now");
 
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+const PRIO = ["Urgent", "High", "Normal", "Low"];
+const prioLabel = (p) => PRIO[Math.min(3, Math.max(0, (Number(p) || 3) - 1))];
 
 /* ── the now card: whatever you're on, right on the orb ────────────────── */
 let nowTask = null, nowTimer = null;
@@ -32,7 +34,7 @@ async function paintNow() {
   nowEl.innerHTML = `
     <div class="ex-now-top"><span class="ex-now-k">${doing ? "In focus" : "Up next"}</span>
       ${doing ? `<span class="ex-timer" id="ex-timer">${fmtClock(doing.startedAt)}</span>` : ""}
-      <span class="ex-pri p${top.priority}">P${top.priority}</span></div>
+      <span class="ex-pri p${top.priority}">${prioLabel(top.priority)}</span></div>
     <div class="ex-now-t">${esc(top.title)}</div>
     <div class="ex-now-acts">
       <button class="ex-now-btn" id="ex-toggle">${doing ? "❚❚ Pause" : "▶ Start"}</button>

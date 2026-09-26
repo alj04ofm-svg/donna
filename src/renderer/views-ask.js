@@ -1,4 +1,4 @@
-const provLabel = (p) => ({ anthropic: "Claude", openai: "GPT", gemini: "Gemini", minimax: "MiniMax", "claude-cli": "Claude CLI", m3: "M3", opus: "Opus", fable: "Fable" }[p] || p || "");
+const provLabel = (p) => ({ anthropic: "Claude", openai: "GPT", gemini: "Gemini", minimax: "MiniMax", "claude-cli": "Claude CLI", m3: "Fast", opus: "Deep", fable: "Best", action: "done" }[p] || p || "");
 
 /* ── Ask: grouped jump-start recommendations ── */
 function suggGroups() {
@@ -31,7 +31,7 @@ function suggGroups() {
 /* Ask modes — quick/think/best used to be typed prefixes hidden in a hint
    line; made them real buttons. Clicking one tags the next
    send; the prefix strips back out of what's shown, brain.js still reads it. */
-const ASK_MODES = [["quick", "⚡", "fast"], ["think", "◐", "deep"], ["best", "✦", "top creative"]];
+const ASK_MODES = [["quick", "⚡", "Fast"], ["think", "◐", "Deep"], ["best", "✦", "Best"]];
 let askMode = null;
 
 /* rotating suggestion carousel — one flattened, shuffled-feeling list cycled
@@ -60,7 +60,7 @@ function startCarousel() {
    that quietly learns about you so she can help better. */
 function vAsk() {
   const g = suggGroups();
-  const modeHtml = ASK_MODES.map(([k, ic, hint]) => `<button class="ask-mode ${askMode === k ? "on" : ""}" data-mode="${k}" title="${esc(hint)}">${ic} ${k}</button>`).join("");
+  const modeHtml = ASK_MODES.map(([k, ic, hint]) => `<button class="ask-mode ${askMode === k ? "on" : ""}" data-mode="${k}" title="${esc(hint)} mode">${ic} ${esc(hint)}</button>`).join("");
   const empty = `<div class="ask-empty">
     <div class="ask-hero-orb"><span class="orb speaking"></span></div>
     <div class="ask-hi">${greeting()}, ${esc((cfg && cfg.userName) || "there")}.<br><span>What can I help with?</span></div>
@@ -273,7 +273,7 @@ async function sendAsk(q) {
       });
     } else { reply.text = answer; reply.streaming = false; streaming = false; }
   } else { reply.text = answer; reply.streaming = false; streaming = false; }
-  if (res && res.tier === "capture") { await refresh(); try { renderCompactBody(); } catch {} }
+  if (res && (res.tier === "capture" || res.tier === "action")) { await refresh(); try { renderCompactBody(); } catch {} }
   persistThread();
 }
 

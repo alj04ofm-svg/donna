@@ -224,9 +224,25 @@ function addActual(id, minutes) {
   return !!t;
 }
 
+/* Roll overdue open tasks forward to today — the "self-healing day" (Motion).
+   Skips anything in focus, waiting on someone, or parked in Someday. */
+function rolloverOverdue(todayIso) {
+  const data = readJson(TASKS_FILE, { version: 1, tasks: [] });
+  const today = todayIso || new Date().toISOString().slice(0, 10);
+  let n = 0;
+  for (const t of (data.tasks || [])) {
+    if (t.status === "done" || t.status === "doing") continue;
+    if (t.waitingOn || t.bucket === "someday") continue;
+    const d = (t.dueAt || "").slice(0, 10);
+    if (d && d < today) { t.dueAt = today; t.updatedAt = new Date().toISOString(); n++; }
+  }
+  if (n) fs.writeFileSync(TASKS_FILE, JSON.stringify(data, null, 2));
+  return n;
+}
+
+/* Donna-only lane: waitingOn is an extra passthrough field; status stays "todo"
+   so the team dashboard keeps rendering it as a normal open card. */
 function setWaiting(id, who) {
-  // Donna-only lane: waitingOn is an extra passthrough field; status stays "todo"
-  // so the team dashboard keeps rendering it as a normal open card.
   const data = readJson(TASKS_FILE, { version: 1, tasks: [] });
   const t = (data.tasks || []).find((x) => x.id === id);
   if (t) {
@@ -273,4 +289,4 @@ function add(input, priority, detail) {
   return id;
 }
 
-module.exports = { summary, complete, setStatus, setWaiting, setDue, setPriority, add, setField, setWontDo, addActual, remove, newId, TASKS_FILE };
+module.exports = { summary, complete, setStatus, setWaiting, setDue, setPriority, add, setField, setWontDo, addActual, remove, newId, rolloverOverdue, TASKS_FILE };

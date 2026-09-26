@@ -9,3 +9,8 @@
 .goal2-health.risk { color: oklch(0.78 0.16 25); background: oklch(0.68 0.19 25 / 16%); }
 .kr-num { cursor: pointer; }
 .kr-num:hover { color: var(--signal); }
+
+/* Goals — linked-task auto-progress + inline help */
+.goal2-help { border: 0; background: none; color: var(--signal); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+.goal2-tasktarget { margin: 10px 0 4px; }
+.goal2-tt-h { display: flex; justify-content: space-between; font: 600 11px var(--sans); color: var(--mut); margin-bottom: 5px; }

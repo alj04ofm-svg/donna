@@ -84,7 +84,7 @@ function renderCompactBody() {
   if (window.sections.isOn("compact.priorities")) cards.push(compactCardPriorities());
   body.innerHTML = `
     ${cards.join("")}
-    <div class="c-add"><input id="c-add-in" placeholder='Add — "email sam tomorrow p1"'></div>`;
+    <div class="c-add"><input id="c-add-in" placeholder='Add — "email sam tomorrow urgent"'></div>`;
   const ai = $("#c-add-in");
   ai.value = localStorage.getItem("donna.draft") || "";
   enhanceCapture(ai);
@@ -206,7 +206,7 @@ function buildActions(q) {
   if (data) for (const t of data.open) {
     const sc = fuzzy(q, t.title);
     if (q && sc > 0) acts.push({
-      sec: "Complete task", icon: ICONS.task, label: t.title, hint: `P${t.priority}`, score: sc * 0.9,
+      sec: "Complete task", icon: ICONS.task, label: t.title, hint: prioLabel(t.priority), score: sc * 0.9,
       run: async () => { await window.donna.completeTask(t.id); await refresh(); render(); renderCompactBody(); toast("Done — " + t.title.slice(0, 40)); },
     });
   }
@@ -298,7 +298,7 @@ window.addEventListener("keydown", (e) => {
   }
   else if (["1", "2", "3"].includes(e.key) && cur >= 0) {
     e.preventDefault();
-    window.donna.setPriority(curList[cur].id, Number(e.key)).then(async () => { await refresh(); render(); toast(`P${e.key}`); });
+    window.donna.setPriority(curList[cur].id, Number(e.key)).then(async () => { await refresh(); render(); toast(prioLabel(Number(e.key))); });
   }
   else if (k === "s" && cur >= 0) {
     e.preventDefault();

@@ -116,8 +116,7 @@
 .tk-level.dist b { color: oklch(0.78 0.16 25); }
 .tk-level.neu b { color: var(--mut); }
 
-/* ── capture row actions ──────────────────────────────────────────────── */
-.cap-act { background: none; border: 1px solid var(--line); color: var(--dim); cursor: pointer; width: 22px; height: 22px; border-radius: 7px; font-size: 11px; transition: all 130ms var(--ease); }
+/* ── capture row actions ──────────────────────────────────────────────── */.cap-act { background: none; border: 1px solid var(--line); color: var(--dim); cursor: pointer; width: 22px; height: 22px; border-radius: 7px; font-size: 11px; transition: all 130ms var(--ease); }
 .cap-act:hover { color: var(--ok); border-color: var(--ok); }
 .cap-act.danger:hover { color: var(--alert); border-color: oklch(0.68 0.19 25 / 45%); }
 .cap-act:disabled { opacity: 0.35; cursor: default; }
@@ -132,3 +131,6 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ── at-risk deadline chip ────────────────────────────────────────────── */
+.chip.risk { color: oklch(0.8 0.17 40); background: oklch(0.7 0.19 40 / 15%); border: 1px solid oklch(0.7 0.19 40 / 34%); }
