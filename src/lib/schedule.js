@@ -16,7 +16,8 @@ function plan(tasks, events, opts = {}) {
   const dayStart = opts.startHour != null ? opts.startHour : 9;
   const dayEnd = opts.endHour != null ? opts.endHour : 19;
   const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  // opts.nowMin lets callers (and tests) pin "now" so the plan is deterministic
+  const nowMin = opts.nowMin != null ? opts.nowMin : now.getHours() * 60 + now.getMinutes();
 
   const busy = (events || []).filter((e) => !e.allDay).map((e) => ({
     s: minutesFromMidnight(e.start), e: minutesFromMidnight(e.end), title: e.title || "Busy", kind: "event",

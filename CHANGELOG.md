@@ -3,6 +3,17 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.22.2] — 2026-09-26
+
+- **Today hero** — gradient-bordered focus card with a soft halo, larger
+  tabular timer with a glow, and a kicker that reads clearly.
+- **Charts** — all progress bars (goals, cycle, week, capacity, categories,
+  coverage, briefing) and the Tracker sparkline/pattern bars now use gradient
+  fills with rounded caps and a subtle glow.
+- Goal rings and the Tracker focus ring get a soft halo.
+- Fix: the day-scheduler is now deterministic when `now` is pinned
+  (`opts.nowMin`), so schedule tests no longer flip with the time of day.
+
 ## [1.22.1] — 2026-09-26
 
 Visual system 3.0 — a richer, premium dark theme (`theme.css`, loaded last).

@@ -15,14 +15,14 @@ test("estimateMin falls back by priority", () => {
 test("blocked tasks are not time-blocked and are reported", () => {
   const a = T("a");
   const b = T("b", { dependsOn: ["a"] });
-  const p = plan([a, b], [], { startHour: 9, endHour: 19 });
+  const p = plan([a, b], [], { startHour: 9, endHour: 19, nowMin: 540 });
   assert.deepStrictEqual(p.blocks.map((x) => x.id), ["a"]);
   assert.strictEqual(p.blocked, 1);
 });
 
 test("a task whose dependency is done gets scheduled", () => {
   const b = T("b", { dependsOn: ["a"] }); // 'a' not in the open list → considered done
-  const p = plan([b], [], { startHour: 9, endHour: 19 });
+  const p = plan([b], [], { startHour: 9, endHour: 19, nowMin: 540 });
   assert.deepStrictEqual(p.blocks.map((x) => x.id), ["b"]);
   assert.strictEqual(p.blocked, 0);
 });
@@ -32,7 +32,7 @@ test("calendar events are flowed around", () => {
   const ev = [{ title: "Standup", allDay: false, start: new Date(2026, 0, 1, 9, 0).toISOString(), end: new Date(2026, 0, 1, 10, 0).toISOString() }];
   // freeze "now" before the work day by planning a start hour in the future is not possible;
   // just assert the block avoids the event window when it lands after it
-  const p = plan([t], ev, { startHour: 9, endHour: 19 });
+  const p = plan([t], ev, { startHour: 9, endHour: 19, nowMin: 540 });
   if (p.blocks.length) {
     const b = p.blocks[0];
     const overlaps = b.s < 600 && b.e > 540;
