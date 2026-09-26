@@ -1,0 +1,144 @@
+/* theme.css — Visual system 3.0. A richer, premium dark theme applied over the
+   whole app: refined tokens first, then the sidebar, headers, cards, buttons,
+   chips, segmented controls and ambient depth. Loaded last so it wins. Nothing
+   here changes layout structure — only how it looks and feels. */
+
+/* ── tokens ─────────────────────────────────────────────────────────────── */
+:root {
+  --bg: oklch(0.05 0.012 268 / 86%);
+  --panel: oklch(0.075 0.014 268);
+  --surface: oklch(0.105 0.016 268);
+  --surface-hi: oklch(0.145 0.018 268);
+  --line: oklch(1 0 0 / 9%);
+  --line-soft: oklch(1 0 0 / 5%);
+  --line-hi: oklch(1 0 0 / 17%);
+  --ink: oklch(0.97 0.006 268);
+  --mut: oklch(0.76 0.015 268);
+  --dim: oklch(0.63 0.018 268);
+  --signal: oklch(0.73 0.15 285);
+  --signal-2: oklch(0.74 0.13 200);
+  --signal-ink: oklch(0.12 0.02 285);
+  --glass: oklch(0.09 0.014 268 / 72%);
+  --glass-bd: oklch(1 0 0 / 10%);
+  --r-sm: 10px; --r-md: 13px; --r-lg: 17px; --r-xl: 22px; --radius: 15px;
+  --shadow-1: 0 14px 34px -16px oklch(0 0 0 / 62%), 0 3px 10px -5px oklch(0 0 0 / 42%);
+  --primary-bg: linear-gradient(135deg, oklch(0.75 0.15 285), oklch(0.68 0.17 320));
+}
+
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* ── ambient depth behind the content ───────────────────────────────────── */
+#main {
+  background-image:
+    radial-gradient(60% 42% at 16% -6%, oklch(0.73 0.15 285 / 9%), transparent 70%),
+    radial-gradient(48% 38% at 102% 0%, oklch(0.74 0.13 200 / 7%), transparent 66%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* ── sidebar ────────────────────────────────────────────────────────────── */
+#sidebar {
+  width: 250px;
+  padding: 16px 13px 12px;
+  background: linear-gradient(180deg, oklch(0.085 0.016 268 / 94%), oklch(0.05 0.012 268 / 94%));
+  border-right: 1px solid var(--line);
+  backdrop-filter: blur(18px);
+}
+.brand { padding: 4px 10px 16px; gap: 10px; }
+.wordmark {
+  font-weight: 700; letter-spacing: -0.02em; font-size: 16.5px;
+  background: linear-gradient(92deg, var(--ink) 20%, oklch(0.82 0.1 285) 90%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.nav-sec {
+  margin: 15px 11px 7px; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.13em; text-transform: uppercase; color: var(--dim);
+}
+.nav-item {
+  border-radius: 12px; padding: 9px 12px; color: var(--mut);
+  font-weight: 550; transition: background 160ms var(--ease), color 160ms var(--ease), transform 160ms var(--ease);
+}
+.nav-item:hover { background: oklch(1 0 0 / 5%); color: var(--ink); transform: translateX(1px); }
+.nav-item.active {
+  background: linear-gradient(92deg, oklch(0.73 0.15 285 / 24%), oklch(0.73 0.15 285 / 7%));
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px oklch(0.73 0.15 285 / 26%);
+}
+.nav-item.active::before { left: 0; top: 9px; bottom: 9px; border-radius: 3px; box-shadow: 0 0 12px var(--signal); }
+.nav-item svg { width: 15px; height: 15px; }
+.nav-count { background: oklch(1 0 0 / 9%); border-radius: 999px; padding: 1px 7px; font-size: 10px; color: var(--mut); }
+.nav-settings { margin-top: 6px; }
+#sidefoot { border-top: 1px solid var(--line); padding-top: 11px; margin-top: 10px; }
+
+/* ── headers ────────────────────────────────────────────────────────────── */
+.h1, .t2-greet, .home-hi, .home-hi { letter-spacing: -0.028em; }
+.h1 { font-size: 27px; font-weight: 700; }
+.sub { color: var(--mut); }
+.t2-eyebrow, .cyc-eyebrow { letter-spacing: 0.12em; color: var(--dim); }
+
+/* ── buttons ────────────────────────────────────────────────────────────── */
+.hero-btn.go, .t2-btn.primary, .tk-btn.primary, .triage-btn.primary, .nd-new, .wind-btn.go, .msg-followup.on {
+  background: var(--primary-bg); color: #0b0b12; border: none;
+  box-shadow: 0 10px 26px -12px oklch(0.73 0.15 285 / 95%);
+}
+.hero-btn.go:hover, .t2-btn.primary:hover, .tk-btn.primary:hover, .triage-btn.primary:hover, .wind-btn.go:hover { filter: brightness(1.06); }
+.hero-btn, .triage-btn, .wind-btn, .tk-btn {
+  background: linear-gradient(180deg, oklch(1 0 0 / 6%), oklch(1 0 0 / 2%));
+  border: 1px solid var(--line); border-radius: 11px;
+}
+
+/* ── cards / rows / panels ──────────────────────────────────────────────── */
+.card, .goal2, .note-card, .panel, .t2-card, .pat-card, .goal-tpl, .cyc, .ask-rail {
+  background-image: linear-gradient(180deg, oklch(1 0 0 / 3.5%), transparent 46%);
+}
+.rows { background: oklch(0.075 0.014 268 / 55%); }
+.row { padding-top: 10px; padding-bottom: 10px; }
+.row:hover { background: oklch(1 0 0 / 4%); }
+.panel, .card, .goal2, .note-card, .t2-card { box-shadow: var(--shadow-1); }
+.set-group { background: oklch(0.075 0.014 268 / 60%); }
+.tk-cell { background-image: linear-gradient(180deg, oklch(1 0 0 / 4%), transparent 55%); }
+.tk-cell.hero .tk-ring.big { filter: drop-shadow(0 6px 20px oklch(0.73 0.15 285 / 45%)); }
+
+/* ── chips ──────────────────────────────────────────────────────────────── */
+.chip, .proj-chip, .domain-badge { border-radius: 7px; }
+.chip.now-chip { box-shadow: 0 0 0 1px oklch(0.73 0.15 285 / 30%), 0 4px 12px -6px oklch(0.73 0.15 285 / 70%); }
+
+/* ── segmented controls ─────────────────────────────────────────────────── */
+.seg { background: oklch(0 0 0 / 28%); border-radius: 13px; padding: 3px; border: 1px solid var(--line); }
+.seg button { border-radius: 10px; }
+.seg button.on {
+  background: linear-gradient(180deg, oklch(1 0 0 / 11%), oklch(1 0 0 / 4%));
+  box-shadow: 0 3px 10px -5px oklch(0 0 0 / 70%), inset 0 1px 0 oklch(1 0 0 / 12%);
+}
+
+/* ── inputs ─────────────────────────────────────────────────────────────── */
+.field input, .quick-add input, .tf-search, .tf-select, .nd-search, .tk-input, .set-input, .goal2-in, .nd-tag-in, .tk-mini-input {
+  background: oklch(0.06 0.012 268 / 70%); border: 1px solid var(--line); border-radius: 11px;
+}
+.field input:focus, .quick-add input:focus, .tf-search:focus, .tk-input:focus, .set-input:focus, .goal2-in:focus {
+  border-color: oklch(0.73 0.15 285 / 60%);
+  box-shadow: 0 0 0 3px oklch(0.73 0.15 285 / 16%);
+}
+
+/* ── empty states ───────────────────────────────────────────────────────── */
+.rows .empty, .empty { color: var(--mut); }
+.home-clear { color: var(--mut); }
+
+/* ── the orb identity, slightly richer ──────────────────────────────────── */
+.orb { box-shadow: 0 0 18px oklch(0.73 0.15 285 / 45%); }
+
+/* ── command palette + modals ───────────────────────────────────────────── */
+#palette-panel, .sd-panel, .tk-panel {
+  box-shadow: 0 30px 80px -30px oklch(0 0 0 / 80%), 0 0 0 1px var(--line);
+  background-image: linear-gradient(180deg, oklch(1 0 0 / 3%), transparent 40%);
+}
+#palette-panel { border-radius: var(--r-xl); }
+.pal-item.on, .pal-item:hover { background: linear-gradient(92deg, oklch(0.73 0.15 285 / 20%), transparent); }
+
+/* ── toast ──────────────────────────────────────────────────────────────── */
+#toast { background: oklch(0.1 0.014 268 / 96%); border: 1px solid var(--line); box-shadow: var(--shadow-1); border-radius: 12px; }
+
+/* ── reduced motion ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+}

@@ -3,6 +3,18 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.22.1] — 2026-09-26
+
+Visual system 3.0 — a richer, premium dark theme (`theme.css`, loaded last).
+
+- Deeper, cooler palette with a violet→cyan accent; preserved macOS vibrancy.
+- **Redesigned sidebar**: wider, gradient wordmark, grouped labels, glowing
+  active item with a left accent, pill counts.
+- Ambient radial depth behind every page; cards, panels and modals get real
+  shadows and a subtle top sheen; refined segmented controls, inputs, chips,
+  buttons and the command palette.
+- No layout changes — purely how it looks.
+
 ## [1.22.0] — 2026-09-26
 
 Plain language everywhere + Motion-style self-healing, plus ClickUp-style goal
