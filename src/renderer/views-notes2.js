@@ -41,6 +41,12 @@ async function notesDesk(root) {
       </div>
       <div class="nd-subhead">
         <button class="nd-daily" id="nd-daily" title="Open today's daily note">☀ Daily</button>
+        <select id="nd-tpl" class="nd-tagfilter" title="New note from a template">
+          <option value="">Template…</option>
+          <option value="meeting">Meeting notes</option>
+          <option value="project">Project plan</option>
+          <option value="weekly">Weekly review</option>
+        </select>
         ${tagIndex.length ? `<select id="nd-tagfilter" class="nd-tagfilter"><option value="">All tags</option>${tagIndex.map((t) => `<option value="${esc(t.tag)}"${tagFilter === t.tag ? " selected" : ""}>${esc(t.tag)} · ${t.count}</option>`).join("")}</select>` : ""}
       </div>
       <div class="notes-rows">
@@ -89,6 +95,20 @@ async function notesDesk(root) {
   root.querySelector("#nd-new").onclick = async () => { flushNotesNow(); const id = await window.donna.notesAdd("Untitled", ""); _notesActive = id; notesDesk(root); };
   const daily = root.querySelector("#nd-daily");
   if (daily) daily.onclick = async () => { flushNotesNow(); const n = await window.donna.notesDaily(); _notesActive = n && n.id; notesDesk(root); toast("Today's note"); };
+  const tpl = root.querySelector("#nd-tpl");
+  if (tpl) tpl.onchange = async () => {
+    const key = tpl.value; if (!key) return;
+    const iso = new Date().toISOString().slice(0, 10);
+    const bodies = {
+      meeting: `## Meeting — ${iso}\n\n### Attendees\n- \n\n### Notes\n\n### Decisions\n- \n\n### Actions\n- `,
+      project: `## Project\n\n### Goal\n\n### Milestones\n- [ ] \n- [ ] \n\n### Notes`,
+      weekly: `## Weekly review — ${iso}\n\n### Wins\n- \n\n### Blockers\n- \n\n### Next week's one thing\n- `,
+    };
+    const titles = { meeting: `Meeting — ${iso}`, project: "Project plan", weekly: `Weekly review — ${iso}` };
+    flushNotesNow();
+    const id = await window.donna.notesAdd(titles[key] || "New note", bodies[key] || "");
+    _notesActive = id; notesDesk(root); toast("Created from template");
+  };
   root.querySelectorAll("[data-note]").forEach((b) => (b.onclick = () => { flushNotesNow(); _notesActive = b.dataset.note; notesDesk(root); }));
 
   if (!active) return;
@@ -98,7 +118,7 @@ async function notesDesk(root) {
   _quill = new Quill(host, {
     theme: "snow",
     placeholder: "Start writing…  [[Note Title]] links notes · #tags in the rail above",
-    modules: { toolbar: [["bold", "italic", "underline", "strike"], [{ header: [1, 2, 3, false] }], [{ list: "ordered" }, { list: "bullet" }, { list: "check" }], ["blockquote", "code-block", "link"], ["clean"]] },
+    modules: { toolbar: [["bold", "italic", "underline", "strike"], [{ header: [1, 2, 3, false] }], [{ list: "ordered" }, { list: "bullet" }, { list: "check" }], ["blockquote", "code-block", "link", "image"], ["clean"]] },
   });
   _quill.__root = root;
   let initial = active.body || "";

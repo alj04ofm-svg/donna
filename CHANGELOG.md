@@ -3,6 +3,16 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.24.0] — 2026-09-26
+
+- **Today is calm for new users.** The Routines card only appears once you've
+  actually created routines — no phantom habits you never set.
+- **No floating coach clutter.** The per-page ✦ AI coach is now **off by
+  default** (turn it on in Settings → Sections if you want it).
+- **Notes** — insert images straight into a note, and start a new note from a
+  **template** (Meeting notes / Project plan / Weekly review). Plus the existing
+  rich text, tags, backlinks, daily notes, word count and AI actions.
+
 ## [1.23.0] — 2026-09-26
 
 Foundations for a shareable personal OS.

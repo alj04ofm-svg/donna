@@ -634,16 +634,16 @@ async function vToday2() {
       </div>
 
       <aside class="t2-side">
-        <section class="t2-card">
+        ${habits.length ? `<section class="t2-card">
           <div class="t2-sec-head"><span>Routines</span><em>${habitsDone}/${habits.length}</em></div>
           <div class="t2-habits">
-            ${habits.length ? habits.map((h) => `<button class="t2-habit ${h.doneToday ? "on" : ""}" data-habit="${h.id}">
+            ${habits.map((h) => `<button class="t2-habit ${h.doneToday ? "on" : ""}" data-habit="${h.id}">
               <span class="t2-habit-tick">${h.doneToday ? "✓" : ""}</span>
               <span class="t2-habit-name">${esc(h.name)}</span>
               ${typeof h.streak === "number" && h.streak > 0 ? `<span class="t2-habit-streak">${h.streak}d</span>` : ""}
-            </button>`).join("") : `<div class="t2-empty slim">No routines yet.</div>`}
+            </button>`).join("")}
           </div>
-        </section>
+        </section>` : ""}
 
         <section class="t2-card">
           <div class="t2-sec-head"><span>Waiting on</span>${waiting && waiting.total ? `<em>${waiting.total}</em>` : ""}</div>

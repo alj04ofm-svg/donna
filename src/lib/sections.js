@@ -21,7 +21,7 @@ const SECTIONS = [
 
   /* AI Coach — contextual ✦ button on every page. Lives in its own group so
      Settings' "sections" tab can hide it independently of the per-page strips. */
-  { id: "ai.coach",        label: "AI coach on every page", group: "ai", desc: "Contextual ✦ button on every page that suggests smart moves", default: true },
+  { id: "ai.coach",        label: "AI coach on every page", group: "ai", desc: "Contextual ✦ button on every page that suggests smart moves", default: false },
 
   /* Today strips */
   { id: "today.brief",     label: "AI morning brief",     group: "Today", desc: "One AI sentence on how to start the day", default: true },
