@@ -3,6 +3,21 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.25.0] — 2026-09-26
+
+The "wow" pass.
+
+- **Animated ambient background** — a slow-drifting violet/cyan/magenta aurora
+  behind every page, plus a soft top sheen and vignette so content reads as
+  glass.
+- **Gradient shimmer** across the big headings; richer page entrance
+  (blur + rise).
+- **Glass depth** on cards/panels (backdrop blur + inner highlight edge).
+- **Micro-interactions** — nav icons pop on hover, primary buttons get a light
+  sheen sweep, the orb pops.
+- All of it animates only transform/opacity/filter (GPU-cheap, stays fast) and
+  is fully disabled under reduced-motion.
+
 ## [1.24.0] — 2026-09-26
 
 - **Today is calm for new users.** The Routines card only appears once you've
