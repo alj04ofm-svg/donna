@@ -18,6 +18,10 @@ const DEFAULTS = {
   // Identity
   userName: "",
   onboarded: false,
+  // About you — injected into the assistant's system prompt so answers fit you
+  profileRole: "",
+  profileFocus: "",
+  profileStyle: "",
 
   // Window / behaviour
   hotkey: "CommandOrControl+Shift+Space",

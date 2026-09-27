@@ -150,9 +150,11 @@ async function loadAskAbout() {
   const el = $("#ask-about"); if (!el) return;
   let facts = []; try { facts = await window.donna.memoryList(); } catch {}
   const KIND_H = { person: 25, preference: 250, date: 85, project: 330, health: 160, fact: 200 };
-  el.innerHTML = facts.length
+  const prof = [cfg && cfg.userName, cfg && cfg.profileRole, cfg && cfg.profileFocus].filter(Boolean).join(" · ");
+  const factsHtml = facts.length
     ? facts.slice(0, 20).map((f) => `<div class="ask-fact"><span class="ask-fact-dot" style="--h:${KIND_H[f.kind] || 200}"></span><span class="ask-fact-t" title="${esc(f.source)} · ${new Date(f.createdAt).toLocaleDateString()}">${esc(f.fact)}</span><button class="ask-fact-x" data-forget="${f.id}">×</button></div>`).join("")
     : `<div class="ask-about-empty">Nothing yet. As you talk, Donna quietly remembers what matters — or teach her below.</div>`;
+  el.innerHTML = (prof ? `<div class="ask-profile" title="Edit in Settings → You">${esc(prof)}</div>` : "") + factsHtml;
   el.querySelectorAll("[data-forget]").forEach((b) => (b.onclick = async () => { await window.donna.memoryRemove(b.dataset.forget); loadAskAbout(); }));
 }
 

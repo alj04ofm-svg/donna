@@ -18,6 +18,9 @@ async function vSettings() {
     <div class="sec">You</div>
     <div class="set-group">
       <div class="set-row"><div><div class="set-label">Your name</div><div class="set-hint">How Donna addresses you</div></div><input id="set-name" class="set-input" value="${esc(cfg.userName || "")}" placeholder="e.g. Sam"></div>
+      <div class="set-row"><div><div class="set-label">Your role</div><div class="set-hint">What you do — helps Donna tailor answers</div></div><input id="set-role" class="set-input" value="${esc(cfg.profileRole || "")}" placeholder="e.g. founder, editor, student"></div>
+      <div class="set-row"><div><div class="set-label">Current focus</div><div class="set-hint">What you're working toward right now</div></div><input id="set-focus" class="set-input" value="${esc(cfg.profileFocus || "")}" placeholder="e.g. launch the studio, get fit"></div>
+      <div class="set-row"><div><div class="set-label">Answer style</div><div class="set-hint">How you like Donna to reply</div></div><input id="set-style" class="set-input" value="${esc(cfg.profileStyle || "")}" placeholder="e.g. short and blunt / warm and detailed"></div>
     </div>
 
     <div class="sec">AI assistant</div>
@@ -249,6 +252,9 @@ async function vSettings() {
   const aiSave = $("#set-ai-save");
   const gatherAI = () => ({
     userName: ($("#set-name") && $("#set-name").value.trim()) || "",
+    profileRole: ($("#set-role") && $("#set-role").value.trim()) || "",
+    profileFocus: ($("#set-focus") && $("#set-focus").value.trim()) || "",
+    profileStyle: ($("#set-style") && $("#set-style").value.trim()) || "",
     provider: ($("#set-provider") && $("#set-provider").value) || "opencode",
     apiKey: ($("#set-key") && $("#set-key").value.trim()) || "",
     baseUrl: ($("#set-baseurl") && $("#set-baseurl").value.trim()) || "",

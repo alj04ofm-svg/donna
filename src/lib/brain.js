@@ -4,19 +4,25 @@ const { route } = require("./router");
 const { buildContext } = require("./contextProvider");
 const { parseCapture } = require("./captureIntent");
 
-function systemPrompt(userName) {
-  const who = userName && String(userName).trim() ? String(userName).trim() : "the user";
-  return [
+function systemPrompt(cfg) {
+  const c = cfg || {};
+  const who = c.userName && String(c.userName).trim() ? String(c.userName).trim() : "the user";
+  const lines = [
     `You are Donna, a sharp, warm personal assistant. Address the user as ${who}.`,
+  ];
+  if (c.profileRole) lines.push(`Their role: ${String(c.profileRole).slice(0, 120)}.`);
+  if (c.profileFocus) lines.push(`What they're focused on right now: ${String(c.profileFocus).slice(0, 160)}.`);
+  if (c.profileStyle) lines.push(`Answer style they prefer: ${String(c.profileStyle).slice(0, 120)}.`);
+  lines.push(
     "You only know what is in the CONTEXT below plus general knowledge — never invent specifics about their life.",
     "Answer fast and direct, no fluff, no flattery. Lead with the answer; end with a concrete next action when useful.",
     "If you don't know, say so plainly.",
-  ].join(" ");
+  );
+  return lines.join(" ");
 }
 
 function createBrain({ config, captureStore, clients }) {
   const cfg = config || {};
-  const SYSTEM = systemPrompt(cfg.userName);
 
   async function ask(text, { onToken, onState } = {}) {
     // plain-language task commands ("complete the invoice", "roll overdue to
@@ -48,7 +54,7 @@ function createBrain({ config, captureStore, clients }) {
     const fn = clients[provider] || clients.opencode || clients.anthropic || Object.values(clients)[0];
     let answer = "";
     try {
-      answer = await fn(prompt, SYSTEM);
+      answer = await fn(prompt, systemPrompt(cfg));
     } catch (e) {
       answer = `(couldn't reach the ${provider} model: ${e.message})`;
     }

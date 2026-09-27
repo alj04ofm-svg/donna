@@ -16,3 +16,5 @@
 .ask-model-note { margin-top: auto; padding: 10px 12px 2px; font-size: 10.5px; color: var(--dim); border-top: 1px solid var(--line-soft); }
 .ask-model-test { border: 0; background: none; color: var(--signal); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
 .ask-jgroup { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.ask-profile { margin: 0 0 8px; padding: 7px 9px; border-radius: 9px; background: oklch(0.73 0.15 285 / 12%); color: var(--ink); font: 600 11.5px var(--sans); }

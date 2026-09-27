@@ -3,6 +3,14 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.28.0] — 2026-09-26
+
+- **The assistant learns about you.** Settings → You now captures your **role**,
+  **current focus**, and preferred **answer style**, which are injected into the
+  system prompt so every reply is tailored to you. The Ask rail shows your
+  profile alongside the facts Donna has remembered from your chats.
+- The assistant reads your profile live, so changes apply immediately.
+
 ## [1.27.0] — 2026-09-26
 
 - **Notes: nested pages.** Create a **sub-page** from any note; the list now
