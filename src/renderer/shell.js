@@ -73,18 +73,67 @@ function compactCardPriorities() {
   </div>`;
 }
 
+function shortDue(d) {
+  const days = daysUntil(d);
+  if (days == null) return null;
+  return { txt: days < 0 ? "overdue" : days === 0 ? "today" : days === 1 ? "tmrw" : String(d).slice(5, 10), cls: days <= 1 ? "soon" : "" };
+}
+/* one compact, useful row: check · priority dot · title · due · live timer */
+function compactTaskRow(t) {
+  const doing = t.status === "doing";
+  const p = `p${Math.min(4, Math.max(1, t.priority || 3))}`;
+  const due = t.dueAt ? shortDue(t.dueAt) : null;
+  return `<div class="c-task ${doing ? "on" : ""}" data-cid="${t.id}" title="${esc(t.title)}">
+    <button class="c-check" data-cdone="${t.id}" aria-label="Complete">${CHECK_SVG}</button>
+    <span class="c-dot ${p}"></span>
+    <span class="c-task-t">${esc(trunc(t.title, 80))}</span>
+    ${due ? `<span class="c-task-due ${due.cls}">${due.txt}</span>` : ""}
+    ${doing ? `<span class="c-task-timer" data-started="${t.startedAt}">${elapsed(t.startedAt)}</span>` : ""}
+  </div>`;
+}
+
 function renderCompactBody() {
   if (!data) return;
   const body = $("#c-body");
   if (!body) return;
-  const cards = [];
-  if (window.sections.isOn("compact.lead")) cards.push(compactCardLead());
-  if (window.sections.isOn("compact.now")) cards.push(compactCardNow());
-  if (window.sections.isOn("compact.pipeline")) cards.push(compactCardPipeline());
-  if (window.sections.isOn("compact.priorities")) cards.push(compactCardPriorities());
+  const open = (data.open || []).slice().sort((a, b) => (a.priority - b.priority) || String(a.dueAt || "9999").localeCompare(String(b.dueAt || "9999")));
+  const now = window.sections.isOn("compact.now") ? compactCardNow() : "";
   body.innerHTML = `
-    ${cards.join("")}
-    <div class="c-add"><input id="c-add-in" placeholder='Add — "email sam tomorrow urgent"'></div>`;
+    <div class="c-stack">
+      ${now}
+      <div class="c-tasks">${open.length ? open.map(compactTaskRow).join("") : `<div class="c-empty">Nothing open. Nice.</div>`}</div>
+    </div>
+    <div class="c-add"><input id="c-add-in" placeholder='Add a task — "email sam tomorrow urgent"'></div>`;
+
+  body.querySelectorAll("[data-cdone]").forEach((b) => (b.onclick = async (e) => {
+    e.stopPropagation();
+    await window.donna.completeTask(b.dataset.cdone);
+    await refresh(); renderCompactBody(); try { render(); } catch {}
+  }));
+  const wireRowsFor = (scope) => scope.querySelectorAll(".c-task[data-cid]").forEach((row) => (row.onclick = async () => {
+    const id = row.dataset.cid;
+    const t = data.open.find((x) => x.id === id);
+    const starting = !(t && t.status === "doing");
+    if (starting && openDepIds(t || {}).length) { toast("Blocked — clear its dependencies first"); return; }
+    await window.donna.setStatus(id, starting ? "doing" : "todo");
+    await refresh(); renderCompactBody();
+    toast(starting ? "On it" : "Paused");
+  }));
+  wireRowsFor(body);
+
+  /* the pill, when the user has stretched it taller, shows the same scroll list */
+  const pl = $("#pill-list");
+  if (pl) { pl.innerHTML = open.map(compactTaskRow).join(""); wireRowsFor(pl); pl.querySelectorAll("[data-cdone]").forEach((b) => (b.onclick = async (e) => { e.stopPropagation(); await window.donna.completeTask(b.dataset.cdone); await refresh(); renderCompactBody(); })); }
+  body.querySelectorAll(".c-task[data-cid]").forEach((row) => (row.onclick = async () => {
+    const id = row.dataset.cid;
+    const t = data.open.find((x) => x.id === id);
+    const starting = !(t && t.status === "doing");
+    if (starting && openDepIds(t || {}).length) { toast("Blocked — clear its dependencies first"); return; }
+    await window.donna.setStatus(id, starting ? "doing" : "todo");
+    await refresh(); renderCompactBody();
+    toast(starting ? "On it" : "Paused");
+  }));
+
   const ai = $("#c-add-in");
   ai.value = localStorage.getItem("donna.draft") || "";
   enhanceCapture(ai);
@@ -96,7 +145,13 @@ function renderCompactBody() {
       await refresh(); renderCompactBody(); toast("Task added");
     }
   });
-  wireRows(body);
+  body.querySelectorAll("[data-done]").forEach((b) => (b.onclick = async (e) => { e.stopPropagation(); await window.donna.completeTask(b.dataset.done); await refresh(); renderCompactBody(); }));
+  body.querySelectorAll("[data-start]").forEach((b) => (b.onclick = async (e) => {
+    e.stopPropagation();
+    const t = data.open.find((x) => x.id === b.dataset.start);
+    await window.donna.setStatus(b.dataset.start, t && t.status === "doing" ? "todo" : "doing");
+    await refresh(); renderCompactBody();
+  }));
   body.querySelectorAll("[data-goto]").forEach((el) => (el.onclick = () => gotoView(el.dataset.goto)));
 }
 
@@ -342,10 +397,13 @@ window.addEventListener("keydown", (e) => {
 });
 
 /* ════════ mode plumbing ════════ */
+function syncPillHeight() { try { document.body.classList.toggle("pill-tall", document.body.dataset.mode === "pill" && window.innerHeight > 72); } catch {} }
+window.addEventListener("resize", () => { syncPillHeight(); if (document.body.dataset.mode === "pill") renderCompactBody(); });
 function setBodyMode(m) {
   document.body.dataset.mode = m;
   document.body.classList.remove("morphing");
-  if (m === "compact") renderCompactBody();
+  syncPillHeight();
+  if (m === "compact" || m === "pill") renderCompactBody();
   if (m === "full") render();
 }
 window.donna.onModeWill?.(() => document.body.classList.add("morphing"));

@@ -199,6 +199,7 @@ async function applyMode(next) {
     await animateBounds(win, savedBoundsFor(mode));
   }
   win.webContents.send("donna:mode", mode);
+  try { win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }); } catch {}
   if (prev !== mode) win.show();
 }
 
@@ -247,6 +248,7 @@ async function showWindow() {
   try { console.log("[showWindow] pre visible=", win.isVisible(), "opacity=", win.getOpacity(), "bounds=", JSON.stringify(win.getBounds())); } catch {}
   win.setOpacity(0);
   win.show(); win.focus(); app.focus({ steal: true });
+  try { win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }); } catch {}
   try { if (app.dock) app.dock.show(); } catch {}
   win.webContents.send("donna:show");
   await fadeTo(1);
@@ -418,6 +420,7 @@ function openQuickCapture() {
       webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true },
     });
     capWin.loadFile(path.join(__dirname, "renderer/capture.html"));
+    capWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     capWin.webContents.on("console-message", (_e, level, msg, line, src) => { if (level >= 2) console.log(`[capture] ${msg} (${src}:${line})`); });
     capWin.on("blur", () => { if (capWin && capWin.isVisible()) capWin.hide(); });
   }

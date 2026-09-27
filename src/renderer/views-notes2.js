@@ -265,7 +265,7 @@ async function notesDesk(root) {
       const r = await window.donna.askInternal(`quick: Tidy and structure the following note as clean HTML suitable for a rich-text editor. Keep the author's wording and facts; invent nothing. Return ONLY the HTML.\n\n${body}`);
       const out = (r.answer || "").trim();
       if (out && !/^\(/i.test(out)) { _quill.clipboard.dangerouslyPasteHTML(out); save(); toast("Tidied"); }
-      else toast("Couldn't tidy that one");
+      else toast(out ? out.replace(/^\(|\)$/g, "").slice(0, 150) : "Couldn't tidy that one");
       b.textContent = "✨ Tidy"; return;
     }
     if (act === "summary") {
@@ -273,7 +273,7 @@ async function notesDesk(root) {
       const r = await window.donna.askInternal(`quick: In 2-3 sentences, summarise this note. Just the summary.\n\n${body}`);
       const out = (r.answer || "").trim();
       if (out && !/^\(/i.test(out)) { _quill.clipboard.dangerouslyPasteHTML(`<blockquote>${out.replace(/[<>]/g, "")}</blockquote><p><br></p>` + _quill.root.innerHTML); save(); toast("Summarised"); }
-      else toast("Couldn't summarise");
+      else toast(out ? out.replace(/^\(|\)$/g, "").slice(0, 150) : "Couldn't summarise");
       b.textContent = "Summarise"; return;
     }
     if (act === "tasks") {
@@ -284,7 +284,7 @@ async function notesDesk(root) {
         const lines = out.split("\n").map((l) => l.replace(/^[-*•\d.\s]+/, "").trim()).filter((l) => l.length > 2).slice(0, 12);
         for (const l of lines) { try { await window.donna.addTask(l); } catch {} }
         toast(`Added ${lines.length} task${lines.length === 1 ? "" : "s"}`);
-      } else toast("No action items found");
+      } else toast(out && /^\(/i.test(out) ? out.replace(/^\(|\)$/g, "").slice(0, 150) : "No action items found");
       b.textContent = "→ Tasks"; return;
     }
   }));
