@@ -77,6 +77,8 @@ async function vSettings() {
         <div class="stepper"><button data-wh="s-">−</button><span id="wh-s">${cfg.dayStartHour || 9}</span><button data-wh="s+">+</button><span class="stepper-arrow">→</span><button data-wh="e-">−</button><span id="wh-e">${cfg.dayEndHour || 19}</span><button data-wh="e+">+</button></div></div>
       <div class="set-row"><div><div class="set-label">Daily deep-work target</div><div class="set-hint">Intentional focus minutes per day — shown against Tracker</div></div>
         <div class="stepper"><button data-deep="-">−</button><span id="deep-val">${Math.round((cfg.deepTargetMin || 180) / 6) / 10}h</span><button data-deep="+">+</button></div></div>
+      <div class="set-row"><div><div class="set-label">Chunk long tasks</div><div class="set-hint">Split big tasks into focus blocks across the day (0 = off)</div></div>
+        <div class="stepper"><button data-chunk="-">−</button><span id="chunk-val">${cfg.chunkMinutes ? cfg.chunkMinutes + "m" : "Off"}</span><button data-chunk="+">+</button></div></div>
     </div>`)}
 
     ${pane("tracker", `
@@ -199,6 +201,13 @@ async function vSettings() {
     let m = cfg.deepTargetMin || 180; m = Math.max(30, Math.min(720, m + (el.dataset.deep === "+" ? 30 : -30)));
     cfg = await window.donna.setConfig({ deepTargetMin: m });
     $("#deep-val").textContent = `${Math.round(m / 6) / 10}h`;
+  }));
+  main.querySelectorAll("[data-chunk]").forEach((el) => (el.onclick = async () => {
+    const steps = [0, 15, 30, 45, 60, 90];
+    let i = steps.indexOf(cfg.chunkMinutes || 0); if (i < 0) i = 0;
+    const m = steps[Math.max(0, Math.min(steps.length - 1, i + (el.dataset.chunk === "+" ? 1 : -1)))];
+    cfg = await window.donna.setConfig({ chunkMinutes: m });
+    $("#chunk-val").textContent = m ? `${m}m` : "Off";
   }));
   const ex = $("#btn-export"); if (ex) ex.onclick = async () => { await window.donna.exportData(); toast("Backup saved to Desktop"); };
   const ct = $("#btn-cleartracker"); if (ct) ct.onclick = async () => {

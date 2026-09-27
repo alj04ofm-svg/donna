@@ -49,12 +49,36 @@ function plan(tasks, events, opts = {}) {
 
   const blocks = [];
   let overflow = 0;
-  for (const t of schedulable) {
-    const need = estimateMin(t);
+  const place = (t, need) => {
     const slot = findSlot(need, cursor);
-    if (slot === null) { overflow++; continue; }
+    if (slot === null) return false;
     blocks.push({ id: t.id, title: t.title, priority: t.priority, project_id: t.project_id, s: slot, e: slot + need, doing: t.status === "doing" });
     cursor = slot + need;
+    return true;
+  };
+  const chunk = opts.chunkMin && opts.chunkMin > 0 ? opts.chunkMin : 0;
+  if (!chunk) {
+    for (const t of schedulable) if (!place(t, estimateMin(t))) overflow++;
+  } else {
+    /* Chunking (Motion): a long task is broken into focus-sized blocks and
+       round-robined against the other work, so you touch each task across the
+       day instead of one marathon sitting. */
+    const queues = schedulable.map((t) => {
+      const need = estimateMin(t);
+      const parts = [];
+      if (need <= chunk) parts.push(need);
+      else { let rem = need; while (rem > 0) { parts.push(Math.min(chunk, rem)); rem -= chunk; } }
+      return { t, parts, i: 0 };
+    });
+    let progress = true;
+    while (progress) {
+      progress = false;
+      for (const q of queues) {
+        if (q.i >= q.parts.length) continue;
+        if (place(q.t, q.parts[q.i])) { q.i++; progress = true; }
+      }
+    }
+    for (const q of queues) if (q.i < q.parts.length) overflow++;
   }
 
   const busyMin = busy.reduce((n, b) => n + (Math.min(b.e, endCap) - Math.max(b.s, dayStart * 60)), 0);

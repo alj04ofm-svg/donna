@@ -27,8 +27,7 @@ test("a task whose dependency is done gets scheduled", () => {
   assert.strictEqual(p.blocked, 0);
 });
 
-test("calendar events are flowed around", () => {
-  const t = T("t", { estimatedMinutes: 60, priority: 1 });
+test("calendar events are flowed around", () => {  const t = T("t", { estimatedMinutes: 60, priority: 1 });
   const ev = [{ title: "Standup", allDay: false, start: new Date(2026, 0, 1, 9, 0).toISOString(), end: new Date(2026, 0, 1, 10, 0).toISOString() }];
   // freeze "now" before the work day by planning a start hour in the future is not possible;
   // just assert the block avoids the event window when it lands after it
@@ -38,4 +37,19 @@ test("calendar events are flowed around", () => {
     const overlaps = b.s < 600 && b.e > 540;
     assert.ok(!overlaps, "block must not overlap the 9-10 event");
   }
+});
+
+test("chunking splits a long task into focus blocks", () => {
+  const big = T("big", { estimatedMinutes: 90, priority: 2 });
+  const p = plan([big], [], { startHour: 9, endHour: 19, nowMin: 540, chunkMin: 30 });
+  assert.strictEqual(p.blocks.length, 3);
+  assert.deepStrictEqual(p.blocks.map((b) => b.e - b.s), [30, 30, 30]);
+});
+
+test("chunking round-robins across tasks", () => {
+  const a = T("a", { estimatedMinutes: 60, priority: 1 });
+  const b = T("b", { estimatedMinutes: 30, priority: 2 });
+  const p = plan([a, b], [], { startHour: 9, endHour: 19, nowMin: 540, chunkMin: 30 });
+  // first pass: one chunk of each task (a, then b); second pass: a's second chunk
+  assert.deepStrictEqual(p.blocks.map((x) => x.id), ["a", "b", "a"]);
 });

@@ -36,6 +36,7 @@ const DEFAULTS = {
   dayEndHour: 19,
   deepTargetMin: 180,
   rolloverOverdue: true,
+  chunkMinutes: 0, // 0 = off; otherwise split long tasks into blocks of N minutes
 
   // The assistant's knowledge: files or folders the user chooses to let it read.
   contextRoots: [],

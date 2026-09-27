@@ -3,6 +3,13 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.29.0] — 2026-09-26
+
+- **Task chunking (Motion-style).** Settings → Focus → *Chunk long tasks*
+  (Off / 15 / 30 / 45 / 60 / 90 min). Long tasks are split into focus-sized
+  blocks and **round-robined** across the day so you touch each task instead of
+  one marathon sitting. Off by default.
+
 ## [1.28.0] — 2026-09-26
 
 - **The assistant learns about you.** Settings → You now captures your **role**,

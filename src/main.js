@@ -537,7 +537,7 @@ app.whenReady().then(() => {
     const open = tasks.summary().open;
     let events = [], calOk = false, calReason = null;
     try { const r = require("./lib/calendar").today(); events = r.events || []; calOk = !!r.ok; calReason = r.reason || null; } catch { calReason = "nomodule"; }
-    const p = require("./lib/schedule").plan(open, events, { startHour: config.dayStartHour || 9, endHour: config.dayEndHour || 19 });
+    const p = require("./lib/schedule").plan(open, events, { startHour: config.dayStartHour || 9, endHour: config.dayEndHour || 19, chunkMin: config.chunkMinutes || 0 });
     return { ...p, calOk, calReason };
   });
   ipcMain.handle("donna:getConfig", () => config);
