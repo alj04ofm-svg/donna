@@ -61,7 +61,7 @@ contextBridge.exposeInMainWorld("donna", {
   habitsToggle: (id) => ipcRenderer.invoke("donna:habitsToggle", id),
   plan: () => ipcRenderer.invoke("donna:plan"),
   notesList: () => ipcRenderer.invoke("donna:notesList"),
-  notesAdd: (title, body) => ipcRenderer.invoke("donna:notesAdd", { title, body }),
+  notesAdd: (title, body, parentId) => ipcRenderer.invoke("donna:notesAdd", { title, body, parentId }),
   notesUpdate: (id, patch) => ipcRenderer.invoke("donna:notesUpdate", { id, patch }),
   notesRemove: (id) => ipcRenderer.invoke("donna:notesRemove", id),
   notesDaily: () => ipcRenderer.invoke("donna:notesDaily"),

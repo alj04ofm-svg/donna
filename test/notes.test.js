@@ -49,3 +49,11 @@ test("daily note is idempotent per day and returns the record", () => {
   assert.strictEqual(a.id, b.id);
   assert.match(a.title, /2026-03-04/);
 });
+
+test("sub-pages: parentId nests and survives a reload", () => {
+  const parent = notes.add("Parent page", "");
+  const child = notes.add("Child page", "", parent);
+  const c = notes.list().find((n) => n.id === child);
+  assert.strictEqual(c.parentId, parent);
+  assert.strictEqual(notes.list().find((n) => n.id === parent).parentId, null);
+});

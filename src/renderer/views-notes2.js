@@ -25,10 +25,22 @@ async function notesDesk(root) {
   try { tagIndex = await window.donna.ext("notes", "allTags"); } catch {}
   const q = (localStorage.getItem("donna.noteSearch") || "").toLowerCase();
   const tagFilter = localStorage.getItem("donna.noteTag") || "";
-  const shown = notes
+  const filtered = notes
     .filter((n) => !q || ((n.title || "") + " " + _stripHtml(n.body)).toLowerCase().includes(q))
-    .filter((n) => !tagFilter || (Array.isArray(n.tags) ? n.tags : []).includes(tagFilter))
-    .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+    .filter((n) => !tagFilter || (Array.isArray(n.tags) ? n.tags : []).includes(tagFilter));
+  /* Notion-style page tree: children nest under their parent, indented */
+  const orderTree = (arr) => {
+    const byParent = new Map();
+    for (const n of arr) { const p = n.parentId || ""; if (!byParent.has(p)) byParent.set(p, []); byParent.get(p).push(n); }
+    const rank = (a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+    for (const list of byParent.values()) list.sort(rank);
+    const out = []; const seen = new Set();
+    const walk = (parent, depth) => { for (const n of (byParent.get(parent) || [])) { if (seen.has(n.id)) continue; seen.add(n.id); out.push({ ...n, _depth: depth }); walk(n.id, depth + 1); } };
+    walk("", 0);
+    for (const n of arr) if (!seen.has(n.id)) { seen.add(n.id); out.push({ ...n, _depth: 0 }); }
+    return out;
+  };
+  const shown = orderTree(filtered);
   const active = shown.find((n) => n.id === _notesActive) || shown[0] || null;
   _notesActive = active ? active.id : null;
   const activeTags = active && Array.isArray(active.tags) ? active.tags : [];
@@ -50,8 +62,8 @@ async function notesDesk(root) {
         ${tagIndex.length ? `<select id="nd-tagfilter" class="nd-tagfilter"><option value="">All tags</option>${tagIndex.map((t) => `<option value="${esc(t.tag)}"${tagFilter === t.tag ? " selected" : ""}>${esc(t.tag)} · ${t.count}</option>`).join("")}</select>` : ""}
       </div>
       <div class="notes-rows">
-        ${shown.length ? shown.map((n) => `<button class="notes-row ${n.id === _notesActive ? "on" : ""}" data-note="${n.id}">
-          <span class="nr-title">${n.pinned ? "★ " : ""}${esc(n.title || "Untitled")}</span>
+        ${shown.length ? shown.map((n) => `<button class="notes-row ${n.id === _notesActive ? "on" : ""}" data-note="${n.id}" style="padding-left:${13 + (n._depth || 0) * 15}px">
+          <span class="nr-title">${n._depth ? "↳ " : ""}${n.pinned ? "★ " : ""}${esc(n.title || "Untitled")}</span>
           <span class="nr-sub">${esc(_stripHtml(n.body).slice(0, 70) || "No additional text")}</span>
           <span class="nr-date">${new Date(n.updatedAt || n.createdAt || Date.now()).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</span>
           ${(Array.isArray(n.tags) && n.tags.length) ? `<span class="nr-tags">${n.tags.slice(0, 3).map((t) => `<i style="--h:${tagHue(t)}">${esc(t)}</i>`).join("")}</span>` : ""}
@@ -62,6 +74,7 @@ async function notesDesk(root) {
       ${active ? `
       <input id="nd-title" class="nd-title" placeholder="Title" value="${esc(active.title || "")}">
       <div class="nd-tags" id="nd-tags"></div>
+      ${(() => { const kids = notes.filter((n) => n.parentId === active.id); return `<div class="nd-subpages"><span class="nd-subpages-h">Sub-pages</span>${kids.map((c) => `<button class="nd-subpage" data-open-note="${esc(c.id)}">${esc(c.title || "Untitled")}</button>`).join("")}<button class="nd-subpage add" id="nd-add-sub">＋ Sub-page</button></div>`; })()}
       <div id="nd-quill" class="nd-quill"></div>
       <div class="nd-links" id="nd-links"></div>
       <div class="nd-foot">
@@ -140,7 +153,12 @@ async function notesDesk(root) {
       if (v && !tags.includes(v) && tags.length < 12) tags.push(v);
       inpT.value = "";
       await window.donna.ext("notes", "setTags", active.id, tags);
-      renderTags();
+  renderTags();
+
+  /* ── sub-pages (Notion-style nesting) ── */
+  root.querySelectorAll("[data-open-note]").forEach((b) => (b.onclick = () => { flushNotesNow(); _notesActive = b.dataset.openNote; notesDesk(root); }));
+  const addSub = root.querySelector("#nd-add-sub");
+  if (addSub) addSub.onclick = async () => { flushNotesNow(); const id = await window.donna.notesAdd("Untitled", "", active.id); _notesActive = id; notesDesk(root); toast("Sub-page created"); };
     };
   };
   renderTags();
@@ -175,6 +193,34 @@ async function notesDesk(root) {
     }, 500);
   };
   _quill.on("text-change", save);
+
+  /* ── [[ wiki-link autocomplete (Obsidian/Notion style) ── */
+  const acMenu = document.createElement("div");
+  acMenu.className = "nd-ac"; acMenu.hidden = true;
+  root.querySelector(".notes-editor")?.appendChild(acMenu);
+  const closeAc = () => { acMenu.hidden = true; };
+  _quill.on("text-change", () => {
+    const sel = _quill.getSelection();
+    if (!sel) { closeAc(); return; }
+    const upto = _quill.getText(0, sel.index);
+    const m = upto.match(/\[\[([^\]\n]{0,60})$/);
+    if (!m) { closeAc(); return; }
+    const query = m[1].toLowerCase();
+    const hits = notes.filter((n) => n.id !== active.id && String(n.title || "").toLowerCase().includes(query)).slice(0, 6);
+    if (!hits.length) { closeAc(); return; }
+    acMenu.hidden = false;
+    acMenu.innerHTML = `<div class="nd-ac-h">Link to a note</div>` + hits.map((n) => `<button data-ac="${esc(n.id)}">${esc(n.title || "Untitled")}</button>`).join("");
+    acMenu.querySelectorAll("[data-ac]").forEach((b) => (b.onclick = () => {
+      const n = notes.find((x) => x.id === b.dataset.ac);
+      if (!n) return;
+      const start = sel.index - m[0].length;
+      _quill.deleteText(start, m[0].length, "user");
+      _quill.insertText(start, `[[${n.title}]]`, "user");
+      _quill.setSelection(start + n.title.length + 4, 0, "user");
+      closeAc();
+    }));
+  });
+  _quill.root.addEventListener("blur", () => setTimeout(closeAc, 150));
   const titleEl = root.querySelector("#nd-title"); if (titleEl) titleEl.oninput = save;
 
   /* ── wiki-link backlinks (out + in) ── */

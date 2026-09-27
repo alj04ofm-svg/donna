@@ -3,6 +3,16 @@
 All notable changes to Donna are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.27.0] — 2026-09-26
+
+- **Notes: nested pages.** Create a **sub-page** from any note; the list now
+  renders a **page tree** (children indented under their parent) and the editor
+  shows a **Sub-pages** row. This is the first step toward full Notion-style
+  page nesting.
+- **Notes: `[[` autocomplete.** Type `[[` while writing to link another note —
+  a menu of matching titles appears; pick one to insert `[[Note Title]]`, which
+  the backlinks panel already resolves.
+
 ## [1.26.0] — 2026-09-26
 
 - **Plan: "Focus now" hero.** The Day view leads with the block you're in

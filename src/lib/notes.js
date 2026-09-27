@@ -31,10 +31,10 @@ function normTags(list, max = 12) {
   return out;
 }
 
-function add(title, body) {
+function add(title, body, parentId) {
   const a = read();
   const now = new Date().toISOString();
-  const n = { id: newId(a), title: (title || "Untitled").slice(0, 140), body: (body || "").slice(0, 200000), tags: [], createdAt: now, updatedAt: now };
+  const n = { id: newId(a), title: (title || "Untitled").slice(0, 140), body: (body || "").slice(0, 200000), tags: [], parentId: parentId || null, createdAt: now, updatedAt: now };
   a.push(n); write(a);
   try { require("./activity").log("note_added", n.title, { ref: { type: "note", id: n.id } }); } catch {}
   return n.id;

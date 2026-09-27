@@ -756,7 +756,7 @@ app.whenReady().then(() => {
     return require("./lib/diagnostic").run({ permStatus, trackerConfig: tcfg, cfg: config });
   });
   ipcMain.handle("donna:notesList", () => require("./lib/notes").list());
-  ipcMain.handle("donna:notesAdd", (_e, { title, body }) => require("./lib/notes").add(title, body));
+  ipcMain.handle("donna:notesAdd", (_e, { title, body, parentId }) => require("./lib/notes").add(title, body, parentId));
   ipcMain.handle("donna:notesUpdate", (_e, { id, patch }) => require("./lib/notes").update(id, patch));
   ipcMain.handle("donna:notesRemove", (_e, id) => require("./lib/notes").remove(id));
   ipcMain.handle("donna:notesDaily", () => require("./lib/notes").ensureDaily());
